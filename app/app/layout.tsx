@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { Logo } from "@/components/logo";
 import { signOut } from "./actions";
 
-// Authenticated app shell: top bar + mobile-first bottom navigation.
+// Authenticated app shell: branded top bar + mobile-first bottom navigation.
 export default async function AppLayout({
   children,
 }: {
@@ -17,18 +18,16 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-200 bg-white/90 px-4 py-3 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
-        <Link href="/app" className="font-semibold tracking-tight">
-          SCoT
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface/90 px-4 py-2.5 backdrop-blur">
+        <Link href="/app" aria-label="Home">
+          <Logo width={104} />
         </Link>
         <div className="flex items-center gap-3 text-xs">
-          <span className="max-w-[10rem] truncate text-zinc-500">
-            {user.email}
-          </span>
+          <span className="max-w-[9rem] truncate text-muted">{user.email}</span>
           <form action={signOut}>
             <button
               type="submit"
-              className="min-h-9 rounded-md border border-zinc-300 px-2 dark:border-zinc-700"
+              className="min-h-9 rounded-lg border border-border px-2.5 text-foreground transition hover:bg-foreground/5"
             >
               Sign out
             </button>
@@ -38,7 +37,7 @@ export default async function AppLayout({
 
       <main className="flex-1 pb-20">{children}</main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-2 border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+      <nav className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-2 border-t border-border bg-surface">
         <NavLink href="/app" label="Home" />
         <NavLink href="/app/colonies" label="Colonies" />
       </nav>
@@ -50,7 +49,7 @@ function NavLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="flex min-h-14 items-center justify-center text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-900"
+      className="flex min-h-14 items-center justify-center text-sm font-medium text-muted transition hover:bg-foreground/5 hover:text-foreground"
     >
       {label}
     </Link>

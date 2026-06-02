@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createOrganisation } from "./actions";
 import { SubmitButton } from "@/components/submit-button";
+import { btnPrimary, card, input, pill } from "@/lib/ui";
 
 type MembershipRow = {
   role: string;
@@ -34,42 +35,38 @@ export default async function AppHome({
       {error ? (
         <p
           role="alert"
-          className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300"
+          className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/60 dark:text-red-300"
         >
           {error}
         </p>
       ) : null}
 
-      <section className="flex flex-col gap-2">
-        <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Your organisations
-        </h2>
+      <section className="flex flex-col gap-3">
+        <h1 className="font-display text-2xl">Your organisations</h1>
         {memberships.length === 0 ? (
-          <p className="rounded-md border border-dashed border-zinc-300 p-4 text-sm text-zinc-500 dark:border-zinc-700">
-            You&rsquo;re not part of an organisation yet. Create one below to
-            get started, or ask an admin to invite you.
+          <p className={`${card} p-4 text-sm text-muted`}>
+            You&rsquo;re not part of an organisation yet — create one below to
+            get started.
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
             {memberships.map((m) => (
               <li
                 key={m.organisation_id}
-                className="flex items-center justify-between rounded-md border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800"
+                className={`${card} flex items-center justify-between px-4 py-3`}
               >
                 <span className="font-medium">
                   {m.organisations?.name ?? "Organisation"}
                 </span>
-                <span className="rounded-full bg-teal-700/10 px-2 py-0.5 text-xs text-teal-800 dark:text-teal-300">
-                  {m.role}
-                </span>
+                <span className={pill}>{m.role}</span>
               </li>
             ))}
           </ul>
         )}
       </section>
 
-      <section className="flex flex-col gap-2 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-        <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+      <section className="flex flex-col gap-2 border-t border-border pt-5">
+        <h2 className="text-sm font-medium text-muted">
           Create an organisation
         </h2>
         <form action={createOrganisation} className="flex gap-2">
@@ -77,16 +74,13 @@ export default async function AppHome({
             name="name"
             required
             placeholder="Organisation name"
-            className="min-h-11 flex-1 rounded-md border border-zinc-300 px-3 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            className={`${input} flex-1`}
           />
-          <SubmitButton
-            pendingText="Creating…"
-            className="min-h-11 rounded-md bg-teal-700 px-4 text-sm font-medium text-white hover:bg-teal-800"
-          >
+          <SubmitButton pendingText="Creating…" className={btnPrimary}>
             Create
           </SubmitButton>
         </form>
-        <p className="text-xs text-zinc-500">
+        <p className="text-xs text-muted">
           You&rsquo;ll become its administrator.
         </p>
       </section>

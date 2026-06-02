@@ -1,10 +1,17 @@
 import type { Metadata, Viewport } from "next";
+import { Inter, Playfair_Display } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 
+const sans = Inter({ subsets: ["latin"], variable: "--font-sans-var" });
+const display = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-display-var",
+});
+
 export const metadata: Metadata = {
-  title: "SCoT Colony Management",
+  title: "Street Cats of Tavira",
   description:
     "Manage feral cat colonies, feeding operations and incidents for Street Cats of Tavira.",
   manifest: "/manifest.webmanifest",
@@ -12,7 +19,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f766e",
+  themeColor: "#faf8f4",
   width: "device-width",
   initialScale: 1,
 };
@@ -24,8 +31,11 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className="h-full antialiased">
-      <body className="min-h-full flex flex-col">
+    <html
+      lang={locale}
+      className={`${sans.variable} ${display.variable} h-full antialiased`}
+    >
+      <body className="flex min-h-full flex-col">
         <NextIntlClientProvider messages={messages}>
           {children}
         </NextIntlClientProvider>
