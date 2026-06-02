@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createOrganisation, signOut } from "./actions";
+import { createOrganisation } from "./actions";
 
 type MembershipRow = {
   role: string;
@@ -29,22 +29,7 @@ export default async function AppHome({
   const memberships = (data ?? []) as unknown as MembershipRow[];
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-6 p-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight">SCoT</h1>
-          <p className="text-xs text-zinc-500">{user.email}</p>
-        </div>
-        <form action={signOut}>
-          <button
-            type="submit"
-            className="min-h-9 rounded-md border border-zinc-300 px-3 text-sm dark:border-zinc-700"
-          >
-            Sign out
-          </button>
-        </form>
-      </header>
-
+    <div className="mx-auto flex max-w-md flex-col gap-6 p-6">
       {error ? (
         <p
           role="alert"
@@ -104,6 +89,6 @@ export default async function AppHome({
           You&rsquo;ll become its administrator.
         </p>
       </section>
-    </main>
+    </div>
   );
 }
