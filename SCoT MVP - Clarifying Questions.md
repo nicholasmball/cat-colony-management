@@ -69,7 +69,7 @@ Thank you for the requirements document — it's clear and well thought through.
 
 14. Should older photos ever be auto-deleted, or kept indefinitely?
 
-## Alert thresholds  ✅ answered (round 2 — defaults, editable per org)
+## Alert thresholds ✅ answered (round 2 — defaults, editable per org)
 
 15. **"Cat not seen recently"** on the dashboard — what counts as "recently"? 3 days? 7 days? 14 days?
     - ✅ **Default: 7 days.**
@@ -105,4 +105,4 @@ Thank you for the requirements document — it's clear and well thought through.
 
 ---
 
-*Once we have answers to the Priority section, we can finalise the technical plan and begin development. The remaining questions can be answered alongside the build.*
+_Once we have answers to the Priority section, we can finalise the technical plan and begin development. The remaining questions can be answered alongside the build._
