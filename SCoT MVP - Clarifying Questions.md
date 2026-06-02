@@ -8,7 +8,7 @@
 
 Thank you for the requirements document — it's clear and well thought through. Before we start building, there are some details that will affect either the architecture or the scope of the MVP. The questions below are grouped by topic. The first section ("Priority") are the ones we'd like answered before any code is written; the rest can be answered as we go.
 
-> **Status:** Priority answers received from SCoT (Catherine). Recorded inline below. One item (Q4, urgency levels) still needs clarification, and SCoT raised two new questions — see "Outstanding" at the end of this section.
+> **Status:** All priority answers received from SCoT (Catherine), plus a second round resolving incident urgency (Q4), alert thresholds (Q15–17) and incident-close permissions (Q18), and confirming the PWA approach. Only a rough cost estimate remains outstanding. Recorded inline below.
 
 ---
 
@@ -24,7 +24,7 @@ Thank you for the requirements document — it's clear and well thought through.
    - ✅ **Answer: Within 12 months — a real goal.** Enforce strict per-organisation data separation from day one.
 
 4. **Incident urgency levels.** How many tiers do you want (e.g., Low / Medium / High / Emergency, or simply Urgent vs. Not urgent)? Which levels should trigger an immediate notification vs. just appear on the dashboard?
-   - ⚠️ **Still open** — SCoT noted "I don't understand this question." Re-phrased below under Outstanding.
+   - ✅ **Answer (round 2): Two tiers — Urgent vs. Not urgent.** Urgent (poisoning, injured cat, threat from a person, dog danger) → immediate push/SMS; Not urgent (food/access issue) → dashboard only. Built as a configurable per-org lookup so more tiers can be added later without a rewrite.
 
 5. **Notification channels.** Is email sufficient for the MVP, or do you also need push notifications / SMS for urgent incidents?
    - ✅ **Answer: Push + SMS.** Urgent incidents need push and/or SMS, not email alone. (SMS implies a paid provider, e.g. Twilio; push on iOS requires an installed PWA.)
@@ -42,17 +42,14 @@ Thank you for the requirements document — it's clear and well thought through.
 
 - **Tech stack:** SCoT has no preference — "up to you." Proceeding with **Next.js + Supabase**, hosted on **Vercel** ("simple and cheap").
 
-### Outstanding — needs a reply from SCoT
+### Follow-up answers (round 2 — confirmed)
 
-- **(Re-ask of Q4) Incident urgency — in plain terms:** When someone reports a problem, should every report be treated the same, or do you want to mark some as more serious than others? For example a simple two-level scheme:
-  - **Urgent** (e.g. poisoning, injured cat, threat from a person) → sends an immediate push/SMS alert to the caretaker.
-  - **Not urgent** (e.g. a food/access issue) → just shows on the dashboard for review.
-  - Question: is two levels (Urgent / Not urgent) enough, or do you want more (e.g. Low / Medium / High / Emergency)? And which situations count as "send an alert now" vs. "I'll see it on the dashboard"?
+- **Incident urgency (Q4):** Two tiers — **Urgent** (poisoning, injured cat, threat from a person, dog danger) → immediate push/SMS; **Not urgent** (food/access) → dashboard only. Configurable per-org lookup so tiers can expand later.
+- **Native apps?** ("Is this for Android and Apple?") → **PWA confirmed.** Installable web app on both Android and iPhone, no App Store / Play Store build for the MVP.
 
-### New questions raised by SCoT (to answer back)
+### Still outstanding
 
-- **Native apps?** "Is this for Android and Apple?" → The plan is a **mobile-first web app (PWA)** that installs to the home screen and works on both Android and iPhone — no separate App Store / Play Store apps for the MVP. Confirm this is acceptable.
-- **Costs?** "Do you know the costs?" → To be estimated. Main cost drivers: Supabase (free tier likely sufficient initially; ~$25/mo Pro if storage/usage grows), Vercel (free/hobby may suffice; ~$20/mo Pro), domain, and **SMS** (per-message cost via a provider such as Twilio — the main variable cost). A rough monthly estimate to follow.
+- **Costs?** "Do you know the costs?" → To be estimated. Main drivers: Supabase (free tier likely sufficient initially; ~$25/mo Pro if usage grows), Vercel (free/hobby may suffice; ~$20/mo Pro), domain, and **SMS** (per-message via a provider such as Twilio — the main variable cost). Rough monthly estimate to follow.
 
 ---
 
@@ -72,17 +69,21 @@ Thank you for the requirements document — it's clear and well thought through.
 
 14. Should older photos ever be auto-deleted, or kept indefinitely?
 
-## Alert thresholds
+## Alert thresholds  ✅ answered (round 2 — defaults, editable per org)
 
 15. **"Cat not seen recently"** on the dashboard — what counts as "recently"? 3 days? 7 days? 14 days?
+    - ✅ **Default: 7 days.**
 
 16. **"Repeated not-seen reports"** alert — how many consecutive reports should trigger it, and over what time window?
+    - ✅ **Default: 3 consecutive not-seen reports.**
 
 17. **"Feeding missed"** alert — how long after the scheduled feeding window before this fires?
+    - ✅ **Default: 12 hours after the scheduled window.**
 
 ## Incidents
 
 18. Who is allowed to close or resolve an incident — only Caretakers and Admins, or also the Feeder who reported it?
+    - ✅ **Answer: Caretaker/Admin only.** The reporting Feeder can add notes/comments but cannot close. Changeable later if needed.
 
 ## Notifications
 

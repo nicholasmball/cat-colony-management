@@ -4,7 +4,7 @@ Volunteer-developed MVP for **Street Cats of Tavira** — a mobile-first web app
 
 ## Project status
 
-Pre-development. The MVP requirements document (`SCOT MVP Requirements v1.docx`) has been received and analysed. The 8 priority clarifying questions have been answered by SCoT (see `SCoT MVP - Clarifying Questions.md`); architecture can now be finalised. Two items remain outstanding before/while building: a re-phrased version of the incident-urgency question (SCoT didn't understand the original), and two questions SCoT raised back (native apps? costs?).
+Pre-development, moving into build. The MVP requirements (`SCOT MVP Requirements v1.docx`) have been analysed and all blocking clarifying questions answered by SCoT (see `SCoT MVP - Clarifying Questions.md`) — including a second round covering incident urgency (Q4), alert thresholds (Q15–17), incident-close permissions (Q18) and confirmation of the PWA approach. The only outstanding item is a rough running-cost estimate. The backlog (epics, phased order, per-task workflows) is managed in VibeCodes.
 
 ### Decisions from SCoT (priority answers)
 
@@ -16,6 +16,13 @@ Pre-development. The MVP requirements document (`SCOT MVP Requirements v1.docx`)
 - **Wix:** Fully independent — no data flows between the public Wix site and the app.
 - **GDPR / volunteers:** Minimal personal data by design — store only a username/ID, "not tracking the volunteers, just the cats." Departure = deactivate; nothing personal to erase.
 - **Stack:** SCoT's call left to us → Next.js + Supabase on Vercel confirmed.
+
+### Operational decisions (round 2)
+
+- **Incident urgency:** Two tiers — Urgent (poisoning, injured cat, threat from person, dog danger) → immediate push/SMS; Not urgent → dashboard only. Modelled as a configurable per-org lookup so tiers can expand later without a rewrite.
+- **Alert thresholds (defaults, editable per org):** cat not-seen = 7 days · repeated not-seen = 3 consecutive · feeding missed = 12h after the scheduled window.
+- **Incident close:** Caretaker/Admin only; reporting Feeder can comment but not resolve.
+- **Platform:** PWA confirmed — installable on Android + iPhone, no native App/Play Store build for the MVP.
 
 ## Recommended stack
 
@@ -43,13 +50,11 @@ Multi-org is in the data model but not the launch scope — scope every query by
 
 ## Open questions
 
-The 8 priority items are answered (see Decisions above). Still outstanding in `SCoT MVP - Clarifying Questions.md`:
+All blocking questions are answered (see Decisions above). Remaining:
 
-- **Incident urgency levels** — SCoT didn't understand the original question; re-phrased there as Urgent vs. Not-urgent (with examples) and awaiting a reply.
-- **Native apps?** — confirm a PWA (installable on Android + iPhone, no App/Play Store build) is acceptable for the MVP.
-- **Costs** — provide a rough monthly estimate (Supabase, Vercel, domain, and per-message SMS as the main variable cost).
+- **Costs** — still to provide: a rough monthly estimate (Supabase, Vercel, domain, and per-message SMS as the main variable cost).
 
-Plus the non-priority questions (accounts/roles, photo limits, alert thresholds, audit/export, etc.) to be answered alongside the build.
+Lower-priority items to confirm alongside the build: who promotes roles (Q9), caretaker colony visibility (Q10), one-role-per-org vs. multiple (Q11 — defaulting to role-per-membership), photo volume/retention (Q12–14), cat-moves-colony history (Q22), and post-login landing path (Q23).
 
 ## Files
 
