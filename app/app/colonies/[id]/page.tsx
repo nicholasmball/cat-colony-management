@@ -18,10 +18,13 @@ function hhmm(t: string | null) {
 
 export default async function ColonyDetail({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ updated?: string }>;
 }) {
   const { id } = await params;
+  const { updated } = await searchParams;
   const org = await getActiveOrg();
   const supabase = await createClient();
 
@@ -76,6 +79,19 @@ export default async function ColonyDetail({
       {colony.notes ? (
         <p className={`${card} p-4 text-sm`}>{colony.notes}</p>
       ) : null}
+
+      {updated ? (
+        <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">
+          ✓ Feeding update recorded.
+        </p>
+      ) : null}
+
+      <Link
+        href={`/app/colonies/${id}/feed`}
+        className={`${btnPrimary} min-h-14 text-base`}
+      >
+        Record feeding update
+      </Link>
 
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3">

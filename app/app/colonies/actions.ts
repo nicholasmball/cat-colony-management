@@ -114,3 +114,73 @@ export async function createCat(formData: FormData) {
   revalidatePath(`/app/colonies/${colonyId}`);
   redirect(`/app/colonies/${colonyId}`);
 }
+
+// The 30-second feeding update: one append-only feeding_event for the colony,
+// plus one append-only cat_sighting per cat the feeder marked.
+export async function submitFeeding(formData: FormData) {
+  const colonyId = String(formData.get("colony_id"));
+  const org = await getActiveOrg();
+  if (!org) redirect("/app");
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const feederId = user?.id ?? null;
+
+  const { data: event, error: eventError } = await supabase
+    .from("feeding_events")
+    .insert({
+      organisation_id: org.organisation_id,
+      colony_id: colonyId,
+      feeder_id: feederId,
+      fed: formData.get("fed") === "1",
+      problem: formData.get("problem") === "1",
+      food_issue: formData.get("food_issue") === "1",
+      danger: formData.get("danger") === "1",
+      notes: String(formData.get("notes") ?? "").trim() || null,
+    })
+    .select("id")
+    .single();
+
+  if (eventError || !event) {
+    redirect(
+      `/app/colonies/${colonyId}/feed?error=${encodeURIComponent(
+        eventError?.message ?? "Could not save the feeding update.",
+      )}`,
+    );
+  }
+
+  const sightings: {
+    organisation_id: string;
+    cat_id: string;
+    feeding_event_id: string;
+    feeder_id: string | null;
+    status: string;
+  }[] = [];
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith("cat:") && typeof value === "string" && value) {
+      sightings.push({
+        organisation_id: org.organisation_id,
+        cat_id: key.slice(4),
+        feeding_event_id: event.id,
+        feeder_id: feederId,
+        status: value,
+      });
+    }
+  }
+
+  if (sightings.length > 0) {
+    const { error: sightingError } = await supabase
+      .from("cat_sightings")
+      .insert(sightings);
+    if (sightingError) {
+      redirect(
+        `/app/colonies/${colonyId}/feed?error=${encodeURIComponent(sightingError.message)}`,
+      );
+    }
+  }
+
+  revalidatePath(`/app/colonies/${colonyId}`);
+  redirect(`/app/colonies/${colonyId}?updated=1`);
+}
