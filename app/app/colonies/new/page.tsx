@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createColony } from "../actions";
+import { SubmitButton } from "@/components/submit-button";
 
 export default async function NewColonyPage({
   searchParams,
@@ -61,12 +62,12 @@ export default async function NewColonyPage({
             className="rounded-md border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
           />
         </label>
-        <button
-          type="submit"
+        <SubmitButton
+          pendingText="Creating…"
           className="min-h-11 rounded-md bg-teal-700 px-4 font-medium text-white hover:bg-teal-800"
         >
           Create colony
-        </button>
+        </SubmitButton>
       </form>
     </div>
   );

@@ -1,4 +1,5 @@
 import { login } from "./actions";
+import { SubmitButton } from "@/components/submit-button";
 
 // Invite-only: there is no public sign-up. Accounts are created by an
 // administrator; this page lets an existing volunteer sign in.
@@ -50,12 +51,12 @@ export default async function LoginPage({
             className="min-h-11 rounded-md border border-zinc-300 px-3 dark:border-zinc-700 dark:bg-zinc-900"
           />
         </label>
-        <button
-          type="submit"
+        <SubmitButton
+          pendingText="Signing in…"
           className="min-h-11 rounded-md bg-teal-700 px-4 font-medium text-white hover:bg-teal-800"
         >
           Sign in
-        </button>
+        </SubmitButton>
       </form>
 
       <p className="text-center text-xs text-zinc-500">

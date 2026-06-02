@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createOrganisation } from "./actions";
+import { SubmitButton } from "@/components/submit-button";
 
 type MembershipRow = {
   role: string;
@@ -78,12 +79,12 @@ export default async function AppHome({
             placeholder="Organisation name"
             className="min-h-11 flex-1 rounded-md border border-zinc-300 px-3 text-sm dark:border-zinc-700 dark:bg-zinc-900"
           />
-          <button
-            type="submit"
+          <SubmitButton
+            pendingText="Creating…"
             className="min-h-11 rounded-md bg-teal-700 px-4 text-sm font-medium text-white hover:bg-teal-800"
           >
             Create
-          </button>
+          </SubmitButton>
         </form>
         <p className="text-xs text-zinc-500">
           You&rsquo;ll become its administrator.
