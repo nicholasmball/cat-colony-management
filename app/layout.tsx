@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter, Fraunces } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 
 const sans = Inter({ subsets: ["latin"], variable: "--font-sans-var" });
-const display = Playfair_Display({
+const display = Fraunces({
   subsets: ["latin"],
   variable: "--font-display-var",
 });

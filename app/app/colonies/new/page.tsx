@@ -11,7 +11,7 @@ export default async function NewColonyPage({
   const { error } = await searchParams;
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-5 p-6">
+    <div className="mx-auto flex max-w-lg flex-col gap-5 p-6">
       <Link href="/app/colonies" className="text-sm text-accent">
         ← Colonies
       </Link>

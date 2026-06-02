@@ -2,9 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Logo } from "@/components/logo";
+import { AppNav } from "@/components/app-nav";
+import { AccountMenu } from "@/components/account-menu";
 import { signOut } from "./actions";
 
-// Authenticated app shell: branded top bar + mobile-first bottom navigation.
+// Responsive shell: left sidebar on desktop, top bar + bottom tab bar on mobile.
 export default async function AppLayout({
   children,
 }: {
@@ -15,43 +17,48 @@ export default async function AppLayout({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  const email = user.email ?? "";
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface/90 px-4 py-2.5 backdrop-blur">
-        <Link href="/app" aria-label="Home">
-          <Logo width={104} />
-        </Link>
-        <div className="flex items-center gap-3 text-xs">
-          <span className="max-w-[9rem] truncate text-muted">{user.email}</span>
+    <div className="flex min-h-dvh flex-col md:flex-row">
+      {/* Desktop sidebar */}
+      <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-border bg-surface md:flex">
+        <div className="px-5 py-5">
+          <Link href="/app" aria-label="Home">
+            <Logo width={132} />
+          </Link>
+        </div>
+        <AppNav variant="sidebar" />
+        <div className="mt-auto border-t border-border p-3">
+          <p className="truncate px-2 text-xs text-muted" title={email}>
+            {email}
+          </p>
           <form action={signOut}>
             <button
               type="submit"
-              className="min-h-9 rounded-lg border border-border px-2.5 text-foreground transition hover:bg-foreground/5"
+              className="mt-1 w-full rounded-lg px-2 py-2 text-left text-sm text-foreground transition hover:bg-foreground/5"
             >
               Sign out
             </button>
           </form>
         </div>
-      </header>
+      </aside>
 
-      <main className="flex-1 pb-20">{children}</main>
+      {/* Main column */}
+      <div className="flex min-h-dvh flex-1 flex-col">
+        {/* Mobile top bar */}
+        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface/90 px-4 py-2.5 backdrop-blur md:hidden">
+          <Link href="/app" aria-label="Home">
+            <Logo width={104} />
+          </Link>
+          <AccountMenu email={email} />
+        </header>
 
-      <nav className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-2 border-t border-border bg-surface">
-        <NavLink href="/app" label="Home" />
-        <NavLink href="/app/colonies" label="Colonies" />
-      </nav>
+        <main className="flex-1 pb-24 md:pb-10">{children}</main>
+
+        {/* Mobile bottom tab bar (hidden on desktop) */}
+        <AppNav variant="tabbar" />
+      </div>
     </div>
-  );
-}
-
-function NavLink({ href, label }: { href: string; label: string }) {
-  return (
-    <Link
-      href={href}
-      className="flex min-h-14 items-center justify-center text-sm font-medium text-muted transition hover:bg-foreground/5 hover:text-foreground"
-    >
-      {label}
-    </Link>
   );
 }

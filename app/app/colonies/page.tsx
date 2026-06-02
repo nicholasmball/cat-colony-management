@@ -37,7 +37,7 @@ export default async function ColoniesPage() {
   const canManage = org.role === "admin" || org.role === "caretaker";
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-4 p-6">
+    <div className="mx-auto flex max-w-2xl flex-col gap-4 p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl">Colonies</h1>
