@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { btnPrimary, card } from "@/lib/ui";
+import { ChevronIcon } from "@/components/icons";
 
 type Colony = {
   id: string;
@@ -57,26 +58,31 @@ export default async function ColoniesPage() {
       ) : (
         <ul className="flex flex-col gap-2">
           {colonies.map((c) => (
-            <li
-              key={c.id}
-              className={`${card} flex items-center justify-between px-4 py-3`}
-            >
-              <div>
-                <p className="font-medium">{c.name}</p>
-                {c.feeding_window_start ? (
-                  <p className="text-xs text-muted">
-                    Feeds {c.feeding_window_start.slice(0, 5)}
-                    {c.feeding_window_end
-                      ? `–${c.feeding_window_end.slice(0, 5)}`
-                      : ""}
-                  </p>
-                ) : null}
-              </div>
-              {!c.is_active ? (
-                <span className="rounded-full bg-foreground/10 px-2.5 py-0.5 text-xs text-muted">
-                  inactive
+            <li key={c.id}>
+              <Link
+                href={`/app/colonies/${c.id}`}
+                className={`${card} flex items-center justify-between px-4 py-3 transition hover:border-accent/50`}
+              >
+                <div>
+                  <p className="font-medium">{c.name}</p>
+                  {c.feeding_window_start ? (
+                    <p className="text-xs text-muted">
+                      Feeds {c.feeding_window_start.slice(0, 5)}
+                      {c.feeding_window_end
+                        ? `–${c.feeding_window_end.slice(0, 5)}`
+                        : ""}
+                    </p>
+                  ) : null}
+                </div>
+                <span className="flex items-center gap-2">
+                  {!c.is_active ? (
+                    <span className="rounded-full bg-foreground/10 px-2.5 py-0.5 text-xs text-muted">
+                      inactive
+                    </span>
+                  ) : null}
+                  <ChevronIcon className="h-5 w-5 text-muted" />
                 </span>
-              ) : null}
+              </Link>
             </li>
           ))}
         </ul>
