@@ -4,7 +4,18 @@ Volunteer-developed MVP for **Street Cats of Tavira** — a mobile-first web app
 
 ## Project status
 
-Pre-development. The MVP requirements document (`SCOT MVP Requirements v1.docx`) has been received and analysed. A list of clarifying questions for SCoT (`SCoT MVP - Clarifying Questions.md`) has been prepared, with 8 priority questions flagged as blockers before development begins.
+Pre-development. The MVP requirements document (`SCOT MVP Requirements v1.docx`) has been received and analysed. The 8 priority clarifying questions have been answered by SCoT (see `SCoT MVP - Clarifying Questions.md`); architecture can now be finalised. Two items remain outstanding before/while building: a re-phrased version of the incident-urgency question (SCoT didn't understand the original), and two questions SCoT raised back (native apps? costs?).
+
+### Decisions from SCoT (priority answers)
+
+- **Sign-up:** Invite-only — no open self-registration.
+- **Offline:** Required. The app must work without signal in the field and sync later → **offline-first / PWA** with a local queue.
+- **Multi-org:** A real goal within 12 months → enforce strict per-`organisation_id` separation from day one (already the plan).
+- **Notifications:** Push + SMS for urgent items (not email-only). SMS needs a paid provider (e.g. Twilio); web push on iOS requires an installed PWA.
+- **Language:** Portuguese **and** English from day one → i18n in place from the start.
+- **Wix:** Fully independent — no data flows between the public Wix site and the app.
+- **GDPR / volunteers:** Minimal personal data by design — store only a username/ID, "not tracking the volunteers, just the cats." Departure = deactivate; nothing personal to erase.
+- **Stack:** SCoT's call left to us → Next.js + Supabase on Vercel confirmed.
 
 ## Recommended stack
 
@@ -32,7 +43,13 @@ Multi-org is in the data model but not the launch scope — scope every query by
 
 ## Open questions
 
-See `SCoT MVP - Clarifying Questions.md`. Eight priority items must be answered before architecture is finalised: sign-up flow, offline support, multi-org timeline, incident urgency levels, notification channels, language(s), Wix data flow, and GDPR handling of departing volunteers.
+The 8 priority items are answered (see Decisions above). Still outstanding in `SCoT MVP - Clarifying Questions.md`:
+
+- **Incident urgency levels** — SCoT didn't understand the original question; re-phrased there as Urgent vs. Not-urgent (with examples) and awaiting a reply.
+- **Native apps?** — confirm a PWA (installable on Android + iPhone, no App/Play Store build) is acceptable for the MVP.
+- **Costs** — provide a rough monthly estimate (Supabase, Vercel, domain, and per-message SMS as the main variable cost).
+
+Plus the non-priority questions (accounts/roles, photo limits, alert thresholds, audit/export, etc.) to be answered alongside the build.
 
 ## Files
 
