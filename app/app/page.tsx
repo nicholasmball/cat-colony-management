@@ -77,7 +77,7 @@ export default async function AppHome({
 
   // ── Has organisation(s) ───────────────────────────────────────────────────
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-7 p-6">
+    <div className="flex max-w-3xl flex-col gap-7 px-6 py-6 md:px-10">
       {error ? (
         <p role="alert" className={errorClass}>
           {error}

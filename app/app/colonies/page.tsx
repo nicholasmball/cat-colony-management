@@ -15,7 +15,7 @@ export default async function ColoniesPage() {
   const org = await getActiveOrg();
   if (!org) {
     return (
-      <div className="mx-auto max-w-md p-6">
+      <div className="max-w-md px-6 py-6 md:px-10">
         <p className={`${card} p-4 text-sm text-muted`}>
           Create an organisation first.{" "}
           <Link href="/app" className="text-accent underline">
@@ -37,7 +37,7 @@ export default async function ColoniesPage() {
   const canManage = org.role === "admin" || org.role === "caretaker";
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-4 p-6">
+    <div className="flex max-w-3xl flex-col gap-4 px-6 py-6 md:px-10">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl">Colonies</h1>
