@@ -45,7 +45,7 @@ Multi-org is in the data model but not the launch scope — scope every query by
 
 - The "30-second feeding update" is the UX north star.
 - Cat records must accept incomplete data — never block creation because a field is missing.
-- The app should answer four daily questions: *Was the colony fed? Which cats were seen? Are there new or missing cats? Is there a problem?*
+- The app should answer four daily questions: _Was the colony fed? Which cats were seen? Are there new or missing cats? Is there a problem?_
 - Missing-cat status requires human review — never auto-mark after a single absence.
 
 ## Open questions
