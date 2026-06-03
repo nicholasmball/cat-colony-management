@@ -115,6 +115,51 @@ export async function createCat(formData: FormData) {
   redirect(`/app/colonies/${colonyId}`);
 }
 
+export async function updateCat(formData: FormData) {
+  const catId = String(formData.get("cat_id"));
+  const colonyId = String(formData.get("colony_id"));
+  const org = await getActiveOrg();
+  if (!org) redirect("/app");
+
+  const name = String(formData.get("name") ?? "").trim() || null;
+  const tempId = String(formData.get("temp_id") ?? "").trim() || null;
+  const editPath = `/app/colonies/${colonyId}/cats/${catId}/edit`;
+  // Same rule as create: at least one identifier, never block on the rest.
+  if (!name && !tempId) {
+    redirect(
+      `${editPath}?error=${encodeURIComponent(
+        "Enter a name or a temporary ID (at least one).",
+      )}`,
+    );
+  }
+  // Tri-state so "unknown" stays null — records accept incomplete data.
+  const neuteredRaw = String(formData.get("neutered") ?? "");
+  const neutered =
+    neuteredRaw === "yes" ? true : neuteredRaw === "no" ? false : null;
+
+  const supabase = await createClient();
+  // RLS scopes this to the caller's org and Caretaker/Admin role.
+  const { error } = await supabase
+    .from("cats")
+    .update({
+      name,
+      temp_id: tempId,
+      colour: String(formData.get("colour") ?? "").trim() || null,
+      markings: String(formData.get("markings") ?? "").trim() || null,
+      sex: String(formData.get("sex") ?? "").trim() || null,
+      neutered,
+      approx_age: String(formData.get("approx_age") ?? "").trim() || null,
+      notes: String(formData.get("notes") ?? "").trim() || null,
+    })
+    .eq("id", catId);
+
+  if (error) {
+    redirect(`${editPath}?error=${encodeURIComponent(error.message)}`);
+  }
+  revalidatePath(`/app/colonies/${colonyId}`);
+  redirect(`/app/colonies/${colonyId}`);
+}
+
 // The 30-second feeding update: one append-only feeding_event for the colony,
 // plus one append-only cat_sighting per cat the feeder marked.
 export async function submitFeeding(formData: FormData) {

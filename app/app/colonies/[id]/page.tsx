@@ -117,7 +117,7 @@ export default async function ColonyDetail({
             {cats.map((c) => (
               <li
                 key={c.id}
-                className={`${card} flex items-center justify-between px-4 py-3`}
+                className={`${card} flex items-center justify-between gap-3 px-4 py-3`}
               >
                 <div>
                   <p className="font-medium">
@@ -129,6 +129,14 @@ export default async function ColonyDetail({
                       .join(" · ")}
                   </p>
                 </div>
+                {canManage ? (
+                  <Link
+                    href={`/app/colonies/${id}/cats/${c.id}/edit`}
+                    className="shrink-0 text-sm text-accent"
+                  >
+                    Edit
+                  </Link>
+                ) : null}
               </li>
             ))}
           </ul>
