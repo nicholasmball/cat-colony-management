@@ -1,27 +1,32 @@
 @import "tailwindcss";
 
 /* ── Design tokens ─────────────────────────────────────────────────────────
-   Brand: Street Cats of Tavira — warm cream + near-black, elegant serif
-   display, clean sans body, restrained lavender accent (from their site). */
+   Brand: Street Cats of Tavira. Matched to the live public site
+   (streetcatsoftavira.org, Wix theme): warm-white page (#f7f4f2) + near-black
+   text, Cormorant Garamond serif display, Raleway sans body, and the brand
+   action colour electric indigo #170df2 (their --wst-color-action) with a
+   periwinkle secondary accent (#afacfb). */
 :root {
-  --background: #faf8f4; /* warm cream */
+  --background: #f7f4f2; /* brand warm-white */
   --surface: #ffffff;
-  --foreground: #211e1a; /* warm near-black */
-  --muted: #6f6a60; /* warm grey, secondary text */
-  --border: #e8e2d6;
-  --accent: #5b51c4; /* lavender/periwinkle */
+  --foreground: #191919; /* near-black, matches site body text */
+  --muted: #5f5f5f; /* neutral grey, secondary text */
+  --border: #e6e2db;
+  --accent: #170df2; /* brand action / link / button indigo */
   --accent-foreground: #ffffff;
+  --accent-soft: #afacfb; /* periwinkle — brand secondary accent */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #15130f;
-    --surface: #1f1c16;
-    --foreground: #f3efe6;
-    --muted: #a9a395;
-    --border: #322e25;
-    --accent: #a59cf2;
-    --accent-foreground: #15130f;
+    --background: #131217;
+    --surface: #1c1b22;
+    --foreground: #f1f0f4;
+    --muted: #a3a1ad;
+    --border: #2c2b34;
+    --accent: #8f88ff; /* lightened indigo for contrast on dark */
+    --accent-foreground: #131217;
+    --accent-soft: #afacfb;
   }
 }
 
@@ -33,6 +38,7 @@
   --color-border: var(--border);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
 
   --font-sans: var(--font-sans-var), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-display-var), ui-serif, Georgia, serif;

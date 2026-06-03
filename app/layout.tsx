@@ -1,12 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Fraunces } from "next/font/google";
+import { Raleway, Cormorant_Garamond } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 
-const sans = Inter({ subsets: ["latin"], variable: "--font-sans-var" });
-const display = Fraunces({
+// Matched to the SCoT public site: Raleway body + Cormorant Garamond display.
+const sans = Raleway({ subsets: ["latin"], variable: "--font-sans-var" });
+const display = Cormorant_Garamond({
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
   variable: "--font-display-var",
 });
 
@@ -19,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#faf8f4",
+  themeColor: "#f7f4f2",
   width: "device-width",
   initialScale: 1,
 };

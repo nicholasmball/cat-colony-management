@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RLS role matrix — SCoT Colony Management</title>
+    <style>
+      body {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        color: #211e1a;
+        background: #faf8f4;
+        margin: 0;
+        padding: 2rem;
+        line-height: 1.5;
+      }
+      .wrap {
+        max-width: 920px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-family: Georgia, serif;
+      }
+      p.note {
+        color: #6f6a60;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 1rem;
+        background: #fff;
+        border: 1px solid #e8e2d6;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 0.6rem 0.8rem;
+        border-bottom: 1px solid #efeae0;
+        font-size: 0.95rem;
+      }
+      th {
+        background: #f3efe7;
+      }
+      td.y {
+        color: #166534;
+        font-weight: 600;
+      }
+      td.n {
+        color: #9a9489;
+      }
+      caption {
+        text-align: left;
+        color: #6f6a60;
+        margin-bottom: 0.25rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>RLS role matrix</h1>
+      <p class="note">
+        Design artefact for the Row-Level Security task. Roles come from
+        <code>memberships(user, org, role)</code>; every action is scoped to the
+        caller's own organisation. Deny-by-default — absence of a policy means no
+        access. (Backfilled record; implemented in <code>0003_rls.sql</code>.)
+      </p>
+      <table>
+        <caption>Within the user's own organisation</caption>
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>Admin</th>
+            <th>Caretaker</th>
+            <th>Feeder</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Read all org data</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+          <tr><td>Manage colonies / schedules</td><td class="y">Yes</td><td class="y">Yes</td><td class="n">No</td></tr>
+          <tr><td>Add / edit cats, mark missing</td><td class="y">Yes</td><td class="y">Yes</td><td class="n">Report new only</td></tr>
+          <tr><td>Record feeds &amp; sightings</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+          <tr><td>Report incidents / new cats</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+          <tr><td>Close / resolve incidents (Q18)</td><td class="y">Yes</td><td class="y">Yes</td><td class="n">No</td></tr>
+          <tr><td>Edit alert thresholds / urgency</td><td class="y">Yes</td><td class="y">Yes</td><td class="n">No</td></tr>
+          <tr><td>Invite / manage members &amp; roles</td><td class="y">Yes</td><td class="n">No</td><td class="n">No</td></tr>
+        </tbody>
+      </table>
+      <p class="note">
+        Append-only event tables (feeding_events, cat_sightings) are insert-only
+        for any member; deletes are soft (manager UPDATE of <code>deleted_at</code>).
+        Cross-org access is impossible (verified: anon read returns
+        <code>[]</code>, anon write returns 401).
+      </p>
+    </div>
+  </body>
+</html>
