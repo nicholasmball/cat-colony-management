@@ -88,7 +88,7 @@ export async function createCat(formData: FormData) {
   if (!name && !tempId) {
     redirect(
       `/app/colonies/${colonyId}/cats/new?error=${encodeURIComponent(
-        "Enter a name or a temporary ID (at least one).",
+        "Enter a name or a description (at least one).",
       )}`,
     );
   }
@@ -128,7 +128,7 @@ export async function updateCat(formData: FormData) {
   if (!name && !tempId) {
     redirect(
       `${editPath}?error=${encodeURIComponent(
-        "Enter a name or a temporary ID (at least one).",
+        "Enter a name or a description (at least one).",
       )}`,
     );
   }

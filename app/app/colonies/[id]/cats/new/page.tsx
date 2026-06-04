@@ -31,22 +31,25 @@ export default async function NewCat({
 
       <form action={createCat} className="flex flex-col gap-4">
         <input type="hidden" name="colony_id" value={id} />
+        <p className="text-sm text-muted">
+          Give the cat a name, or a short description if it has no name yet — at
+          least one. Everything else is optional.
+        </p>
         <label className={fieldLabel}>
           <span>Name</span>
-          <input name="name" className={input} />
+          <input name="name" placeholder="e.g. Ginger" className={input} />
         </label>
         <label className={fieldLabel}>
-          <span>Temporary ID</span>
+          <span>
+            Description{" "}
+            <span className="font-normal text-muted">(if it has no name)</span>
+          </span>
           <input
             name="temp_id"
-            placeholder="e.g. Ginger-by-the-bins"
+            placeholder="e.g. ginger tom by the bins"
             className={input}
           />
         </label>
-        <p className="-mt-2 text-xs text-muted">
-          Enter a name or a temporary ID — at least one. Everything else is
-          optional.
-        </p>
         <label className={fieldLabel}>
           <span>Colour / markings</span>
           <input name="colour" className={input} />

@@ -56,23 +56,26 @@ export default async function EditCat({
         <input type="hidden" name="cat_id" value={catId} />
         <input type="hidden" name="colony_id" value={id} />
 
+        <p className="text-sm text-muted">
+          Keep a name, or a short description if it has no name yet — at least
+          one. Everything else is optional; fill in what you know.
+        </p>
         <label className={fieldLabel}>
           <span>Name</span>
           <input name="name" defaultValue={cat.name ?? ""} className={input} />
         </label>
         <label className={fieldLabel}>
-          <span>Temporary ID</span>
+          <span>
+            Description{" "}
+            <span className="font-normal text-muted">(if it has no name)</span>
+          </span>
           <input
             name="temp_id"
             defaultValue={cat.temp_id ?? ""}
-            placeholder="e.g. Ginger-by-the-bins"
+            placeholder="e.g. ginger tom by the bins"
             className={input}
           />
         </label>
-        <p className="-mt-2 text-xs text-muted">
-          Keep a name or a temporary ID — at least one. Everything else is
-          optional; fill in what you know.
-        </p>
 
         <label className={fieldLabel}>
           <span>Colour</span>
