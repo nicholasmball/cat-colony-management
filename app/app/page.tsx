@@ -31,6 +31,7 @@ export default async function AppHome({
   const { data } = await supabase
     .from("memberships")
     .select("role, organisation_id, organisations(name)")
+    .eq("user_id", user.id)
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
   const memberships = (data ?? []) as unknown as MembershipRow[];
