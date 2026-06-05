@@ -4,6 +4,69 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
+import { deleteObject } from "@/lib/storage/r2";
+
+type PhotoResult = { ok: true } | { error: string };
+
+// Save the uploaded photo's object key onto the cat (after the browser has
+// PUT it to R2). Manager-only; old object is deleted best-effort.
+export async function setCatPhoto(
+  catId: string,
+  key: string,
+): Promise<PhotoResult> {
+  const org = await getActiveOrg();
+  if (!org || (org.role !== "admin" && org.role !== "caretaker")) {
+    return { error: "Not allowed." };
+  }
+  const supabase = await createClient();
+  const { data: cat } = await supabase
+    .from("cats")
+    .select("id, colony_id, photo_url")
+    .eq("id", catId)
+    .eq("organisation_id", org.organisation_id)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (!cat) return { error: "Cat not found." };
+
+  const previous = cat.photo_url as string | null;
+  const { error } = await supabase
+    .from("cats")
+    .update({ photo_url: key })
+    .eq("id", catId);
+  if (error) return { error: error.message };
+
+  if (previous && previous !== key) await deleteObject(previous);
+  revalidatePath(`/app/colonies/${cat.colony_id}`);
+  revalidatePath(`/app/colonies/${cat.colony_id}/cats/${catId}/edit`);
+  return { ok: true };
+}
+
+export async function removeCatPhoto(catId: string): Promise<PhotoResult> {
+  const org = await getActiveOrg();
+  if (!org || (org.role !== "admin" && org.role !== "caretaker")) {
+    return { error: "Not allowed." };
+  }
+  const supabase = await createClient();
+  const { data: cat } = await supabase
+    .from("cats")
+    .select("id, colony_id, photo_url")
+    .eq("id", catId)
+    .eq("organisation_id", org.organisation_id)
+    .maybeSingle();
+  if (!cat) return { error: "Cat not found." };
+
+  const previous = cat.photo_url as string | null;
+  const { error } = await supabase
+    .from("cats")
+    .update({ photo_url: null })
+    .eq("id", catId);
+  if (error) return { error: error.message };
+
+  if (previous) await deleteObject(previous);
+  revalidatePath(`/app/colonies/${cat.colony_id}`);
+  revalidatePath(`/app/colonies/${cat.colony_id}/cats/${catId}/edit`);
+  return { ok: true };
+}
 
 export async function createColony(formData: FormData) {
   const org = await getActiveOrg();

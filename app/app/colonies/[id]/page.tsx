@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
+import { photoSrc } from "@/lib/photo";
+import { PawIcon } from "@/components/icons";
 import { btnGhost, btnPrimary, card } from "@/lib/ui";
 
 type Cat = {
@@ -10,6 +12,7 @@ type Cat = {
   temp_id: string | null;
   colour: string | null;
   status: string;
+  photo_url: string | null;
 };
 
 function hhmm(t: string | null) {
@@ -40,11 +43,20 @@ export default async function ColonyDetail({
 
   const { data: catsData } = await supabase
     .from("cats")
-    .select("id, name, temp_id, colour, status")
+    .select("id, name, temp_id, colour, status, photo_url")
     .eq("colony_id", id)
     .is("deleted_at", null)
     .order("name", { nullsFirst: false });
   const cats = (catsData ?? []) as Cat[];
+
+  // Presigned thumbnail URL per cat (null → paw-icon fallback).
+  const photos = new Map<string, string | null>(
+    await Promise.all(
+      cats.map(
+        async (c) => [c.id, await photoSrc(c.photo_url)] as [string, string | null],
+      ),
+    ),
+  );
 
   const canManage = org?.role === "admin" || org?.role === "caretaker";
   const start = hhmm(colony.feeding_window_start);
@@ -119,15 +131,29 @@ export default async function ColonyDetail({
                 key={c.id}
                 className={`${card} flex items-center justify-between gap-3 px-4 py-3`}
               >
-                <div>
-                  <p className="font-medium">
-                    {c.name ?? c.temp_id ?? "Unnamed cat"}
-                  </p>
-                  <p className="text-xs capitalize text-muted">
-                    {[c.colour, c.status.replace(/_/g, " ")]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </p>
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-surface">
+                    {photos.get(c.id) ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={photos.get(c.id)!}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <PawIcon className="h-5 w-5 text-muted" />
+                    )}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">
+                      {c.name ?? c.temp_id ?? "Unnamed cat"}
+                    </p>
+                    <p className="text-xs capitalize text-muted">
+                      {[c.colour, c.status.replace(/_/g, " ")]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </div>
                 </div>
                 {canManage ? (
                   <Link

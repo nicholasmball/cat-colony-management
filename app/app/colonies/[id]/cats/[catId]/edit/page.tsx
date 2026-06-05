@@ -3,7 +3,9 @@ import { notFound, redirect } from "next/navigation";
 import { updateCat } from "../../../../actions";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
+import { photoSrc } from "@/lib/photo";
 import { SubmitButton } from "@/components/submit-button";
+import { ImageUpload } from "@/components/image-upload";
 import { btnPrimary, fieldLabel, input } from "@/lib/ui";
 
 const errorClass =
@@ -28,7 +30,9 @@ export default async function EditCat({
   const supabase = await createClient();
   const { data: cat } = await supabase
     .from("cats")
-    .select("id, name, temp_id, colour, markings, sex, neutered, approx_age, notes")
+    .select(
+      "id, name, temp_id, colour, markings, sex, neutered, approx_age, notes, photo_url",
+    )
     .eq("id", catId)
     .is("deleted_at", null)
     .maybeSingle();
@@ -36,6 +40,7 @@ export default async function EditCat({
 
   const neuteredValue =
     cat.neutered === true ? "yes" : cat.neutered === false ? "no" : "";
+  const photo = await photoSrc(cat.photo_url as string | null);
 
   return (
     <div className="flex max-w-xl flex-col gap-5 px-6 py-6 md:px-10">
@@ -51,6 +56,12 @@ export default async function EditCat({
           {error}
         </p>
       ) : null}
+
+      <ImageUpload
+        catId={catId}
+        initialSrc={photo}
+        label={cat.name ?? cat.temp_id ?? "cat"}
+      />
 
       <form action={updateCat} className="flex flex-col gap-4">
         <input type="hidden" name="cat_id" value={catId} />
