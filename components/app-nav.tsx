@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HomeIcon, PawIcon, UsersIcon } from "./icons";
+import { HomeIcon, PawIcon, UsersIcon, CogIcon } from "./icons";
 
 const baseItems = [
   { href: "/app", label: "Home", Icon: HomeIcon, exact: true },
@@ -10,6 +10,7 @@ const baseItems = [
 ];
 const adminItems = [
   { href: "/app/members", label: "Members", Icon: UsersIcon, exact: false },
+  { href: "/app/org", label: "Organisation", Icon: CogIcon, exact: false },
 ];
 
 export function AppNav({
