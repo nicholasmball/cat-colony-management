@@ -2,15 +2,25 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HomeIcon, PawIcon } from "./icons";
+import { HomeIcon, PawIcon, UsersIcon } from "./icons";
 
-const items = [
+const baseItems = [
   { href: "/app", label: "Home", Icon: HomeIcon, exact: true },
   { href: "/app/colonies", label: "Colonies", Icon: PawIcon, exact: false },
 ];
+const adminItems = [
+  { href: "/app/members", label: "Members", Icon: UsersIcon, exact: false },
+];
 
-export function AppNav({ variant }: { variant: "sidebar" | "tabbar" }) {
+export function AppNav({
+  variant,
+  isAdmin = false,
+}: {
+  variant: "sidebar" | "tabbar";
+  isAdmin?: boolean;
+}) {
   const path = usePathname();
+  const items = isAdmin ? [...baseItems, ...adminItems] : baseItems;
   const isActive = (href: string, exact: boolean) =>
     exact ? path === href : path.startsWith(href);
 
@@ -41,7 +51,10 @@ export function AppNav({ variant }: { variant: "sidebar" | "tabbar" }) {
 
   // Mobile bottom tab bar
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-2 border-t border-border bg-surface md:hidden">
+    <nav
+      className="fixed inset-x-0 bottom-0 z-10 grid border-t border-border bg-surface md:hidden"
+      style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
+    >
       {items.map(({ href, label, Icon, exact }) => {
         const on = isActive(href, exact);
         return (

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getActiveOrg } from "@/lib/active-org";
 import { Logo } from "@/components/logo";
 import { AppNav } from "@/components/app-nav";
 import { AccountMenu } from "@/components/account-menu";
@@ -18,6 +19,8 @@ export default async function AppLayout({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const email = user.email ?? "";
+  const org = await getActiveOrg();
+  const isAdmin = org?.role === "admin";
 
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">
@@ -28,7 +31,7 @@ export default async function AppLayout({
             <Logo width={132} />
           </Link>
         </div>
-        <AppNav variant="sidebar" />
+        <AppNav variant="sidebar" isAdmin={isAdmin} />
         <div className="mt-auto border-t border-border p-3">
           <p className="truncate px-2 text-xs text-muted" title={email}>
             {email}
@@ -57,7 +60,7 @@ export default async function AppLayout({
         <main className="flex-1 pb-24 md:pb-10">{children}</main>
 
         {/* Mobile bottom tab bar (hidden on desktop) */}
-        <AppNav variant="tabbar" />
+        <AppNav variant="tabbar" isAdmin={isAdmin} />
       </div>
     </div>
   );
