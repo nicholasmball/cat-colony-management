@@ -3,8 +3,16 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { photoSrc } from "@/lib/photo";
-import { PawIcon } from "@/components/icons";
+import { catLabel, formatStatus, statusTone } from "@/lib/cat-display";
+import { PawIcon, ChevronIcon } from "@/components/icons";
 import { btnGhost, btnPrimary, card } from "@/lib/ui";
+
+const toneClass: Record<string, string> = {
+  good: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300",
+  warn: "bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300",
+  bad: "bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300",
+  neutral: "bg-foreground/5 text-muted",
+};
 
 type Cat = {
   id: string;
@@ -125,13 +133,13 @@ export default async function ColonyDetail({
             No cats recorded yet.{canManage ? " Add your first one above." : ""}
           </p>
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ul className="grid gap-2 sm:grid-cols-2">
             {cats.map((c) => (
-              <li
-                key={c.id}
-                className={`${card} flex items-center justify-between gap-3 px-4 py-3`}
-              >
-                <div className="flex min-w-0 items-center gap-3">
+              <li key={c.id}>
+                <Link
+                  href={`/app/colonies/${id}/cats/${c.id}`}
+                  className={`${card} flex min-h-[60px] items-center gap-3 px-4 py-3 transition hover:bg-foreground/5`}
+                >
                   <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-surface">
                     {photos.get(c.id) ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -144,25 +152,23 @@ export default async function ColonyDetail({
                       <PawIcon className="h-5 w-5 text-muted" />
                     )}
                   </span>
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">
-                      {c.name ?? c.temp_id ?? "Unnamed cat"}
-                    </p>
-                    <p className="text-xs capitalize text-muted">
-                      {[c.colour, c.status.replace(/_/g, " ")]
-                        .filter(Boolean)
-                        .join(" · ")}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{catLabel(c)}</p>
+                    <p className="flex items-center gap-1.5 text-xs text-muted">
+                      {c.colour ? (
+                        <span className="capitalize">{c.colour}</span>
+                      ) : null}
+                      <span
+                        className={`rounded-full px-2 py-0.5 font-medium capitalize ${
+                          toneClass[statusTone(c.status)]
+                        }`}
+                      >
+                        {formatStatus(c.status)}
+                      </span>
                     </p>
                   </div>
-                </div>
-                {canManage ? (
-                  <Link
-                    href={`/app/colonies/${id}/cats/${c.id}/edit`}
-                    className="shrink-0 text-sm text-accent"
-                  >
-                    Edit
-                  </Link>
-                ) : null}
+                  <ChevronIcon className="h-4 w-4 shrink-0 text-muted" />
+                </Link>
               </li>
             ))}
           </ul>

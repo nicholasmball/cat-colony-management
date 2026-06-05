@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cat list & detail — UX design</title>
+<style>
+  :root{
+    --bg:#f7f4f2; --fg:#191919; --muted:#6b6b6b; --accent:#170df2;
+    --surface:#fff; --border:#e7e2dd; --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:"Raleway",system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.55}
+  .wrap{max-width:980px;margin:0 auto;padding:40px 24px 80px}
+  h1,h2,h3{font-family:"Cormorant Garamond",Georgia,serif;font-weight:600;line-height:1.15}
+  h1{font-size:2.6rem;margin:0 0 .2em}
+  h2{font-size:1.7rem;margin:2.2em 0 .5em;border-bottom:1px solid var(--border);padding-bottom:.2em}
+  h3{font-size:1.2rem;margin:1.4em 0 .4em}
+  .lede{color:var(--muted);font-size:1.05rem;max-width:62ch}
+  code{background:#efe9e4;padding:.1em .4em;border-radius:5px;font-size:.86em}
+  .phones{display:flex;gap:28px;flex-wrap:wrap;margin:18px 0}
+  .phone{width:300px;border:1px solid var(--border);border-radius:24px;background:var(--surface);
+    padding:14px;box-shadow:0 6px 24px rgba(0,0,0,.06)}
+  .phone .cap{font-size:.78rem;color:var(--muted);text-align:center;margin-bottom:8px;font-weight:600}
+  .screen{background:var(--bg);border-radius:16px;padding:12px;min-height:420px}
+  .crumb{color:var(--accent);font-size:.82rem;margin-bottom:8px}
+  .title{font-family:"Cormorant Garamond",serif;font-size:1.5rem;margin:.1em 0 .1em}
+  .sub{color:var(--muted);font-size:.8rem;margin-bottom:12px}
+  .btn{display:block;text-align:center;background:var(--accent);color:#fff;border-radius:11px;
+    padding:13px;font-weight:600;font-size:.9rem;margin:10px 0}
+  .row{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;padding:11px;margin-bottom:9px;min-height:60px}
+  .row.tap{position:relative}
+  .row .chev{margin-left:auto;color:var(--muted);font-size:1.1rem}
+  .thumb{width:42px;height:42px;border-radius:50%;background:#efe9e4;flex:0 0 auto;display:grid;
+    place-items:center;color:var(--muted);overflow:hidden;font-size:1.1rem}
+  .nm{font-weight:600;font-size:.92rem}
+  .meta{color:var(--muted);font-size:.76rem;text-transform:capitalize}
+  .pill{display:inline-block;font-size:.68rem;padding:2px 8px;border-radius:999px;font-weight:600;
+    border:1px solid var(--border)}
+  .pill.seen{background:#e7f6ec;color:#1c7a3f;border-color:#bfe6cd}
+  .pill.concern{background:#fdeede;color:#9a5b00;border-color:#f3d3a6}
+  .pill.missing{background:#fde7e7;color:#a12525;border-color:#f3bcbc}
+  .field{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 11px;margin-bottom:7px}
+  .field .k{font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .field .v{font-size:.9rem}
+  .hero{height:150px;border-radius:14px;background:#e3ddd6 url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2280%22 height=%2280%22><text x=%2240%22 y=%2250%22 font-size=%2240%22 text-anchor=%22middle%22>🐈</text></svg>') center/64px no-repeat;
+    display:grid;place-items:end;margin-bottom:12px}
+  .note{background:#fff;border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:8px;padding:12px 14px;margin:10px 0;font-size:.92rem}
+  ul.ac{padding-left:0;list-style:none}
+  ul.ac li{padding:6px 0 6px 26px;position:relative}
+  ul.ac li::before{content:"✓";position:absolute;left:0;color:var(--accent);font-weight:700}
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:.92rem}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{font-size:.74rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .tag{font-size:.72rem;background:#efe9e4;border-radius:6px;padding:1px 7px}
+  /* desktop frame */
+  .desk{border:1px solid var(--border);border-radius:14px;background:var(--surface);
+    box-shadow:0 6px 24px rgba(0,0,0,.06);overflow:hidden;margin:18px 0}
+  .desk .bar{display:flex;align-items:center;gap:7px;padding:9px 12px;background:#efe9e4;border-bottom:1px solid var(--border)}
+  .desk .bar i{width:11px;height:11px;border-radius:50%;background:#cfc7bf;display:inline-block}
+  .desk .bar .url{margin-left:10px;font-size:.74rem;color:var(--muted);background:#fff;border-radius:6px;padding:3px 10px}
+  .desk .app{display:flex;min-height:440px}
+  .desk .side{width:210px;flex:0 0 auto;border-right:1px solid var(--border);padding:16px 12px;background:#fbf9f7}
+  .desk .side .brand{font-family:"Cormorant Garamond",serif;font-size:1.2rem;margin-bottom:14px}
+  .desk .side a{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font-size:.84rem;color:var(--fg);margin-bottom:3px}
+  .desk .side a.on{background:#e9e6ff;color:var(--accent);font-weight:600}
+  .desk .main{flex:1;padding:22px 26px}
+  .desk .main .h{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grid-detail{display:grid;grid-template-columns:260px 1fr;gap:24px;align-items:start}
+  .hero.lg{height:240px;margin:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Cat list &amp; cat detail</h1>
+  <p class="lede">Design for the <strong>Cat list (per colony)</strong> card. Building on the
+  Requirements &amp; Acceptance Criteria step: the list already exists on the colony page — the work is
+  making every row a <strong>tappable link to a cat detail page</strong> for <em>all roles</em> (Feeders
+  included), and delivering that lightweight detail page as the destination.</p>
+
+  <h2>1. Flow</h2>
+  <p class="lede">Colony → tap a cat row → Cat detail (read-only) → back to colony, or (managers only) Edit.
+  One tap from the feed view to a cat; one tap back. No modals — full pages keep context and back-navigation
+  honest on mobile.</p>
+
+  <h2>2. Screens</h2>
+  <div class="phones">
+    <div class="phone">
+      <div class="cap">Colony — cat list (whole row now tappable)</div>
+      <div class="screen">
+        <div class="crumb">← Colonies</div>
+        <div class="title">Horta das Figueiras</div>
+        <div class="sub">Feeds 08:00–09:00</div>
+        <a class="btn">Record feeding update</a>
+        <div class="sub" style="margin-top:14px">CATS (4)</div>
+
+        <div class="row tap">
+          <div class="thumb"><img src="" alt="" onerror="this.replaceWith(document.createTextNode('🐾'))" style="width:100%;height:100%"></div>
+          <div>
+            <div class="nm">Mochi</div>
+            <div class="meta">tabby · <span class="pill seen">seen</span></div>
+          </div>
+          <div class="chev">›</div>
+        </div>
+
+        <div class="row tap">
+          <div class="thumb">🐾</div>
+          <div>
+            <div class="nm">ginger tom by the bins</div>
+            <div class="meta">ginger · <span class="pill concern">concern</span></div>
+          </div>
+          <div class="chev">›</div>
+        </div>
+
+        <div class="row tap">
+          <div class="thumb">🐾</div>
+          <div>
+            <div class="nm">Luna</div>
+            <div class="meta">black · <span class="pill missing">not seen</span></div>
+          </div>
+          <div class="chev">›</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="cap">Cat detail — read-only (Feeder view)</div>
+      <div class="screen">
+        <div class="crumb">← Horta das Figueiras</div>
+        <div class="hero"></div>
+        <div class="title">Mochi</div>
+        <div class="sub"><span class="pill seen">seen</span> · last seen today</div>
+        <div class="field"><div class="k">Colour</div><div class="v">Tabby</div></div>
+        <div class="field"><div class="k">Markings</div><div class="v">White socks</div></div>
+        <div class="field"><div class="k">Sex</div><div class="v">Female · neutered</div></div>
+        <div class="field"><div class="k">Approx age</div><div class="v">~2 years</div></div>
+        <div class="field"><div class="k">Notes</div><div class="v">Friendly, comes when called.</div></div>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="cap">Cat detail — sparse data + manager Edit</div>
+      <div class="screen">
+        <div class="crumb">← Horta das Figueiras</div>
+        <div class="hero" style="background-image:none;background:#efe9e4;place-items:center"><span style="font-size:42px">🐾</span></div>
+        <div class="title">ginger tom by the bins</div>
+        <div class="sub"><span class="pill concern">concern</span></div>
+        <div class="field"><div class="k">Colour</div><div class="v">Ginger</div></div>
+        <div class="note" style="margin:8px 0">Only the fields that are set appear — no empty rows, no
+        "unknown" clutter. Records accept incomplete data.</div>
+        <a class="btn" style="background:#fff;color:var(--accent);border:1px solid var(--accent)">Edit cat</a>
+        <div class="sub" style="text-align:center">Edit shown to Admin / Caretaker only</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>2b. Desktop / wide screen</h2>
+  <p class="lede">Same routes, same data — the app is mobile-first but the persistent left nav (already in the
+  app shell) appears from <code>md</code> up, the content column gets a comfortable max-width, and the cat
+  list relaxes into a <strong>two-column grid of the same row cards</strong>. The cat detail page becomes a
+  <strong>photo-left / facts-right</strong> two-column layout. Nothing new to build server-side — these are the
+  existing responsive Tailwind breakpoints applied to the new markup.</p>
+
+  <div class="desk">
+    <div class="bar"><i></i><i></i><i></i><span class="url">app.streetcatsoftavira.org/app/colonies/horta</span></div>
+    <div class="app">
+      <div class="side">
+        <div class="brand">Street Cats 🐾</div>
+        <a>Today</a>
+        <a class="on">Colonies</a>
+        <a>Members</a>
+        <a>Organisation</a>
+      </div>
+      <div class="main">
+        <div class="crumb">← Colonies</div>
+        <div class="h">
+          <div>
+            <div class="title" style="font-size:1.8rem">Horta das Figueiras</div>
+            <div class="sub">Feeds 08:00–09:00</div>
+          </div>
+          <a class="btn" style="width:200px;margin:0">Record feeding update</a>
+        </div>
+        <div class="sub" style="margin:14px 0 8px">CATS (4)</div>
+        <div class="grid2">
+          <div class="row tap"><div class="thumb">🐾</div><div><div class="nm">Mochi</div><div class="meta">tabby · <span class="pill seen">seen</span></div></div><div class="chev">›</div></div>
+          <div class="row tap"><div class="thumb">🐾</div><div><div class="nm">ginger tom by the bins</div><div class="meta">ginger · <span class="pill concern">concern</span></div></div><div class="chev">›</div></div>
+          <div class="row tap"><div class="thumb">🐾</div><div><div class="nm">Luna</div><div class="meta">black · <span class="pill missing">not seen</span></div></div><div class="chev">›</div></div>
+          <div class="row tap"><div class="thumb">🐾</div><div><div class="nm">Pip</div><div class="meta">white · <span class="pill seen">seen</span></div></div><div class="chev">›</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="desk">
+    <div class="bar"><i></i><i></i><i></i><span class="url">app.streetcatsoftavira.org/app/colonies/horta/cats/mochi</span></div>
+    <div class="app">
+      <div class="side">
+        <div class="brand">Street Cats 🐾</div>
+        <a>Today</a>
+        <a class="on">Colonies</a>
+        <a>Members</a>
+        <a>Organisation</a>
+      </div>
+      <div class="main">
+        <div class="crumb">← Horta das Figueiras</div>
+        <div class="grid-detail">
+          <div>
+            <div class="hero lg"></div>
+          </div>
+          <div>
+            <div class="h">
+              <div class="title" style="font-size:1.9rem">Mochi</div>
+              <a class="btn" style="background:#fff;color:var(--accent);border:1px solid var(--accent);width:120px;margin:0">Edit cat</a>
+            </div>
+            <div class="sub"><span class="pill seen">seen</span> · last seen today</div>
+            <div class="grid2" style="margin-top:10px">
+              <div class="field"><div class="k">Colour</div><div class="v">Tabby</div></div>
+              <div class="field"><div class="k">Markings</div><div class="v">White socks</div></div>
+              <div class="field"><div class="k">Sex</div><div class="v">Female · neutered</div></div>
+              <div class="field"><div class="k">Approx age</div><div class="v">~2 years</div></div>
+            </div>
+            <div class="field"><div class="k">Notes</div><div class="v">Friendly, comes when called.</div></div>
+          </div>
+        </div>
+        <div class="sub" style="margin-top:8px">Edit button shown to Admin / Caretaker only; Feeders see the same page read-only.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>3. Interaction &amp; accessibility notes</h2>
+  <ul class="ac">
+    <li><strong>Whole row is the link</strong> (Fitts's Law) — a 60px-tall <code>&lt;Link&gt;</code>, well above the 44px touch minimum. The old manager-only "Edit" corner link is removed from the row; Edit now lives on the detail page so every role taps the same target.</li>
+    <li><strong>Chevron (›) as information scent</strong> — signals "this row goes somewhere," not just a static list item. Reinforces the tap affordance without relying on colour.</li>
+    <li><strong>Status uses pill + word</strong>, never colour alone (WCAG 1.4.1). Green "seen", amber "concern", red "not seen" each carry a text label.</li>
+    <li><strong>Detail hero photo</strong> uses the same presigned GET as the thumbnail; paw fallback when no photo. <code>alt</code> = "Photo of {name}".</li>
+    <li><strong>Sparse-data rule</strong> — only populated fields render. Name falls back to description falls back to "Unnamed cat". Never blocks render on a missing field.</li>
+    <li><strong>Back navigation</strong> returns to the colony, preserving scroll where the platform allows.</li>
+    <li><strong>Loading</strong> — list and detail are server-rendered; thumbnails resolve in one batched <code>Promise.all</code> (no per-row waterfall). No spinner needed for first paint.</li>
+  </ul>
+
+  <h2>4. Status vocabulary (from sightings)</h2>
+  <table>
+    <tr><th>Sighting status</th><th>Pill</th><th>Meaning on the row/detail</th></tr>
+    <tr><td><span class="tag">seen</span></td><td><span class="pill seen">seen</span></td><td>Recorded at the latest feed</td></tr>
+    <tr><td><span class="tag">concern</span></td><td><span class="pill concern">concern</span></td><td>Feeder flagged something off</td></tr>
+    <tr><td><span class="tag">not_seen</span></td><td><span class="pill missing">not seen</span></td><td>Absent — never auto-promoted to "missing" (human review owns that)</td></tr>
+    <tr><td>—</td><td><span class="pill">active</span></td><td>No recent sighting yet; cat record's base status</td></tr>
+  </table>
+  <p class="lede">This card surfaces the cat's <em>current</em> status only. The full status <em>history</em>
+  timeline is intentionally deferred to the "Cat detail &amp; status history" card — this design gives that
+  feature a page to grow into without redoing the layout.</p>
+
+  <h2>5. Mapping to acceptance criteria</h2>
+  <ul class="ac">
+    <li>Tappable row → cat detail, all roles → screens 1–2.</li>
+    <li>Detail renders photo/name/colour/status + optional fields, omits missing → screens 2–3.</li>
+    <li>Manager Edit affordance, Feeder read-only → screen 3.</li>
+    <li>Org-scoped, 404 on cross-org/soft-deleted → server query with <code>.is("deleted_at", null)</code> + RLS → <code>notFound()</code>.</li>
+    <li>Mobile-first, ≥44px targets, batched thumbnails → interaction notes.</li>
+  </ul>
+</div>
+</body>
+</html>
