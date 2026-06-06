@@ -2,7 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { btnPrimary, card } from "@/lib/ui";
-import { ChevronIcon } from "@/components/icons";
+import { ChevronIcon, PawIcon } from "@/components/icons";
+import { EmptyState } from "@/components/empty-state";
 
 type Colony = {
   id: string;
@@ -52,9 +53,16 @@ export default async function ColoniesPage() {
       </div>
 
       {colonies.length === 0 ? (
-        <p className={`${card} p-6 text-center text-sm text-muted`}>
-          No colonies yet.{canManage ? " Add your first one above." : ""}
-        </p>
+        <EmptyState
+          icon={<PawIcon className="h-7 w-7" />}
+          title="No colonies yet"
+          body="A colony is a place you feed — a street, a yard, a car park."
+          cta={
+            canManage
+              ? { href: "/app/colonies/new", label: "Add your first colony" }
+              : undefined
+          }
+        />
       ) : (
         <ul className="flex flex-col gap-2">
           {colonies.map((c) => (

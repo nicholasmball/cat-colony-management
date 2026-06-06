@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createOrganisation } from "./actions";
 import { SubmitButton } from "@/components/submit-button";
 import { PawIcon, ChevronIcon } from "@/components/icons";
+import { EmptyState } from "@/components/empty-state";
+import { firstRunStep } from "@/lib/onboarding";
 import { btnPrimary, card, input } from "@/lib/ui";
 
 type MembershipRow = {
@@ -76,7 +78,113 @@ export default async function AppHome({
     );
   }
 
-  // ── Has organisation(s) ───────────────────────────────────────────────────
+  // ── First-run: org exists but is still empty → guided welcome ─────────────
+  // The active org is the earliest membership (mirrors getActiveOrg).
+  const active = memberships[0];
+  const canManage = active.role === "admin" || active.role === "caretaker";
+  const orgName = active.organisations?.name ?? "your colony";
+
+  const { data: colonyRows, count: colonyCount } = await supabase
+    .from("colonies")
+    .select("id", { count: "exact" })
+    .eq("organisation_id", active.organisation_id)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true })
+    .limit(1);
+  let catCount = 0;
+  if ((colonyCount ?? 0) > 0) {
+    const { count } = await supabase
+      .from("cats")
+      .select("id", { count: "exact", head: true })
+      .eq("organisation_id", active.organisation_id)
+      .is("deleted_at", null);
+    catCount = count ?? 0;
+  }
+  const step = firstRunStep({
+    colonies: colonyCount ?? 0,
+    cats: catCount,
+  });
+  const firstColonyId = colonyRows?.[0]?.id as string | undefined;
+
+  if (step !== "done") {
+    const steps = [
+      { label: "Add your first colony", state: step === "colony" ? "now" : "done" },
+      {
+        label: "Add a cat to it",
+        state: step === "cat" ? "now" : step === "colony" ? "todo" : "done",
+      },
+      { label: "Set a feeding schedule", state: "soon" as const },
+    ];
+    const ctaHref =
+      step === "colony"
+        ? "/app/colonies/new"
+        : `/app/colonies/${firstColonyId}/cats/new`;
+    const ctaLabel = step === "colony" ? "Add your first colony" : "Add a cat";
+
+    return (
+      <div className="mx-auto flex max-w-md flex-col gap-5 px-6 py-8">
+        {error ? (
+          <p role="alert" className={errorClass}>
+            {error}
+          </p>
+        ) : null}
+        <div className="space-y-1">
+          <h1 className="font-display text-3xl">Welcome to {orgName} 🐾</h1>
+          <p className="text-sm text-muted">
+            {canManage
+              ? "Let’s get set up — a couple of quick steps."
+              : "Your colony is being set up."}
+          </p>
+        </div>
+
+        {canManage ? (
+          <div className={`${card} flex flex-col gap-4 p-5`}>
+            <ol className="flex flex-col gap-3">
+              {steps.map((s, i) => (
+                <li key={s.label} className="flex items-center gap-3 text-sm">
+                  <span
+                    aria-hidden
+                    className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold ${
+                      s.state === "done"
+                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+                        : s.state === "now"
+                          ? "bg-accent/10 text-accent"
+                          : "bg-foreground/5 text-muted"
+                    }`}
+                  >
+                    {s.state === "done" ? "✓" : i + 1}
+                  </span>
+                  <span
+                    className={
+                      s.state === "now" ? "font-medium" : "text-muted"
+                    }
+                  >
+                    {s.label}
+                  </span>
+                  {s.state === "soon" ? (
+                    <span className="ml-auto rounded bg-foreground/5 px-1.5 py-0.5 text-[0.65rem] text-muted">
+                      soon
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ol>
+            <Link href={ctaHref} className={btnPrimary}>
+              {ctaLabel} →
+            </Link>
+          </div>
+        ) : (
+          <EmptyState
+            icon={<PawIcon className="h-7 w-7" />}
+            title="Nothing here yet"
+            body="Your caretaker will set up colonies and assign you feeds. Check back soon."
+          />
+        )}
+      </div>
+    );
+  }
+
+  // ── Has organisation(s): fully set up → normal home ───────────────────────
   return (
     <div className="flex max-w-3xl flex-col gap-7 px-6 py-6 md:px-10">
       {error ? (

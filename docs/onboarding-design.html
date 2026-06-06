@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Onboarding &amp; empty states — UX design</title>
+<style>
+  :root{--bg:#f7f4f2;--fg:#191919;--muted:#6b6b6b;--accent:#170df2;--surface:#fff;--border:#e7e2dd}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:"Raleway",system-ui,sans-serif;line-height:1.55}
+  .wrap{max-width:980px;margin:0 auto;padding:40px 24px 80px}
+  h1,h2,h3{font-family:"Cormorant Garamond",Georgia,serif;font-weight:600;line-height:1.15}
+  h1{font-size:2.5rem;margin:0 0 .2em}
+  h2{font-size:1.6rem;margin:2em 0 .5em;border-bottom:1px solid var(--border);padding-bottom:.2em}
+  .lede{color:var(--muted);font-size:1.05rem;max-width:64ch}
+  code{background:#efe9e4;padding:.1em .4em;border-radius:5px;font-size:.86em}
+  .phones{display:flex;gap:26px;flex-wrap:wrap;margin:18px 0}
+  .phone{width:300px;border:1px solid var(--border);border-radius:24px;background:var(--surface);padding:14px;box-shadow:0 6px 24px rgba(0,0,0,.06)}
+  .cap{font-size:.76rem;color:var(--muted);text-align:center;margin-bottom:8px;font-weight:600}
+  .screen{background:var(--bg);border-radius:16px;padding:14px;min-height:380px}
+  .title{font-family:"Cormorant Garamond",serif;font-size:1.7rem}
+  .sub{color:var(--muted);font-size:.82rem}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;margin-top:12px}
+  .icirc{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:#eef0ff;color:var(--accent);font-size:1.6rem;margin-bottom:10px}
+  .steps{list-style:none;padding:0;margin:12px 0;display:flex;flex-direction:column;gap:9px}
+  .steps li{display:flex;align-items:center;gap:10px;font-size:.9rem}
+  .num{width:24px;height:24px;border-radius:50%;background:#eef0ff;color:var(--accent);display:grid;place-items:center;font-size:.8rem;font-weight:700;flex:0 0 auto}
+  .num.done{background:#e7f6ec;color:#1c7a3f}
+  .num.todo{background:#efe9e4;color:var(--muted)}
+  .muted{color:var(--muted)}
+  .soon{font-size:.66rem;background:#efe9e4;color:var(--muted);border-radius:5px;padding:1px 6px;margin-left:auto}
+  .btn{display:block;text-align:center;background:var(--accent);color:#fff;border-radius:11px;padding:13px;font-weight:600;font-size:.9rem;margin-top:12px}
+  .empty{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:30px 18px;text-align:center;margin-top:12px}
+  .empty .icirc{margin:0 auto 12px}
+  .empty p{margin:.2em 0;font-size:.9rem}
+  .hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+  .pill{background:var(--accent);color:#fff;border-radius:9px;padding:7px 11px;font-size:.78rem;font-weight:600}
+  .note{background:#fff;border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:12px 14px;margin:10px 0;font-size:.92rem}
+  ul.ac{padding-left:0;list-style:none}
+  ul.ac li{padding:6px 0 6px 26px;position:relative}
+  ul.ac li::before{content:"✓";position:absolute;left:0;color:var(--accent);font-weight:700}
+  .desk{border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:0 6px 24px rgba(0,0,0,.06);overflow:hidden;margin:18px 0}
+  .desk .bar{display:flex;align-items:center;gap:7px;padding:9px 12px;background:#efe9e4;border-bottom:1px solid var(--border)}
+  .desk .bar i{width:11px;height:11px;border-radius:50%;background:#cfc7bf;display:inline-block}
+  .desk .bar .url{margin-left:10px;font-size:.74rem;color:var(--muted);background:#fff;border-radius:6px;padding:3px 10px}
+  .desk .app{display:flex;min-height:340px}
+  .desk .side{width:190px;flex:0 0 auto;border-right:1px solid var(--border);padding:16px 12px;background:#fbf9f7}
+  .desk .side .brand{font-family:"Cormorant Garamond",serif;font-size:1.15rem;margin-bottom:12px}
+  .desk .side a{display:block;padding:8px 10px;border-radius:9px;font-size:.84rem;color:var(--fg);margin-bottom:3px}
+  .desk .side a.on{background:#e9e6ff;color:var(--accent);font-weight:600}
+  .desk .main{flex:1;padding:24px 28px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Onboarding &amp; empty states</h1>
+  <p class="lede">Building on the approved Requirements (lightweight: contextual empty states + a welcome
+  panel, no tracked checklist). The app already handles the very first step — <em>no organisation yet</em> shows
+  a "create organisation" form. This card fills the next gap: an org that <strong>exists but is empty</strong>,
+  and turning every blank list into a next step. One reusable <code>EmptyState</code> pattern, applied
+  role-aware.</p>
+
+  <h2>1. Home — new org, 0 colonies (Admin / Caretaker)</h2>
+  <div class="phones">
+    <div class="phone">
+      <div class="cap">/app — manager, brand-new org</div>
+      <div class="screen">
+        <div class="title">Welcome to Street Cats 🐾</div>
+        <div class="sub">Let’s get your colony set up — 3 quick steps.</div>
+        <div class="panel">
+          <ol class="steps">
+            <li><span class="num">1</span> Add your first colony</li>
+            <li><span class="num todo">2</span> <span class="muted">Add a cat to it</span></li>
+            <li><span class="num todo">3</span> <span class="muted">Set a feeding schedule</span><span class="soon">soon</span></li>
+          </ol>
+          <a class="btn">Add your first colony →</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="cap">/app — colony exists, 0 cats (step advances)</div>
+      <div class="screen">
+        <div class="title">Welcome to Street Cats 🐾</div>
+        <div class="sub">Nice — one more step to a useful colony.</div>
+        <div class="panel">
+          <ol class="steps">
+            <li><span class="num done">✓</span> <span class="muted">Colony created</span></li>
+            <li><span class="num">2</span> Add a cat to it</li>
+            <li><span class="num todo">3</span> <span class="muted">Set a feeding schedule</span><span class="soon">soon</span></li>
+          </ol>
+          <a class="btn">Add a cat →</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="cap">/app — Feeder, nothing yet (no create CTA)</div>
+      <div class="screen">
+        <div class="title">Welcome 🐾</div>
+        <div class="empty" style="margin-top:16px">
+          <div class="icirc">🐾</div>
+          <p style="font-weight:600">Nothing here yet</p>
+          <p class="muted">Your caretaker will set up colonies and assign you feeds. Check back soon.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="note"><strong>Logic (pure, unit-tested):</strong> <code>firstRunStep({colonies, cats})</code> →
+  <code>"colony"</code> (0 colonies) · <code>"cat"</code> (colonies but 0 cats) · <code>"done"</code> (both —
+  hide the panel, show the normal home). The "schedule" step renders greyed with a <em>soon</em> tag and
+  <strong>no link</strong> until the Feeding-schedules card ships — no dead ends. Feeders never get a step they
+  can’t do; they get the guidance card instead.</div>
+
+  <h2>2. Desktop — same panel, wider canvas</h2>
+  <div class="desk">
+    <div class="bar"><i></i><i></i><i></i><span class="url">app.streetcatsoftavira.org/app</span></div>
+    <div class="app">
+      <div class="side">
+        <div class="brand">Street Cats 🐾</div>
+        <a class="on">Home</a><a>Colonies</a><a>Members</a><a>Organisation</a>
+      </div>
+      <div class="main">
+        <div class="title" style="font-size:2rem">Welcome to Street Cats 🐾</div>
+        <div class="sub">Let’s get your colony set up — 3 quick steps.</div>
+        <div class="panel" style="max-width:440px">
+          <div class="icirc">🐾</div>
+          <ol class="steps">
+            <li><span class="num">1</span> Add your first colony</li>
+            <li><span class="num todo">2</span> <span class="muted">Add a cat to it</span></li>
+            <li><span class="num todo">3</span> <span class="muted">Set a feeding schedule</span><span class="soon">soon</span></li>
+          </ol>
+          <a class="btn" style="max-width:220px">Add your first colony →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>3. Empty list states</h2>
+  <div class="phones">
+    <div class="phone">
+      <div class="cap">Colonies — empty (manager)</div>
+      <div class="screen">
+        <div class="hdr"><div class="title" style="font-size:1.4rem">Colonies</div><span class="pill">Add colony</span></div>
+        <div class="sub">Street Cats of Tavira</div>
+        <div class="empty">
+          <div class="icirc">🐾</div>
+          <p style="font-weight:600">No colonies yet</p>
+          <p class="muted">A colony is a place you feed — a street, a yard, a car park.</p>
+          <a class="btn" style="max-width:200px;margin:14px auto 0">Add your first colony</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="cap">Colonies — empty (feeder, no CTA)</div>
+      <div class="screen">
+        <div class="hdr"><div class="title" style="font-size:1.4rem">Colonies</div></div>
+        <div class="sub">Street Cats of Tavira</div>
+        <div class="empty">
+          <div class="icirc">🐾</div>
+          <p style="font-weight:600">No colonies yet</p>
+          <p class="muted">Your caretaker will add colonies here. Nothing for you to do yet.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="cap">Colony detail — no cats (manager)</div>
+      <div class="screen">
+        <div class="sub">← Colonies</div>
+        <div class="title" style="font-size:1.5rem">Horta das Figueiras</div>
+        <div class="sub">No feeding window set</div>
+        <a class="btn">Record feeding update</a>
+        <div class="empty" style="margin-top:14px">
+          <div class="icirc">🐱</div>
+          <p style="font-weight:600">No cats recorded</p>
+          <p class="muted">Add the cats you see here so feeders can mark them each visit.</p>
+          <a class="btn" style="max-width:170px;margin:14px auto 0">Add a cat</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>4. The reusable pattern</h2>
+  <p class="lede">One <code>&lt;EmptyState&gt;</code> building block — round icon, bold one-liner, a muted
+  explanatory line, and an <em>optional</em> primary CTA. Variants differ only by icon, copy, and whether a CTA
+  is passed (managers yes, feeders no). This keeps every future list (schedules, incidents…) consistent when
+  those cards add their own.</p>
+  <ul class="ac">
+    <li><strong>Information scent:</strong> copy says what a colony/cat <em>is</em> and the button says exactly what happens ("Add your first colony", not "OK").</li>
+    <li><strong>No disabled buttons:</strong> a role that can’t act sees explanatory text, never a greyed CTA (WCAG-friendly, per our constraints).</li>
+    <li><strong>Accessibility:</strong> real <code>&lt;h2&gt;</code>/heading, CTA ≥44px, icon is decorative (<code>aria-hidden</code>), meaning carried by text not colour.</li>
+    <li><strong>Mobile-first:</strong> centred block, comfortable tap target, works at 320px.</li>
+  </ul>
+
+  <h2>5. Acceptance-criteria coverage</h2>
+  <ul class="ac">
+    <li>New org (manager, 0 colonies) → welcome panel + single CTA to first available step → §1, §2.</li>
+    <li>Feeder with nothing → guidance, no create CTA → §1 third phone, §3 second phone.</li>
+    <li>Colonies empty + cats empty → designed states → §3.</li>
+    <li>Schedule step shown, not linked → §1 "soon" tag.</li>
+    <li><code>firstRunStep</code> pure + tested → §1 note.</li>
+  </ul>
+</div>
+</body>
+</html>

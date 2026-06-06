@@ -5,6 +5,7 @@ import { getActiveOrg } from "@/lib/active-org";
 import { photoSrc } from "@/lib/photo";
 import { catLabel, formatStatus, statusTone } from "@/lib/cat-display";
 import { PawIcon, ChevronIcon } from "@/components/icons";
+import { EmptyState } from "@/components/empty-state";
 import { btnGhost, btnPrimary, card } from "@/lib/ui";
 
 const toneClass: Record<string, string> = {
@@ -129,9 +130,16 @@ export default async function ColonyDetail({
         </div>
 
         {cats.length === 0 ? (
-          <p className={`${card} p-6 text-center text-sm text-muted`}>
-            No cats recorded yet.{canManage ? " Add your first one above." : ""}
-          </p>
+          <EmptyState
+            icon={<PawIcon className="h-7 w-7" />}
+            title="No cats recorded"
+            body="Add the cats you see here so feeders can mark them each visit."
+            cta={
+              canManage
+                ? { href: `/app/colonies/${id}/cats/new`, label: "Add a cat" }
+                : undefined
+            }
+          />
         ) : (
           <ul className="grid gap-2 sm:grid-cols-2">
             {cats.map((c) => (
