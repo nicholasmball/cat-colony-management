@@ -108,6 +108,13 @@ export default async function AppHome({
       catCount = cats ?? 0;
     }
   }
+  // Feeders land on Today once their org has colonies to feed. A feeder with no
+  // colonies falls through to the "nothing here yet" guidance below; managers
+  // keep this home screen.
+  if (active?.role === "feeder" && colonyCount > 0) {
+    redirect("/app/today");
+  }
+
   const step = firstRunStep({ colonies: colonyCount, cats: catCount });
 
   if (active && step !== "done") {

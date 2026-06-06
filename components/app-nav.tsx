@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HomeIcon, PawIcon, UsersIcon, CogIcon } from "./icons";
+import { HomeIcon, PawIcon, UsersIcon, CogIcon, CalendarIcon } from "./icons";
 
 const baseItems = [
   { href: "/app", label: "Home", Icon: HomeIcon, exact: true },
+  { href: "/app/today", label: "Today", Icon: CalendarIcon, exact: false },
   { href: "/app/colonies", label: "Colonies", Icon: PawIcon, exact: false },
 ];
 const adminItems = [
