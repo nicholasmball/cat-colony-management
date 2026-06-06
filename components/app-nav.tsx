@@ -2,27 +2,32 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { ComponentType, SVGProps } from "react";
 import { HomeIcon, PawIcon, UsersIcon, CogIcon, CalendarIcon } from "./icons";
+import { navItemsFor } from "@/lib/nav-items";
 
-const baseItems = [
-  { href: "/app", label: "Home", Icon: HomeIcon, exact: true },
-  { href: "/app/today", label: "Today", Icon: CalendarIcon, exact: false },
-  { href: "/app/colonies", label: "Colonies", Icon: PawIcon, exact: false },
-];
-const adminItems = [
-  { href: "/app/members", label: "Members", Icon: UsersIcon, exact: false },
-  { href: "/app/org", label: "Organisation", Icon: CogIcon, exact: false },
-];
+// Icons can't live in the pure nav-items lib, so map each item's href to its
+// Icon here. The which-items decision lives in navItemsFor.
+const iconByHref: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
+  "/app": HomeIcon,
+  "/app/today": CalendarIcon,
+  "/app/colonies": PawIcon,
+  "/app/members": UsersIcon,
+  "/app/org": CogIcon,
+};
 
 export function AppNav({
   variant,
-  isAdmin = false,
+  role,
 }: {
   variant: "sidebar" | "tabbar";
-  isAdmin?: boolean;
+  role?: string | null;
 }) {
   const path = usePathname();
-  const items = isAdmin ? [...baseItems, ...adminItems] : baseItems;
+  const items = navItemsFor({ role }).map((item) => ({
+    ...item,
+    Icon: iconByHref[item.href],
+  }));
   const isActive = (href: string, exact: boolean) =>
     exact ? path === href : path.startsWith(href);
 

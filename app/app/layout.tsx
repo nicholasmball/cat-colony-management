@@ -20,7 +20,7 @@ export default async function AppLayout({
   if (!user) redirect("/login");
   const email = user.email ?? "";
   const org = await getActiveOrg();
-  const isAdmin = org?.role === "admin";
+  const role = org?.role;
 
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">
@@ -31,7 +31,7 @@ export default async function AppLayout({
             <Logo width={132} />
           </Link>
         </div>
-        <AppNav variant="sidebar" isAdmin={isAdmin} />
+        <AppNav variant="sidebar" role={role} />
         <div className="mt-auto border-t border-border p-3">
           <p className="truncate px-2 text-xs text-muted" title={email}>
             {email}
@@ -60,7 +60,7 @@ export default async function AppLayout({
         <main className="flex-1 pb-24 md:pb-10">{children}</main>
 
         {/* Mobile bottom tab bar (hidden on desktop) */}
-        <AppNav variant="tabbar" isAdmin={isAdmin} />
+        <AppNav variant="tabbar" role={role} />
       </div>
     </div>
   );
