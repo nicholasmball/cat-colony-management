@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { createOrganisation } from "./actions";
+import { createOrganisation, switchOrg } from "./actions";
 import { SubmitButton } from "@/components/submit-button";
 import { PawIcon, ChevronIcon } from "@/components/icons";
 import { EmptyState } from "@/components/empty-state";
+import { getActiveOrg } from "@/lib/active-org";
 import { firstRunStep } from "@/lib/onboarding";
 import { btnPrimary, card, input } from "@/lib/ui";
 
@@ -78,35 +79,38 @@ export default async function AppHome({
     );
   }
 
-  // ── First-run: org exists but is still empty → guided welcome ─────────────
-  // The active org is the earliest membership (mirrors getActiveOrg).
-  const active = memberships[0];
-  const canManage = active.role === "admin" || active.role === "caretaker";
-  const orgName = active.organisations?.name ?? "your colony";
+  // ── First-run: active org exists but is still empty → guided welcome ──────
+  // Active org honours the switcher cookie (falls back to earliest membership).
+  const active = await getActiveOrg();
+  const canManage =
+    active?.role === "admin" || active?.role === "caretaker";
+  const orgName = active?.name ?? "your colony";
 
-  const { data: colonyRows, count: colonyCount } = await supabase
-    .from("colonies")
-    .select("id", { count: "exact" })
-    .eq("organisation_id", active.organisation_id)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: true })
-    .limit(1);
+  let colonyCount = 0;
   let catCount = 0;
-  if ((colonyCount ?? 0) > 0) {
-    const { count } = await supabase
-      .from("cats")
-      .select("id", { count: "exact", head: true })
+  let firstColonyId: string | undefined;
+  if (active) {
+    const { data: colonyRows, count } = await supabase
+      .from("colonies")
+      .select("id", { count: "exact" })
       .eq("organisation_id", active.organisation_id)
-      .is("deleted_at", null);
-    catCount = count ?? 0;
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true })
+      .limit(1);
+    colonyCount = count ?? 0;
+    firstColonyId = colonyRows?.[0]?.id as string | undefined;
+    if (colonyCount > 0) {
+      const { count: cats } = await supabase
+        .from("cats")
+        .select("id", { count: "exact", head: true })
+        .eq("organisation_id", active.organisation_id)
+        .is("deleted_at", null);
+      catCount = cats ?? 0;
+    }
   }
-  const step = firstRunStep({
-    colonies: colonyCount ?? 0,
-    cats: catCount,
-  });
-  const firstColonyId = colonyRows?.[0]?.id as string | undefined;
+  const step = firstRunStep({ colonies: colonyCount, cats: catCount });
 
-  if (step !== "done") {
+  if (active && step !== "done") {
     const steps = [
       { label: "Add your first colony", state: step === "colony" ? "now" : "done" },
       {
@@ -200,29 +204,44 @@ export default async function AppHome({
           {memberships.length > 1 ? "Your organisations" : "Your organisation"}
         </h2>
         <ul className="flex flex-col gap-2">
-          {memberships.map((m) => (
-            <li key={m.organisation_id}>
-              <Link
-                href="/app/colonies"
-                className={`${card} flex items-center justify-between px-4 py-3.5 transition hover:border-accent/50`}
-              >
-                <span className="flex items-center gap-3">
-                  <span className="grid h-10 w-10 place-items-center rounded-lg bg-accent/10 text-accent">
-                    <PawIcon className="h-5 w-5" />
-                  </span>
-                  <span>
-                    <span className="block font-medium">
-                      {m.organisations?.name ?? "Organisation"}
+          {memberships.map((m) => {
+            const isActive = m.organisation_id === active?.organisation_id;
+            return (
+              <li key={m.organisation_id}>
+                {/* A form (not a link) so switching the active org is a POST —
+                    avoids Next prefetch silently changing the active org. */}
+                <form action={switchOrg}>
+                  <input
+                    type="hidden"
+                    name="org"
+                    value={m.organisation_id}
+                  />
+                  <button
+                    type="submit"
+                    className={`${card} flex w-full items-center justify-between px-4 py-3.5 text-left transition hover:border-accent/50 ${
+                      isActive ? "border-accent/60" : ""
+                    }`}
+                  >
+                    <span className="flex items-center gap-3">
+                      <span className="grid h-10 w-10 place-items-center rounded-lg bg-accent/10 text-accent">
+                        <PawIcon className="h-5 w-5" />
+                      </span>
+                      <span>
+                        <span className="block font-medium">
+                          {m.organisations?.name ?? "Organisation"}
+                        </span>
+                        <span className="block text-xs capitalize text-muted">
+                          {m.role}
+                          {isActive ? " · active" : ""}
+                        </span>
+                      </span>
                     </span>
-                    <span className="block text-xs capitalize text-muted">
-                      {m.role}
-                    </span>
-                  </span>
-                </span>
-                <ChevronIcon className="h-5 w-5 text-muted" />
-              </Link>
-            </li>
-          ))}
+                    <ChevronIcon className="h-5 w-5 text-muted" />
+                  </button>
+                </form>
+              </li>
+            );
+          })}
         </ul>
       </section>
 
