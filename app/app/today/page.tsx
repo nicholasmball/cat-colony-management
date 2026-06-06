@@ -2,9 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
-import { dayRangeInTz, minutesAfterWindow } from "@/lib/time";
+import { dayRangeInTz, minutesAfterWindow, todayInTz } from "@/lib/time";
+import { localWeekday } from "@/lib/schedule";
 import { feedingStatus, type FeedingStatus } from "@/lib/feeding-status";
-import { ChevronIcon, PawIcon } from "@/components/icons";
+import { CalendarIcon, ChevronIcon, PawIcon } from "@/components/icons";
 import { EmptyState } from "@/components/empty-state";
 import { card } from "@/lib/ui";
 
@@ -22,6 +23,8 @@ type TodayRow = {
   windowEnd: string | null;
   status: FeedingStatus;
   fedAt: Date | null;
+  // Manager-only: is anyone scheduled to feed this colony today? null for feeders.
+  assignedToday: boolean | null;
 };
 
 const pillTone: Record<FeedingStatus, string> = {
@@ -103,16 +106,52 @@ export default async function TodayPage() {
 
   const supabase = await createClient();
   const dayRange = dayRangeInTz(org.timezone);
+  const todayLocal = todayInTz(org.timezone);
+  const weekdayLocal = localWeekday(todayLocal);
+  const isManager = org.role === "admin" || org.role === "caretaker";
 
-  // Two reads, both org-scoped (RLS also enforces it). No per-colony loop: a
-  // single feeding_events query for the whole day powers every row's status.
+  // Schedules matching today (active, non-deleted, one-off today OR weekly
+  // today). Feeders: only their own rows; managers: the whole org. One query
+  // either way — no per-colony/per-schedule calls.
+  let schedulesQuery = supabase
+    .from("feeding_schedules")
+    .select("colony_id, feeder_id")
+    .eq("organisation_id", org.organisation_id)
+    .eq("is_active", true)
+    .is("deleted_at", null)
+    .or(`specific_date.eq.${todayLocal},weekday.eq.${weekdayLocal}`);
+
+  if (!isManager) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    schedulesQuery = schedulesQuery.eq("feeder_id", user?.id ?? "");
+  }
+
+  const { data: scheduleRows } = await schedulesQuery;
+  // colony_ids assigned today (managers: any feeder; feeders: themselves).
+  const assignedColonyIds = new Set(
+    (scheduleRows ?? []).map((s) => s.colony_id as string),
+  );
+
+  // Manager → all active colonies (existing behaviour). Feeder → only the
+  // colonies they're scheduled for today; if none, skip the colonies query.
+  let coloniesQuery = supabase
+    .from("colonies")
+    .select("id, name, feeding_window_start, feeding_window_end")
+    .eq("organisation_id", org.organisation_id)
+    .eq("is_active", true)
+    .is("deleted_at", null);
+  if (!isManager) {
+    coloniesQuery = coloniesQuery.in("id", [...assignedColonyIds]);
+  }
+
+  // Both reads org-scoped (RLS also enforces it). No per-colony loop: a single
+  // feeding_events query for the whole day powers every row's status.
   const [coloniesResult, feedsResult] = await Promise.all([
-    supabase
-      .from("colonies")
-      .select("id, name, feeding_window_start, feeding_window_end")
-      .eq("organisation_id", org.organisation_id)
-      .eq("is_active", true)
-      .is("deleted_at", null),
+    isManager || assignedColonyIds.size > 0
+      ? coloniesQuery
+      : Promise.resolve({ data: [] as ColonyRow[] }),
     supabase
       .from("feeding_events")
       .select("colony_id, observed_at")
@@ -146,6 +185,8 @@ export default async function TodayPage() {
       windowEnd: c.feeding_window_end,
       status: feedingStatus({ fed, minutesAfterClose }),
       fedAt: fedAt.get(c.id) ?? null,
+      // Coverage gap marker is manager-only; feeders already see only their own.
+      assignedToday: isManager ? assignedColonyIds.has(c.id) : null,
     };
   });
 
@@ -206,6 +247,13 @@ export default async function TodayPage() {
               {row.status === "fed" && row.fedAt ? (
                 <span>{timeFmt.format(row.fedAt)}</span>
               ) : null}
+              {row.assignedToday === false ? (
+                // Coverage gap: icon + words, never colour alone (WCAG 1.4.1).
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
+                  <CalendarIcon className="h-3 w-3" aria-hidden />
+                  no one assigned today
+                </span>
+              ) : null}
             </p>
           </div>
           <span className="shrink-0 text-sm font-semibold text-accent">
@@ -229,11 +277,19 @@ export default async function TodayPage() {
       </div>
 
       {rows.length === 0 ? (
-        <EmptyState
-          icon={<PawIcon className="h-7 w-7" />}
-          title="No colonies to feed yet"
-          body="When a colony is added to this organisation, it'll show up here for the day."
-        />
+        isManager ? (
+          <EmptyState
+            icon={<PawIcon className="h-7 w-7" />}
+            title="No colonies to feed yet"
+            body="When a colony is added to this organisation, it'll show up here for the day."
+          />
+        ) : (
+          <EmptyState
+            icon={<CalendarIcon className="h-7 w-7" />}
+            title="No feeds assigned to you today"
+            body="When a caretaker schedules you to feed a colony, it'll appear here."
+          />
+        )
       ) : (
         <div className="flex flex-col gap-6">
           {needsFeeding.length > 0 ? (

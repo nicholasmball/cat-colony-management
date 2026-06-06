@@ -8,16 +8,19 @@ export function ConfirmButton({
   children,
   confirm,
   className,
+  "aria-label": ariaLabel,
 }: {
   children: React.ReactNode;
   confirm: string;
   className?: string;
+  "aria-label"?: string;
 }) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
       disabled={pending}
+      aria-label={ariaLabel}
       onClick={(e) => {
         if (!window.confirm(confirm)) e.preventDefault();
       }}

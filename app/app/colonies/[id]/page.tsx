@@ -4,9 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { photoSrc } from "@/lib/photo";
 import { catLabel, formatStatus, statusTone } from "@/lib/cat-display";
-import { PawIcon, ChevronIcon } from "@/components/icons";
+import { scheduleWhen } from "@/lib/schedule";
+import { createServiceClient } from "@/lib/supabase/service";
+import { PawIcon, ChevronIcon, CalendarIcon } from "@/components/icons";
 import { EmptyState } from "@/components/empty-state";
-import { btnGhost, btnPrimary, card } from "@/lib/ui";
+import { ConfirmButton } from "@/components/confirm-button";
+import { deleteSchedule } from "./schedules/actions";
+import { btnGhost, btnPrimary, card, pill } from "@/lib/ui";
 
 const toneClass: Record<string, string> = {
   good: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300",
@@ -22,6 +26,15 @@ type Cat = {
   colour: string | null;
   status: string;
   photo_url: string | null;
+};
+
+type Schedule = {
+  id: string;
+  feeder_id: string | null;
+  weekday: number | null;
+  specific_date: string | null;
+  approx_time: string | null;
+  notes: string | null;
 };
 
 function hhmm(t: string | null) {
@@ -70,6 +83,31 @@ export default async function ColonyDetail({
   const canManage = org?.role === "admin" || org?.role === "caretaker";
   const start = hhmm(colony.feeding_window_start);
   const end = hhmm(colony.feeding_window_end);
+
+  // Active schedules for this colony, ordered weekday then date.
+  const { data: scheduleData } = await supabase
+    .from("feeding_schedules")
+    .select("id, feeder_id, weekday, specific_date, approx_time, notes")
+    .eq("colony_id", id)
+    .is("deleted_at", null)
+    .order("weekday", { nullsFirst: false })
+    .order("specific_date", { nullsFirst: false });
+  const schedules = (scheduleData ?? []) as Schedule[];
+
+  // Resolve feeder emails once for the distinct feeder ids (no per-row call).
+  const feederEmails = new Map<string, string>();
+  const feederIds = [
+    ...new Set(schedules.map((s) => s.feeder_id).filter((v): v is string => !!v)),
+  ];
+  if (feederIds.length > 0) {
+    const svc = createServiceClient();
+    await Promise.all(
+      feederIds.map(async (uid) => {
+        const { data } = await svc.auth.admin.getUserById(uid);
+        feederEmails.set(uid, data.user?.email ?? "unknown");
+      }),
+    );
+  }
 
   return (
     <div className="flex max-w-3xl flex-col gap-6 px-6 py-6 md:px-10">
@@ -179,6 +217,96 @@ export default async function ColonyDetail({
                 </Link>
               </li>
             ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Feeding schedule ({schedules.length})
+          </h2>
+          {canManage ? (
+            <Link
+              href={`/app/colonies/${id}/schedules/new`}
+              className={`${btnPrimary} text-sm`}
+            >
+              Add schedule
+            </Link>
+          ) : null}
+        </div>
+
+        {schedules.length === 0 ? (
+          <EmptyState
+            icon={<CalendarIcon className="h-7 w-7" />}
+            title="No schedule yet"
+            body="Assign feeders to this colony so it shows up on their Today list."
+            cta={
+              canManage
+                ? {
+                    href: `/app/colonies/${id}/schedules/new`,
+                    label: "Add a schedule",
+                  }
+                : undefined
+            }
+          />
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {schedules.map((s) => {
+              const email = s.feeder_id
+                ? (feederEmails.get(s.feeder_id) ?? "unknown")
+                : "Unassigned";
+              const time = hhmm(s.approx_time);
+              const isOneOff = !!s.specific_date;
+              return (
+                <li
+                  key={s.id}
+                  className={`${card} flex items-center gap-3 px-4 py-3`}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{email}</p>
+                    <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                      <span className={pill}>
+                        {isOneOff ? "★ one-off" : "⟳ weekly"}
+                      </span>
+                      <span>
+                        {scheduleWhen({
+                          weekday: s.weekday,
+                          specific_date: s.specific_date,
+                        })}
+                      </span>
+                      <span aria-hidden>·</span>
+                      <span>{time ? `~${time}` : "no time"}</span>
+                      {s.notes ? (
+                        <span className="truncate">· {s.notes}</span>
+                      ) : null}
+                    </p>
+                  </div>
+                  {canManage ? (
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Link
+                        href={`/app/colonies/${id}/schedules/${s.id}/edit`}
+                        aria-label={`Edit schedule for ${email}`}
+                        className={`${btnGhost} h-9 px-3 text-sm`}
+                      >
+                        Edit
+                      </Link>
+                      <form action={deleteSchedule}>
+                        <input type="hidden" name="colony_id" value={id} />
+                        <input type="hidden" name="schedule_id" value={s.id} />
+                        <ConfirmButton
+                          confirm="Remove this schedule?"
+                          aria-label={`Delete schedule for ${email}`}
+                          className="h-9 rounded-lg border border-red-200 px-3 text-sm font-medium text-red-700 transition hover:bg-red-50 dark:border-red-900 dark:text-red-300"
+                        >
+                          Delete
+                        </ConfirmButton>
+                      </form>
+                    </div>
+                  ) : null}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

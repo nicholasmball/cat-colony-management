@@ -1,0 +1,159 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { getActiveOrg } from "@/lib/active-org";
+
+// A schedulable feeder = an active member whose role is feeder or caretaker.
+const ASSIGNABLE_ROLES = new Set(["feeder", "caretaker"]);
+
+// Manager-only gate shared by every action here. UI also hides these, but the
+// server must never trust that.
+async function requireManagerOrg() {
+  const org = await getActiveOrg();
+  if (!org) redirect("/app");
+  if (org.role !== "admin" && org.role !== "caretaker") {
+    redirect(`/app/colonies`);
+  }
+  return org;
+}
+
+// Validate that `feederId` is an active feeder/caretaker member of the org.
+async function feederIsAssignable(
+  organisationId: string,
+  feederId: string,
+): Promise<boolean> {
+  const svc = createServiceClient();
+  const { data } = await svc
+    .from("memberships")
+    .select("role")
+    .eq("organisation_id", organisationId)
+    .eq("user_id", feederId)
+    .is("deleted_at", null)
+    .maybeSingle();
+  return !!data && ASSIGNABLE_ROLES.has(data.role as string);
+}
+
+// Selected weekday checkboxes arrive as repeated "weekday" fields ("0".."6").
+function parseWeekdays(formData: FormData): number[] {
+  const out = new Set<number>();
+  for (const v of formData.getAll("weekday")) {
+    const n = Number(v);
+    if (Number.isInteger(n) && n >= 0 && n <= 6) out.add(n);
+  }
+  return [...out];
+}
+
+export async function createSchedule(formData: FormData) {
+  const colonyId = String(formData.get("colony_id"));
+  const org = await requireManagerOrg();
+  const newPath = `/app/colonies/${colonyId}/schedules/new`;
+
+  const feederId = String(formData.get("feeder_id") ?? "");
+  if (!feederId || !(await feederIsAssignable(org.organisation_id, feederId))) {
+    redirect(
+      `${newPath}?error=${encodeURIComponent("Choose a feeder for this colony.")}`,
+    );
+  }
+
+  const approxTime = String(formData.get("approx_time") ?? "") || null;
+  const notes = String(formData.get("notes") ?? "").trim() || null;
+  const type = String(formData.get("type") ?? "weekly");
+
+  const base = {
+    organisation_id: org.organisation_id,
+    colony_id: colonyId,
+    feeder_id: feederId,
+    approx_time: approxTime,
+    notes,
+  };
+
+  let rows: Array<Record<string, unknown>>;
+  if (type === "one_off") {
+    const date = String(formData.get("specific_date") ?? "");
+    if (!date) {
+      redirect(
+        `${newPath}?error=${encodeURIComponent("Pick a date to save this one-off feed.")}`,
+      );
+    }
+    rows = [{ ...base, specific_date: date, weekday: null }];
+  } else {
+    const weekdays = parseWeekdays(formData);
+    if (weekdays.length === 0) {
+      redirect(
+        `${newPath}?error=${encodeURIComponent("Choose at least one weekday.")}`,
+      );
+    }
+    // One DB row per selected weekday so Today's filter is a plain weekday match.
+    rows = weekdays.map((w) => ({ ...base, weekday: w, specific_date: null }));
+  }
+
+  const supabase = await createClient();
+  // RLS also enforces org + manager role on insert.
+  const { error } = await supabase.from("feeding_schedules").insert(rows);
+  if (error) {
+    redirect(`${newPath}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath(`/app/colonies/${colonyId}`);
+  redirect(`/app/colonies/${colonyId}`);
+}
+
+export async function updateSchedule(formData: FormData) {
+  const colonyId = String(formData.get("colony_id"));
+  const scheduleId = String(formData.get("schedule_id"));
+  const org = await requireManagerOrg();
+  const editPath = `/app/colonies/${colonyId}/schedules/${scheduleId}/edit`;
+
+  const feederId = String(formData.get("feeder_id") ?? "");
+  if (!feederId || !(await feederIsAssignable(org.organisation_id, feederId))) {
+    redirect(
+      `${editPath}?error=${encodeURIComponent("Choose a feeder for this colony.")}`,
+    );
+  }
+
+  const approxTime = String(formData.get("approx_time") ?? "") || null;
+  const notes = String(formData.get("notes") ?? "").trim() || null;
+  const isActive = formData.get("is_active") === "on";
+
+  const supabase = await createClient();
+  // RLS scopes this to the caller's org + manager role; row id is enough.
+  const { error } = await supabase
+    .from("feeding_schedules")
+    .update({
+      feeder_id: feederId,
+      approx_time: approxTime,
+      notes,
+      is_active: isActive,
+    })
+    .eq("id", scheduleId);
+  if (error) {
+    redirect(`${editPath}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath(`/app/colonies/${colonyId}`);
+  redirect(`/app/colonies/${colonyId}`);
+}
+
+export async function deleteSchedule(formData: FormData) {
+  const colonyId = String(formData.get("colony_id"));
+  const scheduleId = String(formData.get("schedule_id"));
+  await requireManagerOrg();
+
+  const supabase = await createClient();
+  // Soft delete — covered by the manager UPDATE policy.
+  const { error } = await supabase
+    .from("feeding_schedules")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", scheduleId);
+  if (error) {
+    redirect(
+      `/app/colonies/${colonyId}?error=${encodeURIComponent(error.message)}`,
+    );
+  }
+
+  revalidatePath(`/app/colonies/${colonyId}`);
+  redirect(`/app/colonies/${colonyId}`);
+}
