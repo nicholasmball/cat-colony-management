@@ -1,6 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 
-export type ActiveOrg = { organisation_id: string; name: string; role: string };
+export type ActiveOrg = {
+  organisation_id: string;
+  name: string;
+  role: string;
+  timezone: string;
+};
 
 // MVP: the user's first (active) membership is the "active" organisation.
 // A proper org switcher is deferred until multi-org is real (post-MVP).
@@ -16,7 +21,7 @@ export async function getActiveOrg(): Promise<ActiveOrg | null> {
   // else's row (e.g. an admin's) and be mis-scoped / over-privileged.
   const { data } = await supabase
     .from("memberships")
-    .select("organisation_id, role, organisations(name)")
+    .select("organisation_id, role, organisations(name, timezone)")
     .eq("user_id", user.id)
     .is("deleted_at", null)
     .order("created_at", { ascending: true })
@@ -26,7 +31,7 @@ export async function getActiveOrg(): Promise<ActiveOrg | null> {
     | {
         organisation_id: string;
         role: string;
-        organisations: { name: string } | null;
+        organisations: { name: string; timezone: string | null } | null;
       }
     | undefined;
   if (!row) return null;
@@ -34,5 +39,7 @@ export async function getActiveOrg(): Promise<ActiveOrg | null> {
     organisation_id: row.organisation_id,
     name: row.organisations?.name ?? "Organisation",
     role: row.role,
+    // Falls back to Lisbon if somehow unset (column is NOT NULL default Lisbon).
+    timezone: row.organisations?.timezone ?? "Europe/Lisbon",
   };
 }
