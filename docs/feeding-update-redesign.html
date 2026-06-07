@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Feeding update — redesign (Fed vs Save hierarchy)</title>
+<link
+  href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Raleway:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  :root{
+    --bg:#f7f4f2; --fg:#191919; --muted:#6b6b6b; --accent:#170df2;
+    --surface:#fff; --border:#e7e2dd; --radius:14px;
+    --emerald:#059669;  /* emerald-600 — Fed-on + Seen-on */
+    --amber:#f59e0b;    /* amber-500  — Not-seen-on */
+    --red:#dc2626;      /* red-600    — flags-on + Concern-on */
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:"Raleway",system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.55}
+  .wrap{max-width:980px;margin:0 auto;padding:40px 24px 80px}
+  h1,h2,h3{font-family:"Cormorant Garamond",Georgia,serif;font-weight:600;line-height:1.15}
+  h1{font-size:2.6rem;margin:0 0 .2em}
+  h2{font-size:1.7rem;margin:2.2em 0 .5em;border-bottom:1px solid var(--border);padding-bottom:.2em}
+  h3{font-size:1.2rem;margin:1.4em 0 .4em}
+  .lede{color:var(--muted);font-size:1.05rem;max-width:64ch}
+  code{background:#efe9e4;padding:.1em .4em;border-radius:5px;font-size:.86em}
+  kbd{background:#fff;border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:0 .35em;font-size:.82em}
+
+  /* phone + desktop frames (house style) */
+  .phones{display:flex;gap:28px;flex-wrap:wrap;margin:18px 0;align-items:flex-start}
+  .phone{width:330px;border:1px solid var(--border);border-radius:24px;background:var(--surface);
+    padding:14px;box-shadow:0 6px 24px rgba(0,0,0,.06)}
+  .phone .cap{font-size:.78rem;color:var(--muted);text-align:center;margin-bottom:8px;font-weight:600}
+  .screen{background:var(--bg);border-radius:16px;padding:14px;min-height:420px}
+  .screen.w375{width:347px} /* 375px device − ~14px frame padding each side, shown to-scale */
+  .crumb{color:var(--accent);font-size:.82rem;margin-bottom:8px}
+  .title{font-family:"Cormorant Garamond",serif;font-size:1.6rem;margin:.1em 0 .35em}
+
+  /* section heading like the form's muted uppercase Cats label */
+  .seclbl{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 2px 7px}
+
+  /* ── segmented "Was the colony fed?" — same family as the tri-toggle ── */
+  .seg2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .segbtn{min-height:44px;border:1px solid var(--border);border-radius:12px;background:#fff;
+    font-size:.95rem;font-weight:600;color:var(--fg);display:flex;align-items:center;
+    justify-content:center;gap:6px;cursor:pointer}
+  .segbtn.on-fed{background:var(--emerald);border-color:var(--emerald);color:#fff;font-weight:700}
+  .segbtn.focus{outline:3px solid var(--accent);outline-offset:2px}
+
+  /* flag chips — unchanged, red-on / outline-off, 3-up */
+  .chips{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
+  .chip{min-height:44px;border:1px solid var(--border);border-radius:10px;background:#fff;
+    font-size:.82rem;font-weight:500;color:var(--fg);display:flex;align-items:center;justify-content:center;text-align:center}
+  .chip.on{background:var(--red);border-color:var(--red);color:#fff;font-weight:600}
+
+  /* cats tri-toggle — unchanged */
+  .cat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px;margin-bottom:9px}
+  .cat .nm{font-size:.86rem;font-weight:600;margin-bottom:8px}
+  .tri{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .tribtn{min-height:44px;border:1px solid var(--border);border-radius:10px;background:#fff;
+    font-size:.8rem;font-weight:500;color:var(--fg);display:flex;align-items:center;justify-content:center}
+  .tribtn.on-seen{background:var(--emerald);border-color:var(--emerald);color:#fff;font-weight:600}
+  .tribtn.on-ns{background:var(--amber);border-color:var(--amber);color:#fff;font-weight:600}
+  .tribtn.on-con{background:var(--red);border-color:var(--red);color:#fff;font-weight:600}
+
+  .nocats{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;
+    font-size:.82rem;color:var(--muted)}
+
+  .notes-lbl{font-size:.82rem;font-weight:600;display:block;margin:14px 2px 6px}
+  .ta{width:100%;background:#fff;border:1px solid var(--border);border-radius:10px;padding:9px 11px;
+    font-size:.82rem;color:var(--muted);min-height:48px}
+
+  /* the ONLY accent-blue button on the page */
+  .save{position:sticky;bottom:8px;display:flex;align-items:center;justify-content:center;
+    background:var(--accent);color:#fff;border-radius:11px;min-height:48px;font-weight:700;
+    font-size:.95rem;margin-top:16px;box-shadow:0 4px 14px rgba(23,13,242,.22)}
+
+  .errbanner{background:#fde7e7;border:1px solid #f3bcbc;color:#a12525;border-radius:10px;
+    padding:10px 12px;font-size:.82rem;margin-bottom:12px}
+
+  .note{background:#fff;border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:8px;padding:12px 14px;margin:14px 0;font-size:.92rem}
+  .note.warn{border-left-color:var(--amber)}
+
+  /* before/after split */
+  .ba{display:flex;gap:22px;flex-wrap:wrap;margin:16px 0}
+  .ba .col{flex:1;min-width:260px;background:var(--surface);border:1px solid var(--border);
+    border-radius:14px;padding:16px}
+  .ba .col h4{margin:0 0 4px;font-family:"Raleway",sans-serif;font-size:.82rem;text-transform:uppercase;
+    letter-spacing:.04em;color:var(--muted)}
+  .ba .col .verdict{font-size:.8rem;margin-top:10px}
+  .ba .bad{color:#a12525;font-weight:600}
+  .ba .good{color:var(--emerald);font-weight:600}
+  .blueblock{display:flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;
+    border-radius:11px;min-height:46px;font-weight:700;font-size:.9rem;margin:8px 0}
+
+  /* desktop frame */
+  .desk{border:1px solid var(--border);border-radius:14px;background:var(--surface);
+    box-shadow:0 6px 24px rgba(0,0,0,.06);overflow:hidden;margin:18px 0}
+  .desk .bar{display:flex;align-items:center;gap:7px;padding:9px 12px;background:#efe9e4;border-bottom:1px solid var(--border)}
+  .desk .bar i{width:11px;height:11px;border-radius:50%;background:#cfc7bf;display:inline-block}
+  .desk .bar .url{margin-left:10px;font-size:.74rem;color:var(--muted);background:#fff;border-radius:6px;padding:3px 10px}
+  .desk .app{display:flex;min-height:440px}
+  .desk .side{width:200px;flex:0 0 auto;border-right:1px solid var(--border);padding:16px 12px;background:#fbf9f7}
+  .desk .side .brand{font-family:"Cormorant Garamond",serif;font-size:1.2rem;margin-bottom:14px}
+  .desk .side a{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font-size:.84rem;color:var(--fg);margin-bottom:3px}
+  .desk .side a.on{background:#e9e6ff;color:var(--accent);font-weight:600}
+  .desk .main{flex:1;padding:22px 28px}
+  .desk .form{max-width:520px} /* mirrors max-w-xl */
+
+  ul.ac{padding-left:0;list-style:none}
+  ul.ac li{padding:6px 0 6px 26px;position:relative}
+  ul.ac li::before{content:"✓";position:absolute;left:0;color:var(--accent);font-weight:700}
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:.92rem}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{font-size:.74rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .tag{font-size:.72rem;background:#efe9e4;border-radius:6px;padding:1px 7px}
+  .swatch{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:middle;margin-right:5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Feeding update — redesign</h1>
+  <p class="lede">Step 2 (UX) of the <strong>"Redesign feeding-update page"</strong> task.
+  <strong>Step 1 (Requirements) confirmed the problem and the fix:</strong> the current <code>✓ Fed</code> toggle and
+  the <code>Save update</code> submit are <em>both</em> full-width filled accent-blue, so users can't tell the
+  selection toggle from the primary action — two equally-weighted blue buttons. <strong>Confirmed fix (Option A):</strong>
+  replace the Fed toggle with a labelled <strong>segmented single-select "Was the colony fed?"</strong> control
+  (<code>✓ Fed</code> / <code>Not fed</code>), green-on (<code>emerald-600</code>, the same family as the existing
+  <em>Seen</em> sighting) / outline-off. Filled accent-blue is now reserved for the <strong>single</strong> primary
+  CTA, <code>Save update</code>. Fed, flags and sightings become one consistent family of selection controls; none of
+  them is accent-blue.</p>
+
+  <div class="note"><strong>Presentation-only — data contract FROZEN.</strong> Hidden <code>fed</code> still posts
+  <code>"1"</code>/<code>"0"</code> (defaults ON); flags <code>problem</code>/<code>food_issue</code>/<code>danger</code>
+  and per-cat <code>cat:&lt;id&gt;</code> (<code>seen|not_seen|concern|""</code>) are unchanged; <code>submitFeeding</code>
+  is untouched. <code>Save update</code> is the <strong>only</strong> <code>type="submit"</code>; every selection control
+  (Fed, flags, sightings) is <code>type="button"</code>. No new colours — reuse the existing emerald / amber / red and
+  <code>border-border</code> tokens from <code>lib/ui.ts</code> + <code>components/feed-form.tsx</code>.</div>
+
+  <h2>1. The problem — before / after</h2>
+  <p class="lede">Same screen, only the Fed control changes. On the left, two filled-blue blocks compete for "what's the
+  action here?". On the right, one green selection state up top and one blue action at the bottom — hierarchy restored.</p>
+
+  <div class="ba">
+    <div class="col">
+      <h4>Before — today's build</h4>
+      <div class="blueblock">✓ Fed</div>
+      <div class="chips" style="margin-top:8px">
+        <div class="chip">Problem</div><div class="chip">Food issue</div><div class="chip">Danger</div>
+      </div>
+      <div style="font-size:.74rem;color:var(--muted);margin:10px 0 0">…cats, notes…</div>
+      <div class="blueblock" style="margin-top:8px">Save update</div>
+      <div class="verdict"><span class="bad">✗ Two identical accent-blue buttons.</span> "Fed" looks like a submit;
+      the real submit looks like just another toggle. The eye can't find the one primary action (Fitts / single-CTA).</div>
+    </div>
+    <div class="col">
+      <h4>After — this redesign</h4>
+      <div class="seg2">
+        <div class="segbtn on-fed">✓ Fed</div>
+        <div class="segbtn">Not fed</div>
+      </div>
+      <div class="chips" style="margin-top:8px">
+        <div class="chip">Problem</div><div class="chip">Food issue</div><div class="chip">Danger</div>
+      </div>
+      <div style="font-size:.74rem;color:var(--muted);margin:10px 0 0">…cats, notes…</div>
+      <div class="blueblock" style="margin-top:8px">Save update</div>
+      <div class="verdict"><span class="good">✓ One blue action only.</span> Fed is a green selection in the same
+      family as Seen / flags / sightings; <code>Save update</code> is the lone accent-blue element, unmistakably the CTA.</div>
+    </div>
+  </div>
+
+  <h2>2. The "Was the colony fed?" segmented control — both states</h2>
+  <p class="lede">A labelled section heading, then a 2-segment single-select. Exactly one segment is always selected;
+  Fed is pre-selected by default (the common case). Each segment is ≥44px tall. The on-state deliberately matches the
+  <em>Seen</em> sighting below it — same emerald-600 fill, white text — so the whole form reads as one family of
+  selection controls (Gestalt similarity).</p>
+
+  <div class="phones">
+    <div class="phone">
+      <div class="cap">Default — Fed selected</div>
+      <div class="screen">
+        <div class="seclbl">Was the colony fed?</div>
+        <div class="seg2" role="radiogroup" aria-label="Was the colony fed?">
+          <div class="segbtn on-fed focus" role="radio" aria-checked="true">✓ Fed</div>
+          <div class="segbtn" role="radio" aria-checked="false">Not fed</div>
+        </div>
+        <div style="margin-top:14px" class="seclbl">For comparison — a Seen sighting</div>
+        <div class="tri"><span class="tribtn on-seen">Seen</span><span class="tribtn">Not seen</span><span class="tribtn">Concern</span></div>
+        <div class="note" style="margin-top:14px;font-size:.78rem">Same emerald fill + white text + bold weight as
+        <em>Seen</em> → the green "on" reads as the same selection language across the page.</div>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="cap">Flipped — Not fed selected</div>
+      <div class="screen">
+        <div class="seclbl">Was the colony fed?</div>
+        <div class="seg2" role="radiogroup" aria-label="Was the colony fed?">
+          <div class="segbtn" role="radio" aria-checked="false">✓ Fed</div>
+          <div class="segbtn on-fed" role="radio" aria-checked="true" style="background:#6b6b6b;border-color:#6b6b6b">Not fed</div>
+        </div>
+        <div class="note warn" style="margin-top:14px;font-size:.78rem"><strong>On-cue is never colour-alone.</strong>
+        The selected segment carries <strong>weight (bold)</strong> + a <strong>fill</strong> + (for Fed) the
+        <strong>✓ glyph</strong>; the unselected one is a plain outline. "Not fed" selected uses a neutral
+        <code>muted</code> fill (it isn't a positive state, so it must not borrow the emerald success colour — green
+        stays reserved for "Fed" / "Seen").</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note"><strong>Engineer note — reuses the existing tri-toggle, no new primitive.</strong> Render the two
+  segments exactly like the sighting buttons in <code>components/feed-form.tsx</code>: a <code>grid grid-cols-2 gap-2</code>
+  wrapper, each a <code>type="button"</code> with <code>min-h-11 rounded-lg border</code>. <strong>Fed-on</strong> =
+  <code>border-emerald-600 bg-emerald-600 text-white font-semibold</code> (identical to the <em>Seen</em> option's
+  <code>on</code> class). <strong>Not-fed-on</strong> = a neutral selected style
+  (<code>border-muted bg-muted text-white</code> / equivalent) so it doesn't read as success-green. Off =
+  <code>border-border text-foreground</code>. The hidden <code>&lt;input name="fed"&gt;</code> stays and posts
+  <code>"1"</code> when Fed is the chosen segment, <code>"0"</code> when Not fed — same state, same default (ON),
+  same payload as today.</div>
+
+  <h2>3. Full page — mobile (375px)</h2>
+  <p class="lede">Top-to-bottom so the restored hierarchy is visible end-to-end: green segmented <em>Fed</em> → red
+  flag chips (unchanged) → emerald/amber/red cat tri-toggles (unchanged) → Notes → the single sticky accent-blue
+  <em>Save update</em>. Shown to-scale at the 375px device width; the 2-up segmented control and the 3-up grids don't
+  overflow.</p>
+
+  <div class="phones">
+    <div class="phone">
+      <div class="cap">Default state · 375px · Fed pre-selected</div>
+      <div class="screen w375">
+        <div class="crumb">← Horta das Figueiras</div>
+        <div class="title">Feeding update</div>
+
+        <div class="seclbl">Was the colony fed?</div>
+        <div class="seg2" role="radiogroup" aria-label="Was the colony fed?">
+          <div class="segbtn on-fed" role="radio" aria-checked="true">✓ Fed</div>
+          <div class="segbtn" role="radio" aria-checked="false">Not fed</div>
+        </div>
+        <div class="chips" role="group" aria-label="Colony flags">
+          <div class="chip">Problem</div><div class="chip">Food issue</div><div class="chip">Danger</div>
+        </div>
+
+        <div style="margin-top:16px" class="seclbl">Cats</div>
+        <div class="cat">
+          <div class="nm">Ginger</div>
+          <div class="tri" role="group" aria-label="Ginger sighting">
+            <span class="tribtn on-seen">Seen</span><span class="tribtn">Not seen</span><span class="tribtn">Concern</span>
+          </div>
+        </div>
+        <div class="cat">
+          <div class="nm">Smudge</div>
+          <div class="tri" role="group" aria-label="Smudge sighting">
+            <span class="tribtn">Seen</span><span class="tribtn">Not seen</span><span class="tribtn">Concern</span>
+          </div>
+        </div>
+
+        <label class="notes-lbl" for="n-a">Notes (optional)</label>
+        <div class="ta" id="n-a">&nbsp;</div>
+
+        <div class="save">Save update</div>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="cap">Not-fed selected + flags & sightings active</div>
+      <div class="screen w375">
+        <div class="crumb">← Quinta do Lago</div>
+        <div class="title">Feeding update</div>
+
+        <div class="seclbl">Was the colony fed?</div>
+        <div class="seg2" role="radiogroup" aria-label="Was the colony fed?">
+          <div class="segbtn" role="radio" aria-checked="false">✓ Fed</div>
+          <div class="segbtn on-fed" role="radio" aria-checked="true" style="background:#6b6b6b;border-color:#6b6b6b">Not fed</div>
+        </div>
+        <div class="chips" role="group" aria-label="Colony flags">
+          <div class="chip on">Problem</div><div class="chip">Food issue</div><div class="chip on">Danger</div>
+        </div>
+
+        <div style="margin-top:16px" class="seclbl">Cats</div>
+        <div class="cat">
+          <div class="nm">Ginger</div>
+          <div class="tri" role="group" aria-label="Ginger sighting">
+            <span class="tribtn">Seen</span><span class="tribtn on-ns">Not seen</span><span class="tribtn">Concern</span>
+          </div>
+        </div>
+        <div class="cat">
+          <div class="nm">Smudge</div>
+          <div class="tri" role="group" aria-label="Smudge sighting">
+            <span class="tribtn">Seen</span><span class="tribtn">Not seen</span><span class="tribtn on-con">Concern</span>
+          </div>
+        </div>
+
+        <label class="notes-lbl" for="n-b">Notes (optional)</label>
+        <div class="ta" id="n-b" style="color:var(--fg)">Bowl was tipped, no dry food left.</div>
+
+        <div class="save">Save update</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>4. Edge states</h2>
+  <p class="lede">No-cats colony · long cat name · error banner — proving Fed + flags + Save keep working in every shape.</p>
+
+  <div class="phones">
+    <div class="phone">
+      <div class="cap">No cats in colony · error banner</div>
+      <div class="screen w375">
+        <div class="crumb">← New colony, Olhão</div>
+        <div class="title">Feeding update</div>
+        <div class="errbanner" role="alert">Couldn't save — you're offline. We'll queue this and sync when you're back.</div>
+
+        <div class="seclbl">Was the colony fed?</div>
+        <div class="seg2" role="radiogroup" aria-label="Was the colony fed?">
+          <div class="segbtn on-fed" role="radio" aria-checked="true">✓ Fed</div>
+          <div class="segbtn" role="radio" aria-checked="false">Not fed</div>
+        </div>
+        <div class="chips" role="group" aria-label="Colony flags">
+          <div class="chip">Problem</div><div class="chip on">Food issue</div><div class="chip">Danger</div>
+        </div>
+
+        <div style="margin-top:16px" class="seclbl">Cats</div>
+        <div class="nocats">No cats in this colony yet.</div>
+
+        <label class="notes-lbl" for="n-c">Notes (optional)</label>
+        <div class="ta" id="n-c">&nbsp;</div>
+
+        <div class="save">Save update</div>
+        <div class="note" style="font-size:.76rem">The error banner sits at the top of the page (rendered by
+        <code>feed/page.tsx</code> from <code>?error=</code>, <code>role="alert"</code>), above the form — unchanged.
+        Fed defaults ON, flags + Save all work with zero cats; the empty card is informational, never a blocker.</div>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="cap">Long cat name — wraps, never clips the tri-toggle</div>
+      <div class="screen w375">
+        <div class="crumb">← Horta das Figueiras</div>
+        <div class="title">Feeding update</div>
+
+        <div class="seclbl">Was the colony fed?</div>
+        <div class="seg2" role="radiogroup" aria-label="Was the colony fed?">
+          <div class="segbtn on-fed" role="radio" aria-checked="true">✓ Fed</div>
+          <div class="segbtn" role="radio" aria-checked="false">Not fed</div>
+        </div>
+
+        <div style="margin-top:16px" class="seclbl">Cats</div>
+        <div class="cat">
+          <div class="nm">Sir Reginald Whiskers-McFluffington III (the orange one by the wall)</div>
+          <div class="tri" role="group" aria-label="Sir Reginald sighting">
+            <span class="tribtn on-seen">Seen</span><span class="tribtn">Not seen</span><span class="tribtn">Concern</span>
+          </div>
+        </div>
+        <div class="cat">
+          <div class="nm">temp-2025-0042</div>
+          <div class="tri" role="group" aria-label="temp cat sighting">
+            <span class="tribtn">Seen</span><span class="tribtn">Not seen</span><span class="tribtn">Concern</span>
+          </div>
+        </div>
+
+        <div class="save">Save update</div>
+        <div class="note" style="font-size:.76rem">The name sits on its own line above the tri-toggle (as in the
+        current card), so long names wrap freely and the three ≥44px buttons keep their full width — no truncation, no
+        overflow. Nameless cats fall back to <code>temp_id</code> then "Unnamed cat", unchanged.</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>5. Full page — desktop (within <code>max-w-xl</code>)</h2>
+  <p class="lede">Same route, same markup, same column cap. The form stays left-aligned in a readable
+  <code>max-w-xl</code> column inside the app shell — a wide row of toggles is worse to scan and to hit. The single
+  accent-blue <em>Save update</em> sits at the foot of that column; everything above it is green/red/amber selection.</p>
+
+  <div class="desk">
+    <div class="bar"><i></i><i></i><i></i><span class="url">app.streetcatsoftavira.org/app/colonies/horta/feed</span></div>
+    <div class="app">
+      <div class="side">
+        <div class="brand">Street Cats 🐾</div>
+        <a><span aria-hidden="true">🗓</span> Today</a>
+        <a class="on"><span aria-hidden="true">📍</span> Colonies</a>
+        <a><span aria-hidden="true">👥</span> Members</a>
+        <a><span aria-hidden="true">🏠</span> Organisation</a>
+      </div>
+      <div class="main">
+        <div class="form">
+          <div class="crumb">← Horta das Figueiras</div>
+          <div class="title" style="font-size:1.9rem">Feeding update</div>
+
+          <div class="seclbl" style="margin-top:14px">Was the colony fed?</div>
+          <div class="seg2" role="radiogroup" aria-label="Was the colony fed?">
+            <div class="segbtn on-fed" role="radio" aria-checked="true">✓ Fed</div>
+            <div class="segbtn" role="radio" aria-checked="false">Not fed</div>
+          </div>
+          <div class="chips" role="group" aria-label="Colony flags">
+            <div class="chip">Problem</div><div class="chip on">Food issue</div><div class="chip">Danger</div>
+          </div>
+
+          <div style="margin-top:16px" class="seclbl">Cats</div>
+          <div class="cat">
+            <div class="nm">Ginger</div>
+            <div class="tri"><span class="tribtn on-seen">Seen</span><span class="tribtn">Not seen</span><span class="tribtn">Concern</span></div>
+          </div>
+          <div class="cat">
+            <div class="nm">Smudge</div>
+            <div class="tri"><span class="tribtn">Seen</span><span class="tribtn on-con">Concern → </span><span class="tribtn">…</span></div>
+          </div>
+
+          <label class="notes-lbl" for="n-d">Notes (optional)</label>
+          <div class="ta" id="n-d">&nbsp;</div>
+
+          <div class="save" style="position:static">Save update</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>6. Accessibility notes (§)</h2>
+  <ul class="ac">
+    <li><strong>§ Segmented = single-select semantics.</strong> The two segments are a
+    <code>role="radiogroup"</code> labelled "Was the colony fed?" (its visible heading), with each segment a
+    <code>role="radio"</code> / <code>aria-checked</code> — exactly one checked at all times. (The current code uses a
+    single <code>aria-pressed</code> toggle button; either a radiogroup or a 2-button <code>aria-pressed</code> pair is
+    acceptable as long as the <em>selected</em>/<em>unselected</em> state is exposed and mutually exclusive. The
+    heading must be programmatically associated as the group label.)</li>
+    <li><strong>§ Never colour-alone.</strong> The selected segment is signalled by <strong>fill + bold weight + the
+    ✓ glyph</strong> (Fed) / fill + bold (Not fed), not hue. Legible in greyscale and to colour-blind users; mirrors the
+    Step-1 rule already used for flags and sightings.</li>
+    <li><strong>§ "Not fed" doesn't borrow success-green.</strong> Emerald-600 stays reserved for the positive states
+    (Fed / Seen). "Not fed" selected uses the neutral <code>muted</code> fill so colour meaning stays honest across the form.</li>
+    <li><strong>§ ≥44px targets.</strong> Both Fed segments, all three flag chips, every sighting button and Save are
+    ≥44px tall (<code>min-h-11</code>+); the 2-up and 3-up grids hold full-width hit areas at 375px with no overflow.</li>
+    <li><strong>§ Visible focus.</strong> A <code>focus-visible</code> accent ring (≈3px, offset) on each control —
+    the same visible focus the design system already applies — keeps the keyboard position obvious.</li>
+    <li><strong>§ Keyboard order.</strong> Linear top-to-bottom: <kbd>Tab</kbd> reaches Fed → flags → cats
+    (Seen/Not-seen/Concern per cat) → Notes → <strong>Save update</strong>. As a radiogroup, the Fed segments are one
+    tab stop with <kbd>←</kbd>/<kbd>→</kbd> to switch; <kbd>Space</kbd>/<kbd>Enter</kbd> selects. Save is the only
+    control that submits.</li>
+    <li><strong>§ Visible label association.</strong> "Was the colony fed?" is a real on-screen heading tied to the
+    group (not a placeholder); "Cats" and "Notes (optional)" keep their existing labels — recognition over recall, no
+    hidden meaning.</li>
+    <li><strong>§ Error banner.</strong> The top-of-page banner keeps <code>role="alert"</code> so it announces on
+    arrival; it sits above the form and never blocks Fed/flags/Save.</li>
+  </ul>
+
+  <h2>7. Elements → Acceptance Criteria mapping</h2>
+  <table>
+    <tr><th>UI element</th><th>On-state token</th><th>Posts</th><th>Step-1 acceptance criterion</th><th>Shown in</th></tr>
+    <tr>
+      <td><span class="swatch" style="background:var(--emerald)"></span><strong>"Was the colony fed?"</strong> segmented (✓ Fed / Not fed)</td>
+      <td><code>border-emerald-600 bg-emerald-600 text-white</code> (Fed) · neutral muted (Not fed)</td>
+      <td>hidden <code>fed</code> = <code>"1"</code>/<code>"0"</code>, default ON</td>
+      <td>Fix = Option A segmented single-select; green-on matching <em>Seen</em>; Fed no longer accent-blue; default ON; frozen payload</td>
+      <td>§1, §2, §3, §5</td>
+    </tr>
+    <tr>
+      <td><span class="swatch" style="background:var(--accent)"></span><strong>Save update</strong> (sticky)</td>
+      <td><code>btnPrimary</code> (accent) — the only blue</td>
+      <td>the only <code>type="submit"</code> → <code>submitFeeding</code></td>
+      <td>Accent-blue reserved for the single primary CTA; hierarchy restored; <code>submitFeeding</code> untouched</td>
+      <td>§1, §3, §5</td>
+    </tr>
+    <tr>
+      <td><span class="swatch" style="background:var(--red)"></span><strong>Flags</strong> Problem / Food issue / Danger</td>
+      <td><code>border-red-600 bg-red-600 text-white</code> (unchanged)</td>
+      <td><code>problem</code>/<code>food_issue</code>/<code>danger</code> = <code>"1"</code>/<code>"0"</code></td>
+      <td>Flags unchanged, red-on/outline-off, <code>type="button"</code>, frozen payload</td>
+      <td>§3, §4, §5</td>
+    </tr>
+    <tr>
+      <td><span class="swatch" style="background:var(--emerald)"></span><span class="swatch" style="background:var(--amber)"></span><span class="swatch" style="background:var(--red)"></span><strong>Cat sightings</strong> Seen / Not-seen / Concern</td>
+      <td>emerald / amber-500 / red-600 (unchanged)</td>
+      <td><code>cat:&lt;id&gt;</code> = <code>seen|not_seen|concern|""</code></td>
+      <td>Tri-toggle unchanged; Fed-on deliberately matches Seen-on (Gestalt similarity)</td>
+      <td>§2, §3, §4, §5</td>
+    </tr>
+    <tr>
+      <td><strong>No-cats card</strong></td>
+      <td>—</td><td>—</td>
+      <td>"No cats in this colony yet." still shows; Fed + flags + Save still work</td>
+      <td>§4</td>
+    </tr>
+    <tr>
+      <td><strong>Long name / temp_id fallback</strong></td>
+      <td>—</td><td>—</td>
+      <td>Cat records accept incomplete data; long names wrap, never clip the toggle</td>
+      <td>§4</td>
+    </tr>
+    <tr>
+      <td><strong>Error banner</strong></td>
+      <td><code>role="alert"</code> red</td><td>—</td>
+      <td>Top-of-page error, announced, non-blocking</td>
+      <td>§4</td>
+    </tr>
+    <tr>
+      <td><strong>Notes</strong></td>
+      <td><code>input</code> token</td>
+      <td><code>notes</code> (optional)</td>
+      <td>Optional textarea, unchanged</td>
+      <td>§3, §4, §5</td>
+    </tr>
+  </table>
+
+  <div class="note"><strong>New primitive needed?</strong> None. The segmented "Was the colony fed?" control is the
+  existing tri-toggle pattern from <code>components/feed-form.tsx</code> at <code>grid-cols-2</code>, reusing the
+  <em>Seen</em> option's emerald-600 on-class verbatim and the standard <code>border-border</code> off-state. Pure
+  presentation: the hidden <code>fed</code> input, its default-ON state, and <code>submitFeeding</code> are all
+  untouched.</div>
+</div>
+</body>
+</html>
