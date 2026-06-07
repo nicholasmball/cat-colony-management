@@ -56,18 +56,50 @@ export function FeedForm({
       ))}
 
       <section className="flex flex-col gap-3">
-        <button
-          type="button"
-          onClick={() => setFed((v) => !v)}
-          aria-pressed={fed}
-          className={`min-h-14 rounded-xl border text-base font-semibold transition ${
-            fed
-              ? "border-accent bg-accent text-accent-foreground"
-              : "border-border text-foreground"
-          }`}
-        >
-          {fed ? "✓ Fed" : "Mark as fed"}
-        </button>
+        <div className="flex flex-col gap-2">
+          <h2
+            id="fed-label"
+            className="text-xs font-semibold uppercase tracking-wide text-muted"
+          >
+            Was the colony fed?
+          </h2>
+          <div
+            role="radiogroup"
+            aria-labelledby="fed-label"
+            className="grid grid-cols-2 gap-2"
+          >
+            {/* Single-select: exactly one of Fed / Not fed is always chosen.
+                Fed-on reuses the "Seen" sighting's emerald on-class so the form
+                reads as one family; "Not fed" uses a neutral-strong fill
+                (foreground/background) — selected but not success-green. */}
+            <button
+              type="button"
+              role="radio"
+              aria-checked={fed}
+              onClick={() => setFed(true)}
+              className={`min-h-12 rounded-lg border text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/25 ${
+                fed
+                  ? "border-emerald-600 bg-emerald-600 font-semibold text-white"
+                  : "border-border font-medium text-foreground"
+              }`}
+            >
+              ✓ Fed
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={!fed}
+              onClick={() => setFed(false)}
+              className={`min-h-12 rounded-lg border text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/25 ${
+                !fed
+                  ? "border-foreground bg-foreground font-semibold text-background"
+                  : "border-border font-medium text-foreground"
+              }`}
+            >
+              Not fed
+            </button>
+          </div>
+        </div>
         <div className="grid grid-cols-3 gap-2">
           {colonyFlags.map((f) => {
             const on = !!flags[f.key];
