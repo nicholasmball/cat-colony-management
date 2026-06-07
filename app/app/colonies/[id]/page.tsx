@@ -12,6 +12,9 @@ import { ConfirmButton } from "@/components/confirm-button";
 import { deleteSchedule } from "./schedules/actions";
 import { btnGhost, btnPrimary, card, pill } from "@/lib/ui";
 
+const errorClass =
+  "rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/60 dark:text-red-300";
+
 const toneClass: Record<string, string> = {
   good: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300",
   warn: "bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300",
@@ -46,10 +49,10 @@ export default async function ColonyDetail({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ updated?: string }>;
+  searchParams: Promise<{ updated?: string; error?: string }>;
 }) {
   const { id } = await params;
-  const { updated } = await searchParams;
+  const { updated, error } = await searchParams;
   const org = await getActiveOrg();
   const supabase = await createClient();
 
@@ -137,6 +140,12 @@ export default async function ColonyDetail({
 
       {colony.notes ? (
         <p className={`${card} p-4 text-sm`}>{colony.notes}</p>
+      ) : null}
+
+      {error ? (
+        <p role="alert" className={errorClass}>
+          {error}
+        </p>
       ) : null}
 
       {updated ? (

@@ -3,8 +3,10 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
 import { deleteObject } from "@/lib/storage/r2";
+import { isFailedWrite, writeErrorMessage } from "@/lib/mutation-result";
 
 type PhotoResult = { ok: true } | { error: string };
 
@@ -125,16 +127,33 @@ export async function updateColony(formData: FormData) {
 
 export async function archiveColony(formData: FormData) {
   const id = String(formData.get("id"));
-  const supabase = await createClient();
-  const { error } = await supabase
+  // Manager-only trust boundary in app code — the UI hides this but the server
+  // must not trust that. (Previously this relied solely on RLS.)
+  const org = await getActiveOrg();
+  if (!org) redirect("/app");
+  if (org.role !== "admin" && org.role !== "caretaker") {
+    redirect("/app/colonies");
+  }
+
+  // Soft-delete through the service-role client (RLS bypassed) scoped to id +
+  // org, mirroring deleteSchedule: in the server-action write context the
+  // RLS-bound client's auth.uid() is not reliably present, so the manager
+  // UPDATE policy filtered the row out and the archive was a silent 0-row
+  // no-op. .select() + isFailedWrite turns 0 rows into a surfaced error.
+  const svc = createServiceClient();
+  const { data, error } = await svc
     .from("colonies")
     .update({ deleted_at: new Date().toISOString() })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("organisation_id", org.organisation_id)
+    .select("id");
 
-  if (error) {
-    redirect(
-      `/app/colonies/${id}/edit?error=${encodeURIComponent(error.message)}`,
+  if (isFailedWrite({ error, rows: data })) {
+    const message = writeErrorMessage(
+      { error, rows: data },
+      "That colony no longer exists.",
     );
+    redirect(`/app/colonies/${id}/edit?error=${encodeURIComponent(message)}`);
   }
   revalidatePath("/app/colonies");
   redirect("/app/colonies");
