@@ -6,6 +6,8 @@ import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
+import { isFailedWrite, writeErrorMessage } from "@/lib/mutation-result";
+import { canChangeRole, type AppRole } from "@/lib/member-role";
 
 const MEMBERS = "/app/members";
 
@@ -150,4 +152,69 @@ export async function reactivateMember(formData: FormData) {
     .eq("organisation_id", org.organisation_id);
   revalidatePath(MEMBERS);
   redirect(MEMBERS);
+}
+
+export async function updateMemberRole(formData: FormData) {
+  const org = await requireAdminOrg();
+  const target = String(formData.get("user_id") ?? "");
+  const newRole = String(formData.get("role") ?? "");
+
+  // Who's acting — needed for the self-change guard. org id always comes from
+  // the server-trusted active org, never from formData.
+  const supabase = await createClient();
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+  if (!actor) redirect("/app");
+
+  const svc = createServiceClient();
+
+  // One bounded read for the target's current membership, one for the active
+  // admins (reuses deactivateMember's count query). No per-row fan-out.
+  const [{ data: targetRow }, { data: admins }] = await Promise.all([
+    svc
+      .from("memberships")
+      .select("user_id, role, deleted_at")
+      .eq("user_id", target)
+      .eq("organisation_id", org.organisation_id)
+      .maybeSingle(),
+    svc
+      .from("memberships")
+      .select("user_id")
+      .eq("organisation_id", org.organisation_id)
+      .eq("role", "admin")
+      .is("deleted_at", null),
+  ]);
+
+  if (!targetRow) err("That member no longer exists.");
+
+  // Defer every guardrail to the pure, unit-tested decision function.
+  const decision = canChangeRole({
+    actorUserId: actor.id,
+    target: {
+      userId: targetRow.user_id,
+      currentRole: targetRow.role as AppRole,
+      isActive: targetRow.deleted_at === null,
+    },
+    newRole,
+    activeAdminCount: admins?.length ?? 0,
+  });
+
+  if (!decision.ok) err(decision.reason);
+  // No-op (role unchanged): skip the write, redirect back cleanly.
+  if (decision.noop) redirect(MEMBERS);
+
+  const { data, error } = await svc
+    .from("memberships")
+    .update({ role: newRole })
+    .eq("user_id", target)
+    .eq("organisation_id", org.organisation_id)
+    .is("deleted_at", null)
+    .select("user_id");
+  if (isFailedWrite({ error, rows: data })) {
+    err(writeErrorMessage({ error, rows: data }, "That member no longer exists."));
+  }
+
+  revalidatePath(MEMBERS);
+  redirect(`${MEMBERS}?updated=${encodeURIComponent(target)}&role=${newRole}`);
 }
