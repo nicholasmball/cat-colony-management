@@ -1,10 +1,13 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { getActiveOrg } from "@/lib/active-org";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { SubmitButton } from "@/components/submit-button";
 import { CopyButton } from "@/components/copy-button";
 import { ConfirmButton } from "@/components/confirm-button";
+import { RoleSelectForm } from "@/components/role-select-form";
+import { type AppRole } from "@/lib/member-role";
 import { btnGhost, btnGhostDanger, btnPrimary, card, fieldLabel, input, pill } from "@/lib/ui";
 import {
   inviteVolunteer,
@@ -12,6 +15,7 @@ import {
   revokeInvite,
   deactivateMember,
   reactivateMember,
+  updateMemberRole,
 } from "./actions";
 
 type Member = { user_id: string; role: string; deleted_at: string | null };
@@ -25,13 +29,25 @@ const okClass =
 export default async function MembersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; invited?: string; sent?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    invited?: string;
+    sent?: string;
+    updated?: string;
+    role?: string;
+  }>;
 }) {
   const org = await getActiveOrg();
   if (!org) redirect("/app");
   if (org.role !== "admin") redirect("/app"); // admin-only screen
 
-  const { error, invited, sent } = await searchParams;
+  const { error, invited, sent, updated, role: updatedRole } = await searchParams;
+
+  // The viewer's id — used to mark their own row (no self role change).
+  const supabase = await createClient();
+  const {
+    data: { user: viewer },
+  } = await supabase.auth.getUser();
 
   // Admin-only reads via the service client (caller already verified admin).
   const svc = createServiceClient();
@@ -51,6 +67,11 @@ export default async function MembersPage({
 
   const members = (memberRows ?? []) as Member[];
   const invites = (inviteRows ?? []) as Invite[];
+
+  // Active-admin count drives the last-admin UI guard (server re-checks anyway).
+  const activeAdminCount = members.filter(
+    (m) => !m.deleted_at && m.role === "admin",
+  ).length;
 
   // Look up each member's email (the only personal data we hold).
   const emails = new Map<string, string>();
@@ -84,6 +105,12 @@ export default async function MembersPage({
           {sent === "1"
             ? "We’ve emailed them an invite link."
             : "Email isn’t set up yet — copy their invite link below and send it."}
+        </p>
+      ) : null}
+      {updated ? (
+        <p role="status" className={okClass}>
+          ✓ Updated <strong>{emails.get(updated) ?? "member"}</strong>
+          {updatedRole ? <> to {updatedRole}.</> : "."}
         </p>
       ) : null}
 
@@ -124,10 +151,15 @@ export default async function MembersPage({
         <ul className="flex flex-col gap-2">
           {members.map((m) => {
             const inactive = !!m.deleted_at;
+            const isSelf = !!viewer && m.user_id === viewer.id;
+            // Active, not-own rows get the inline role editor. Own row and
+            // deactivated rows keep a static pill (no role control).
+            const editable = !inactive && !isSelf;
+            const isLastAdmin = m.role === "admin" && activeAdminCount <= 1;
             return (
               <li
                 key={m.user_id}
-                className={`${card} flex items-center justify-between gap-3 px-4 py-3 ${
+                className={`${card} flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${
                   inactive ? "opacity-60" : ""
                 }`}
               >
@@ -135,34 +167,55 @@ export default async function MembersPage({
                   <p className="truncate text-sm font-medium">
                     {emails.get(m.user_id)}
                   </p>
-                  <p className="mt-0.5 flex items-center gap-2 text-xs">
-                    <span className={pill}>{m.role}</span>
+                  <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs">
+                    {editable ? null : (
+                      <span className={pill}>{m.role}</span>
+                    )}
+                    {isSelf ? (
+                      <span className={pill}>You</span>
+                    ) : null}
                     <span className="text-muted">
                       {inactive ? "deactivated" : "active"}
                     </span>
+                    {isSelf && !inactive ? (
+                      <span className="text-muted">
+                        · 🔒 you can’t change your own role
+                      </span>
+                    ) : null}
                   </p>
                 </div>
-                {inactive ? (
-                  <form action={reactivateMember}>
-                    <input type="hidden" name="user_id" value={m.user_id} />
-                    <SubmitButton
-                      pendingText="…"
-                      className={`${btnGhost} h-9 px-3 text-sm`}
-                    >
-                      Reactivate
-                    </SubmitButton>
-                  </form>
-                ) : (
-                  <form action={deactivateMember}>
-                    <input type="hidden" name="user_id" value={m.user_id} />
-                    <ConfirmButton
-                      confirm={`Deactivate ${emails.get(m.user_id)}? They'll lose access immediately.`}
-                      className={`${btnGhostDanger} h-9 px-3 text-sm`}
-                    >
-                      Deactivate
-                    </ConfirmButton>
-                  </form>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  {editable ? (
+                    <RoleSelectForm
+                      action={updateMemberRole}
+                      userId={m.user_id}
+                      email={emails.get(m.user_id) ?? "this member"}
+                      currentRole={m.role as AppRole}
+                      isLastAdmin={isLastAdmin}
+                    />
+                  ) : null}
+                  {inactive ? (
+                    <form action={reactivateMember}>
+                      <input type="hidden" name="user_id" value={m.user_id} />
+                      <SubmitButton
+                        pendingText="…"
+                        className={`${btnGhost} h-9 px-3 text-sm`}
+                      >
+                        Reactivate
+                      </SubmitButton>
+                    </form>
+                  ) : isSelf ? null : (
+                    <form action={deactivateMember}>
+                      <input type="hidden" name="user_id" value={m.user_id} />
+                      <ConfirmButton
+                        confirm={`Deactivate ${emails.get(m.user_id)}? They'll lose access immediately.`}
+                        className={`${btnGhostDanger} h-9 px-3 text-sm`}
+                      >
+                        Deactivate
+                      </ConfirmButton>
+                    </form>
+                  )}
+                </div>
               </li>
             );
           })}
