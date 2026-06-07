@@ -1,6 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { feedingStatus, MISSED_AFTER_MIN } from "./feeding-status.ts";
+import {
+  feedingStatus,
+  latestFedByColony,
+  MISSED_AFTER_MIN,
+} from "./feeding-status.ts";
 
 test("fed always wins, regardless of the window", () => {
   assert.equal(feedingStatus({ fed: true, minutesAfterClose: null }), "fed");
@@ -26,4 +30,39 @@ test("unfed at exactly 720 min (boundary) is missed", () => {
 
 test("unfed well past the threshold is missed", () => {
   assert.equal(feedingStatus({ fed: false, minutesAfterClose: 800 }), "missed");
+});
+
+test("latestFedByColony: a later Not-fed overrides an earlier Fed (the bug)", () => {
+  const m = latestFedByColony([
+    { colony_id: "a", observed_at: "2026-06-07T16:46:00Z", fed: true },
+    { colony_id: "a", observed_at: "2026-06-07T17:10:00Z", fed: false },
+  ]);
+  assert.equal(m.get("a")?.fed, false);
+});
+
+test("latestFedByColony: a later Fed overrides an earlier Not-fed", () => {
+  const m = latestFedByColony([
+    { colony_id: "a", observed_at: "2026-06-07T09:00:00Z", fed: false },
+    { colony_id: "a", observed_at: "2026-06-07T18:00:00Z", fed: true },
+  ]);
+  assert.equal(m.get("a")?.fed, true);
+  assert.equal(m.get("a")?.at.toISOString(), "2026-06-07T18:00:00.000Z");
+});
+
+test("latestFedByColony: out-of-order input still picks the latest by observed_at", () => {
+  const m = latestFedByColony([
+    { colony_id: "a", observed_at: "2026-06-07T18:00:00Z", fed: true },
+    { colony_id: "a", observed_at: "2026-06-07T09:00:00Z", fed: false },
+  ]);
+  assert.equal(m.get("a")?.fed, true);
+});
+
+test("latestFedByColony: independent per colony; missing colony is undefined", () => {
+  const m = latestFedByColony([
+    { colony_id: "a", observed_at: "2026-06-07T10:00:00Z", fed: true },
+    { colony_id: "b", observed_at: "2026-06-07T10:00:00Z", fed: false },
+  ]);
+  assert.equal(m.get("a")?.fed, true);
+  assert.equal(m.get("b")?.fed, false);
+  assert.equal(m.get("c"), undefined);
 });

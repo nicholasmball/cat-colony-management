@@ -4,7 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { dayRangeInTz, minutesAfterWindow, todayInTz } from "@/lib/time";
 import { localWeekday } from "@/lib/schedule";
-import { feedingStatus, type FeedingStatus } from "@/lib/feeding-status";
+import {
+  feedingStatus,
+  latestFedByColony,
+  type FeedingStatus,
+} from "@/lib/feeding-status";
 import { CalendarIcon, ChevronIcon, PawIcon } from "@/components/icons";
 import { EmptyState } from "@/components/empty-state";
 import { card } from "@/lib/ui";
@@ -154,27 +158,22 @@ export default async function TodayPage() {
       : Promise.resolve({ data: [] as ColonyRow[] }),
     supabase
       .from("feeding_events")
-      .select("colony_id, observed_at")
+      .select("colony_id, observed_at, fed")
       .eq("organisation_id", org.organisation_id)
-      .eq("fed", true)
       .gte("observed_at", dayRange.startUtc.toISOString())
       .lt("observed_at", dayRange.endUtc.toISOString()),
   ]);
 
   const colonies = (coloniesResult.data ?? []) as ColonyRow[];
 
-  // colony_id → latest fed time today, by observed_at (field-observation time,
-  // not insert time — correct for offline backfill and uses the observed_at
-  // index). Keeping the latest so the row shows the most recent feed.
-  const fedAt = new Map<string, Date>();
-  for (const f of feedsResult.data ?? []) {
-    const at = new Date(f.observed_at as string);
-    const prev = fedAt.get(f.colony_id as string);
-    if (!prev || at > prev) fedAt.set(f.colony_id as string, at);
-  }
+  // colony_id → the most recent feeding_event today (by observed_at). Events are
+  // append-only, so the latest one is the current truth — a later "Not fed"
+  // correction overrides an earlier "Fed".
+  const latest = latestFedByColony(feedsResult.data ?? []);
 
   const rows: TodayRow[] = colonies.map((c) => {
-    const fed = fedAt.has(c.id);
+    const event = latest.get(c.id);
+    const fed = event?.fed === true;
     const minutesAfterClose = c.feeding_window_end
       ? minutesAfterWindow(c.feeding_window_end, org.timezone)
       : null;
@@ -184,7 +183,7 @@ export default async function TodayPage() {
       windowStart: c.feeding_window_start,
       windowEnd: c.feeding_window_end,
       status: feedingStatus({ fed, minutesAfterClose }),
-      fedAt: fedAt.get(c.id) ?? null,
+      fedAt: fed ? (event?.at ?? null) : null,
       // Coverage gap marker is manager-only; feeders already see only their own.
       assignedToday: isManager ? assignedColonyIds.has(c.id) : null,
     };

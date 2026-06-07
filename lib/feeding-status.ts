@@ -24,3 +24,25 @@ export function feedingStatus({
   }
   return "pending";
 }
+
+export type FeedEvent = {
+  colony_id: string;
+  observed_at: string;
+  fed: boolean;
+};
+
+// feeding_events are append-only, so a correction is a *new* event, not an edit.
+// The most recent event per colony today (by observed_at — field-observation
+// time, correct for offline backfill) is the current truth: a later "Not fed"
+// must override an earlier "Fed". Returns colony_id → { at, fed } for the latest.
+export function latestFedByColony(
+  events: FeedEvent[],
+): Map<string, { at: Date; fed: boolean }> {
+  const latest = new Map<string, { at: Date; fed: boolean }>();
+  for (const e of events) {
+    const at = new Date(e.observed_at);
+    const prev = latest.get(e.colony_id);
+    if (!prev || at > prev.at) latest.set(e.colony_id, { at, fed: e.fed });
+  }
+  return latest;
+}
