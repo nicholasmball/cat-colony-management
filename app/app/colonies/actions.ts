@@ -31,11 +31,19 @@ export async function setCatPhoto(
   if (!cat) return { error: "Cat not found." };
 
   const previous = cat.photo_url as string | null;
-  const { error } = await supabase
+  // .select("id") + isFailedWrite: an RLS-filtered 0-row update would otherwise
+  // report success while nothing changed. Org-scoped as defence-in-depth.
+  const { data, error } = await supabase
     .from("cats")
     .update({ photo_url: key })
-    .eq("id", catId);
-  if (error) return { error: error.message };
+    .eq("id", catId)
+    .eq("organisation_id", org.organisation_id)
+    .select("id");
+  if (isFailedWrite({ error, rows: data })) {
+    return {
+      error: writeErrorMessage({ error, rows: data }, "That cat no longer exists."),
+    };
+  }
 
   if (previous && previous !== key) await deleteObject(previous);
   revalidatePath(`/app/colonies/${cat.colony_id}`);
@@ -58,11 +66,19 @@ export async function removeCatPhoto(catId: string): Promise<PhotoResult> {
   if (!cat) return { error: "Cat not found." };
 
   const previous = cat.photo_url as string | null;
-  const { error } = await supabase
+  // .select("id") + isFailedWrite: an RLS-filtered 0-row update would otherwise
+  // report success while nothing changed. Org-scoped as defence-in-depth.
+  const { data, error } = await supabase
     .from("cats")
     .update({ photo_url: null })
-    .eq("id", catId);
-  if (error) return { error: error.message };
+    .eq("id", catId)
+    .eq("organisation_id", org.organisation_id)
+    .select("id");
+  if (isFailedWrite({ error, rows: data })) {
+    return {
+      error: writeErrorMessage({ error, rows: data }, "That cat no longer exists."),
+    };
+  }
 
   if (previous) await deleteObject(previous);
   revalidatePath(`/app/colonies/${cat.colony_id}`);
@@ -97,14 +113,27 @@ export async function createColony(formData: FormData) {
 
 export async function updateColony(formData: FormData) {
   const id = String(formData.get("id"));
+  // Manager-only trust boundary in app code — the UI hides this but the server
+  // must not trust that. (Previously this had no gate and relied on RLS.)
+  const org = await getActiveOrg();
+  if (!org) redirect("/app");
+  if (org.role !== "admin" && org.role !== "caretaker") {
+    redirect("/app/colonies");
+  }
+
   const name = String(formData.get("name") ?? "").trim();
   const start = String(formData.get("feeding_window_start") ?? "") || null;
   const end = String(formData.get("feeding_window_end") ?? "") || null;
   const notes = String(formData.get("notes") ?? "").trim() || null;
   const isActive = formData.get("is_active") === "on";
 
-  const supabase = await createClient();
-  const { error } = await supabase
+  // Write through the service-role client (RLS bypassed) scoped to id + the
+  // server-trusted org, mirroring archiveColony: in the server-action write
+  // context the RLS-bound client's auth.uid() is not reliably present, so the
+  // manager UPDATE policy filtered the row out and the edit was a silent 0-row
+  // no-op. .select() + isFailedWrite turns 0 rows into a surfaced error.
+  const svc = createServiceClient();
+  const { data, error } = await svc
     .from("colonies")
     .update({
       name,
@@ -113,12 +142,16 @@ export async function updateColony(formData: FormData) {
       notes,
       is_active: isActive,
     })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("organisation_id", org.organisation_id)
+    .select("id");
 
-  if (error) {
-    redirect(
-      `/app/colonies/${id}/edit?error=${encodeURIComponent(error.message)}`,
+  if (isFailedWrite({ error, rows: data })) {
+    const message = writeErrorMessage(
+      { error, rows: data },
+      "That colony no longer exists.",
     );
+    redirect(`/app/colonies/${id}/edit?error=${encodeURIComponent(message)}`);
   }
   revalidatePath(`/app/colonies/${id}`);
   revalidatePath("/app/colonies");
@@ -220,8 +253,11 @@ export async function updateCat(formData: FormData) {
     neuteredRaw === "yes" ? true : neuteredRaw === "no" ? false : null;
 
   const supabase = await createClient();
-  // RLS scopes this to the caller's org and Caretaker/Admin role.
-  const { error } = await supabase
+  // RLS scopes this to the caller's org and Caretaker/Admin role — it is the
+  // only authz here, so we keep the RLS-bound client rather than service-role.
+  // .select("id") + isFailedWrite turns an RLS-filtered 0-row match into a
+  // surfaced error instead of a silent success.
+  const { data, error } = await supabase
     .from("cats")
     .update({
       name,
@@ -233,10 +269,15 @@ export async function updateCat(formData: FormData) {
       approx_age: String(formData.get("approx_age") ?? "").trim() || null,
       notes: String(formData.get("notes") ?? "").trim() || null,
     })
-    .eq("id", catId);
+    .eq("id", catId)
+    .select("id");
 
-  if (error) {
-    redirect(`${editPath}?error=${encodeURIComponent(error.message)}`);
+  if (isFailedWrite({ error, rows: data })) {
+    const message = writeErrorMessage(
+      { error, rows: data },
+      "That cat no longer exists.",
+    );
+    redirect(`${editPath}?error=${encodeURIComponent(message)}`);
   }
   revalidatePath(`/app/colonies/${colonyId}`);
   redirect(`/app/colonies/${colonyId}`);

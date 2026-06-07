@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { isValidTimeZone } from "@/lib/time";
+import { isFailedWrite, writeErrorMessage } from "@/lib/mutation-result";
 
 // Admin-only: edit the organisation's name + notes. RLS ("admin updates
 // organisation") backs this up, but re-check the role server-side anyway.
@@ -25,12 +26,20 @@ export async function updateOrganisation(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
+  // Admin gate + server-trusted org scope above are the trust boundary; RLS
+  // backs it up. .select("id") + isFailedWrite turns an RLS-filtered 0-row
+  // match into a surfaced error instead of a silent success.
+  const { data, error } = await supabase
     .from("organisations")
     .update({ name, notes, timezone })
-    .eq("id", org.organisation_id);
-  if (error) {
-    redirect(`/app/org?error=${encodeURIComponent(error.message)}`);
+    .eq("id", org.organisation_id)
+    .select("id");
+  if (isFailedWrite({ error, rows: data })) {
+    const message = writeErrorMessage(
+      { error, rows: data },
+      "That organisation no longer exists.",
+    );
+    redirect(`/app/org?error=${encodeURIComponent(message)}`);
   }
 
   revalidatePath("/app/org");
