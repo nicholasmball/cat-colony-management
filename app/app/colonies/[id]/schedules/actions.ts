@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
+import { isFailedWrite, writeErrorMessage } from "@/lib/mutation-result";
 
 // A schedulable feeder = an active member whose role is feeder or caretaker.
 const ASSIGNABLE_ROLES = new Set(["feeder", "caretaker"]);
@@ -118,9 +119,12 @@ export async function updateSchedule(formData: FormData) {
   const notes = String(formData.get("notes") ?? "").trim() || null;
   const isActive = formData.get("is_active") === "on";
 
-  const supabase = await createClient();
-  // RLS scopes this to the caller's org + manager role; row id is enough.
-  const { error } = await supabase
+  // requireManagerOrg above is the trust boundary. Write through the
+  // service-role client (RLS bypassed) and scope by org explicitly so the
+  // update can never silently match 0 rows because of a missing JWT, and can
+  // never cross orgs. Mirrors the proven deactivateMember pattern.
+  const svc = createServiceClient();
+  const { data, error } = await svc
     .from("feeding_schedules")
     .update({
       feeder_id: feederId,
@@ -128,9 +132,15 @@ export async function updateSchedule(formData: FormData) {
       notes,
       is_active: isActive,
     })
-    .eq("id", scheduleId);
-  if (error) {
-    redirect(`${editPath}?error=${encodeURIComponent(error.message)}`);
+    .eq("id", scheduleId)
+    .eq("organisation_id", org.organisation_id)
+    .select("id");
+  if (isFailedWrite({ error, rows: data })) {
+    const message = writeErrorMessage(
+      { error, rows: data },
+      "That schedule no longer exists.",
+    );
+    redirect(`${editPath}?error=${encodeURIComponent(message)}`);
   }
 
   revalidatePath(`/app/colonies/${colonyId}`);
@@ -140,18 +150,26 @@ export async function updateSchedule(formData: FormData) {
 export async function deleteSchedule(formData: FormData) {
   const colonyId = String(formData.get("colony_id"));
   const scheduleId = String(formData.get("schedule_id"));
-  await requireManagerOrg();
+  const org = await requireManagerOrg();
 
-  const supabase = await createClient();
-  // Soft delete — covered by the manager UPDATE policy.
-  const { error } = await supabase
+  // requireManagerOrg above is the real trust boundary. Soft-delete through the
+  // service-role client (RLS bypassed) scoped to id + org — the RLS-bound
+  // client could not reliably present auth.uid() in this server-action write
+  // context, so the manager UPDATE policy filtered the row out and the write
+  // was a silent 0-row no-op. .select() + isFailedWrite makes 0 rows an error.
+  const svc = createServiceClient();
+  const { data, error } = await svc
     .from("feeding_schedules")
     .update({ deleted_at: new Date().toISOString() })
-    .eq("id", scheduleId);
-  if (error) {
-    redirect(
-      `/app/colonies/${colonyId}?error=${encodeURIComponent(error.message)}`,
+    .eq("id", scheduleId)
+    .eq("organisation_id", org.organisation_id)
+    .select("id");
+  if (isFailedWrite({ error, rows: data })) {
+    const message = writeErrorMessage(
+      { error, rows: data },
+      "That schedule no longer exists.",
     );
+    redirect(`/app/colonies/${colonyId}?error=${encodeURIComponent(message)}`);
   }
 
   revalidatePath(`/app/colonies/${colonyId}`);
