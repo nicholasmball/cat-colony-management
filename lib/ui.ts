@@ -7,6 +7,11 @@ export const btnPrimary =
 export const btnGhost =
   "inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-4 font-medium text-foreground transition hover:bg-foreground/5";
 
+// Ghost button in a destructive/danger tone. Same shape as btnGhost (so a
+// Delete sits flush next to an Edit) — only the colour differs.
+export const btnGhostDanger =
+  "inline-flex min-h-11 items-center justify-center rounded-lg border border-red-200 px-4 font-medium text-red-700 transition hover:bg-red-50 dark:border-red-900 dark:text-red-300";
+
 export const card = "rounded-xl border border-border bg-surface";
 
 export const input =

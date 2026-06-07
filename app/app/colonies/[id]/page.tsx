@@ -10,7 +10,7 @@ import { PawIcon, ChevronIcon, CalendarIcon } from "@/components/icons";
 import { EmptyState } from "@/components/empty-state";
 import { ConfirmButton } from "@/components/confirm-button";
 import { deleteSchedule } from "./schedules/actions";
-import { btnGhost, btnPrimary, card, pill } from "@/lib/ui";
+import { btnGhost, btnGhostDanger, btnPrimary, card, pill } from "@/lib/ui";
 
 const toneClass: Record<string, string> = {
   good: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300",
@@ -297,7 +297,7 @@ export default async function ColonyDetail({
                         <ConfirmButton
                           confirm="Remove this schedule?"
                           aria-label={`Delete schedule for ${email}`}
-                          className="h-9 rounded-lg border border-red-200 px-3 text-sm font-medium text-red-700 transition hover:bg-red-50 dark:border-red-900 dark:text-red-300"
+                          className={`${btnGhostDanger} h-9 px-3 text-sm`}
                         >
                           Delete
                         </ConfirmButton>
