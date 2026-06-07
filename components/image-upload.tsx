@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { setCatPhoto, removeCatPhoto } from "@/app/app/colonies/actions";
 import { PawIcon } from "@/components/icons";
-import { btnGhost } from "@/lib/ui";
+import { btnGhost, btnGhostDanger } from "@/lib/ui";
 
 // Downscale + JPEG-compress in the browser so field uploads are small.
 async function resizeToJpeg(file: File, max = 1600, quality = 0.82): Promise<Blob> {
@@ -147,7 +147,7 @@ export function ImageUpload({
             <button
               type="button"
               onClick={onRemove}
-              className="h-9 rounded-lg border border-red-200 px-3 text-sm font-medium text-red-700 transition hover:bg-red-50 dark:border-red-900 dark:text-red-300"
+              className={`${btnGhostDanger} h-9 px-3 text-sm`}
             >
               Remove
             </button>

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { SubmitButton } from "@/components/submit-button";
 import { ConfirmButton } from "@/components/confirm-button";
-import { btnGhost, btnPrimary, fieldLabel, input } from "@/lib/ui";
+import { btnGhost, btnGhostDanger, btnPrimary, fieldLabel, input } from "@/lib/ui";
 import { scheduleWhen } from "@/lib/schedule";
 import { updateSchedule, deleteSchedule } from "../../actions";
 import { getAssignableFeeders } from "../../feeders";
@@ -132,7 +132,7 @@ export default async function EditSchedule({
         <input type="hidden" name="schedule_id" value={sid} />
         <ConfirmButton
           confirm="Remove this schedule?"
-          className="h-11 rounded-lg border border-red-200 px-4 text-sm font-medium text-red-700 transition hover:bg-red-50 dark:border-red-900 dark:text-red-300"
+          className={`${btnGhostDanger} text-sm`}
         >
           Delete schedule
         </ConfirmButton>

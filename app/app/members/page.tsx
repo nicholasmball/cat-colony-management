@@ -5,7 +5,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { SubmitButton } from "@/components/submit-button";
 import { CopyButton } from "@/components/copy-button";
 import { ConfirmButton } from "@/components/confirm-button";
-import { btnGhost, btnPrimary, card, fieldLabel, input, pill } from "@/lib/ui";
+import { btnGhost, btnGhostDanger, btnPrimary, card, fieldLabel, input, pill } from "@/lib/ui";
 import {
   inviteVolunteer,
   resendInvite,
@@ -157,7 +157,7 @@ export default async function MembersPage({
                     <input type="hidden" name="user_id" value={m.user_id} />
                     <ConfirmButton
                       confirm={`Deactivate ${emails.get(m.user_id)}? They'll lose access immediately.`}
-                      className="h-9 rounded-lg border border-red-200 px-3 text-sm font-medium text-red-700 transition hover:bg-red-50 dark:border-red-900 dark:text-red-300"
+                      className={`${btnGhostDanger} h-9 px-3 text-sm`}
                     >
                       Deactivate
                     </ConfirmButton>
@@ -209,7 +209,7 @@ export default async function MembersPage({
                     <input type="hidden" name="invite_id" value={inv.id} />
                     <ConfirmButton
                       confirm={`Revoke the invite for ${inv.email}?`}
-                      className="h-9 rounded-lg border border-red-200 px-3 text-sm font-medium text-red-700 transition hover:bg-red-50 dark:border-red-900 dark:text-red-300"
+                      className={`${btnGhostDanger} h-9 px-3 text-sm`}
                     >
                       Revoke
                     </ConfirmButton>
