@@ -31,6 +31,14 @@ test("formatStatus replaces underscores", () => {
   assert.equal(formatStatus("active"), "active");
 });
 
+test("formatStatus uses a friendly label for new_unconfirmed", () => {
+  assert.equal(formatStatus("new_unconfirmed"), "New · unconfirmed");
+});
+
+test("statusTone keeps new_unconfirmed in the neutral tone", () => {
+  assert.equal(statusTone("new_unconfirmed"), "neutral");
+});
+
 test("statusTone maps known statuses", () => {
   assert.equal(statusTone("active"), "good");
   assert.equal(statusTone("seen"), "good");
