@@ -7,6 +7,8 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
 import { deleteObject } from "@/lib/storage/r2";
 import { isFailedWrite, writeErrorMessage } from "@/lib/mutation-result";
+import { isKeyInOrg } from "@/lib/photo-key";
+import { parseNeutered } from "@/lib/cat-report";
 
 type PhotoResult = { ok: true } | { error: string };
 
@@ -19,6 +21,12 @@ export async function setCatPhoto(
   const org = await getActiveOrg();
   if (!org || (org.role !== "admin" && org.role !== "caretaker")) {
     return { error: "Not allowed." };
+  }
+  // The key is client-supplied; only accept one minted under this org's prefix
+  // (`org/{orgId}/…`) so a tampered key can't point the record at another org's
+  // object. The presign route always issues org-scoped keys.
+  if (!isKeyInOrg(key, org.organisation_id)) {
+    return { error: "That photo couldn’t be saved." };
   }
   const supabase = await createClient();
   const { data: cat } = await supabase

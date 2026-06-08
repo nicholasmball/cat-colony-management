@@ -203,7 +203,10 @@ export default async function IncidentsPage({
     await Promise.all(
       [...firstAttachment.entries()].map(
         async ([incidentId, key]) =>
-          [incidentId, await photoSrc(key)] as [string, string | null],
+          [incidentId, await photoSrc(key, org.organisation_id)] as [
+            string,
+            string | null,
+          ],
       ),
     ),
   );

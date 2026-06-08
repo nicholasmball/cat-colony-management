@@ -40,7 +40,10 @@ export default async function EditCat({
 
   const neuteredValue =
     cat.neutered === true ? "yes" : cat.neutered === false ? "no" : "";
-  const photo = await photoSrc(cat.photo_url as string | null);
+  const photo = await photoSrc(
+    cat.photo_url as string | null,
+    org?.organisation_id ?? "",
+  );
 
   return (
     <div className="flex max-w-xl flex-col gap-5 px-6 py-6 md:px-10">

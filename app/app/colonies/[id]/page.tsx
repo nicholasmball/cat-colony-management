@@ -101,7 +101,10 @@ export default async function ColonyDetail({
     await Promise.all(
       cats.map(
         async (c) =>
-          [c.id, await photoSrc(c.photo_url)] as [string, string | null],
+          [c.id, await photoSrc(c.photo_url, org?.organisation_id ?? "")] as [
+            string,
+            string | null,
+          ],
       ),
     ),
   );

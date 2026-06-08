@@ -37,11 +37,25 @@ function objectUrl(key: string) {
 }
 
 // Presigned PUT the browser uses to upload a file directly to R2.
-export async function presignPut(key: string, expiresSeconds = 300) {
+//
+// contentType is BOUND into the signature (allHeaders pulls content-type into
+// X-Amz-SignedHeaders), so the browser's PUT must send a matching Content-Type
+// header or R2 rejects the upload — the client can't smuggle a different type.
+//
+// NOTE: a query-signed PUT cannot enforce a max upload size the way a presigned
+// POST policy (Content-Length-range) can. We keep the client-side 25 MB check
+// for UX; true server-side size enforcement would need a presigned POST policy
+// (out of scope here).
+export async function presignPut(
+  key: string,
+  contentType: string,
+  expiresSeconds = 300,
+) {
   const url = `${objectUrl(key)}?X-Amz-Expires=${expiresSeconds}`;
   const signed = await client().sign(url, {
     method: "PUT",
-    aws: { signQuery: true },
+    headers: { "Content-Type": contentType },
+    aws: { signQuery: true, allHeaders: true },
   });
   return signed.url;
 }

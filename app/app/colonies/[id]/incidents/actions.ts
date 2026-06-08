@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
+import { isKeyInOrg } from "@/lib/photo-key";
 import {
   defaultUrgencyLevel,
   isValidIncidentType,
@@ -104,7 +105,13 @@ export async function createIncident(formData: FormData) {
   // insert must NOT roll back the incident — surface a soft warning instead and
   // keep the report (the field/offline reality from the design).
   let photoWarning = false;
-  const photoKey = String(formData.get("photo_key") ?? "").trim();
+  const submittedKey = String(formData.get("photo_key") ?? "").trim();
+  // The key is client-supplied; only attach one minted under this org's prefix
+  // (`org/{orgId}/…`). A foreign/tampered key is dropped (treated as no photo)
+  // rather than attached, consistent with the non-blocking photo design.
+  const photoKey = isKeyInOrg(submittedKey, org.organisation_id)
+    ? submittedKey
+    : "";
   if (photoKey) {
     const { error: attachError } = await supabase.from("attachments").insert({
       organisation_id: org.organisation_id,
