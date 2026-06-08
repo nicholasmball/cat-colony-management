@@ -97,7 +97,12 @@ export async function reportCat(formData: FormData) {
 
   revalidatePath(`/app/colonies/${colonyId}`);
   // Honest "we'll review it" copy lives on the colony page, keyed by ?reported.
-  redirect(`/app/colonies/${colonyId}?reported=cat`);
+  // Mirror the incident photo=failed contract: if the client flagged a failed
+  // upload and no usable key arrived, surface the non-blocking photo warning
+  // alongside the success banner (the cat itself still saved).
+  const photoFailed =
+    formData.get("photo_failed") === "1" && !photoKey ? "&photo=failed" : "";
+  redirect(`/app/colonies/${colonyId}?reported=cat${photoFailed}`);
 }
 
 // ── confirmCat ───────────────────────────────────────────────────────────────
