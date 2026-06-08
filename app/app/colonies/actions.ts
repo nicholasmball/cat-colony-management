@@ -283,9 +283,7 @@ export async function updateCat(formData: FormData) {
     );
   }
   // Tri-state so "unknown" stays null — records accept incomplete data.
-  const neuteredRaw = String(formData.get("neutered") ?? "");
-  const neutered =
-    neuteredRaw === "yes" ? true : neuteredRaw === "no" ? false : null;
+  const neutered = parseNeutered(formData.get("neutered")?.toString());
 
   const supabase = await createClient();
   // RLS scopes this to the caller's org and Caretaker/Admin role — it is the
