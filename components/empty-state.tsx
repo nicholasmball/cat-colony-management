@@ -17,7 +17,9 @@ export function EmptyState({
   cta?: { href: string; label: string };
 }) {
   return (
-    <div className={`${card} flex flex-col items-center gap-2 px-6 py-10 text-center`}>
+    <div
+      className={`${card} flex flex-col items-center gap-2 px-6 py-10 text-center`}
+    >
       <span
         aria-hidden
         className="grid h-14 w-14 place-items-center rounded-full bg-accent/10 text-accent"

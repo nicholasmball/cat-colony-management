@@ -12,15 +12,24 @@ test("fed always wins, regardless of the window", () => {
 });
 
 test("unfed with no window is pending", () => {
-  assert.equal(feedingStatus({ fed: false, minutesAfterClose: null }), "pending");
+  assert.equal(
+    feedingStatus({ fed: false, minutesAfterClose: null }),
+    "pending",
+  );
 });
 
 test("unfed before the threshold is pending", () => {
-  assert.equal(feedingStatus({ fed: false, minutesAfterClose: 100 }), "pending");
+  assert.equal(
+    feedingStatus({ fed: false, minutesAfterClose: 100 }),
+    "pending",
+  );
 });
 
 test("unfed at 719 min (boundary) is still pending", () => {
-  assert.equal(feedingStatus({ fed: false, minutesAfterClose: 719 }), "pending");
+  assert.equal(
+    feedingStatus({ fed: false, minutesAfterClose: 719 }),
+    "pending",
+  );
 });
 
 test("unfed at exactly 720 min (boundary) is missed", () => {

@@ -9,30 +9,144 @@
       rel="stylesheet"
     />
     <style>
-      :root { --bg:#f7f4f2; --fg:#191919; --muted:#5f5f5f; --surface:#fff; --border:#e6e2db; --accent:#170df2; }
-      body { margin:0; padding:2rem; background:var(--bg); color:var(--fg); font-family:Raleway, system-ui, sans-serif; line-height:1.55; }
-      .wrap { max-width:960px; margin:0 auto; }
-      h1,h2,h3 { font-family:"Cormorant Garamond", Georgia, serif; }
-      h1 { font-size:2.2rem; margin-bottom:0.2rem; }
-      .muted { color:var(--muted); }
-      .flow { display:flex; flex-wrap:wrap; gap:0.4rem; align-items:center; margin:0.8rem 0; font-size:0.85rem; }
-      .flow span { background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:0.3rem 0.65rem; }
-      .flow b { background:rgba(23,13,242,0.08); border-color:rgba(23,13,242,0.3); color:var(--accent); }
-      .arrow { color:var(--muted); }
-      .states { display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); margin-top:1rem; }
-      .state { border:1px solid var(--border); border-radius:12px; background:var(--surface); padding:1rem; text-align:center; }
-      .state h3 { margin:0 0 0.6rem; font-size:1rem; }
-      .ph { height:96px; border-radius:10px; display:grid; place-items:center; font-size:0.78rem; }
-      .empty { border:1.5px dashed var(--border); color:var(--muted); }
-      .thumb { background:linear-gradient(135deg,#d9cbbe,#b7a290); color:#fff; }
-      .progress { border:1px solid var(--border); position:relative; overflow:hidden; color:var(--muted); }
-      .bar { position:absolute; left:0; bottom:0; height:4px; width:62%; background:var(--accent); }
-      .err { border:1px solid #f1c0c0; background:#fdf2f2; color:#b91c1c; }
-      .btn { display:inline-block; background:var(--accent); color:#fff; border-radius:9px; padding:0.4rem 0.7rem; font-weight:600; font-size:0.78rem; margin-top:0.5rem; }
-      .btn.ghost { background:transparent; color:var(--fg); border:1px solid var(--border); }
-      .note { border-left:3px solid var(--accent); padding:0.5rem 0.8rem; background:#fff; border-radius:0 8px 8px 0; margin-top:0.6rem; font-size:0.85rem; }
-      ul { margin:0.3rem 0 0 1rem; padding:0; }
-      code { background:#efeae0; border-radius:4px; padding:0.05rem 0.3rem; font-size:0.85em; }
+      :root {
+        --bg: #f7f4f2;
+        --fg: #191919;
+        --muted: #5f5f5f;
+        --surface: #fff;
+        --border: #e6e2db;
+        --accent: #170df2;
+      }
+      body {
+        margin: 0;
+        padding: 2rem;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: Raleway, system-ui, sans-serif;
+        line-height: 1.55;
+      }
+      .wrap {
+        max-width: 960px;
+        margin: 0 auto;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: "Cormorant Garamond", Georgia, serif;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-bottom: 0.2rem;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .flow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        align-items: center;
+        margin: 0.8rem 0;
+        font-size: 0.85rem;
+      }
+      .flow span {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.3rem 0.65rem;
+      }
+      .flow b {
+        background: rgba(23, 13, 242, 0.08);
+        border-color: rgba(23, 13, 242, 0.3);
+        color: var(--accent);
+      }
+      .arrow {
+        color: var(--muted);
+      }
+      .states {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        margin-top: 1rem;
+      }
+      .state {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--surface);
+        padding: 1rem;
+        text-align: center;
+      }
+      .state h3 {
+        margin: 0 0 0.6rem;
+        font-size: 1rem;
+      }
+      .ph {
+        height: 96px;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        font-size: 0.78rem;
+      }
+      .empty {
+        border: 1.5px dashed var(--border);
+        color: var(--muted);
+      }
+      .thumb {
+        background: linear-gradient(135deg, #d9cbbe, #b7a290);
+        color: #fff;
+      }
+      .progress {
+        border: 1px solid var(--border);
+        position: relative;
+        overflow: hidden;
+        color: var(--muted);
+      }
+      .bar {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 4px;
+        width: 62%;
+        background: var(--accent);
+      }
+      .err {
+        border: 1px solid #f1c0c0;
+        background: #fdf2f2;
+        color: #b91c1c;
+      }
+      .btn {
+        display: inline-block;
+        background: var(--accent);
+        color: #fff;
+        border-radius: 9px;
+        padding: 0.4rem 0.7rem;
+        font-weight: 600;
+        font-size: 0.78rem;
+        margin-top: 0.5rem;
+      }
+      .btn.ghost {
+        background: transparent;
+        color: var(--fg);
+        border: 1px solid var(--border);
+      }
+      .note {
+        border-left: 3px solid var(--accent);
+        padding: 0.5rem 0.8rem;
+        background: #fff;
+        border-radius: 0 8px 8px 0;
+        margin-top: 0.6rem;
+        font-size: 0.85rem;
+      }
+      ul {
+        margin: 0.3rem 0 0 1rem;
+        padding: 0;
+      }
+      code {
+        background: #efeae0;
+        border-radius: 4px;
+        padding: 0.05rem 0.3rem;
+        font-size: 0.85em;
+      }
     </style>
   </head>
   <body>
@@ -47,10 +161,12 @@
       <h2>The flow</h2>
       <div class="flow">
         <span>pick / take a photo</span><span class="arrow">→</span>
-        <b>resize + compress in the browser (~1600px)</b><span class="arrow">→</span>
-        <span>ask server for a presigned PUT URL</span><span class="arrow">→</span>
-        <b>upload straight to R2</b><span class="arrow">→</span>
-        <span>save key + URL on the cat</span><span class="arrow">→</span>
+        <b>resize + compress in the browser (~1600px)</b
+        ><span class="arrow">→</span>
+        <span>ask server for a presigned PUT URL</span
+        ><span class="arrow">→</span> <b>upload straight to R2</b
+        ><span class="arrow">→</span> <span>save key + URL on the cat</span
+        ><span class="arrow">→</span>
         <span>thumbnail shows</span>
       </div>
       <div class="note">
@@ -68,13 +184,16 @@
         </div>
         <div class="state">
           <h3>Uploading</h3>
-          <div class="ph progress">resizing / uploading…<span class="bar"></span></div>
+          <div class="ph progress">
+            resizing / uploading…<span class="bar"></span>
+          </div>
           <span class="btn ghost">Cancel</span>
         </div>
         <div class="state">
           <h3>Uploaded</h3>
           <div class="ph thumb">🐱 thumbnail</div>
-          <span class="btn ghost">Replace</span> <span class="btn ghost">Remove</span>
+          <span class="btn ghost">Replace</span>
+          <span class="btn ghost">Remove</span>
         </div>
         <div class="state">
           <h3>Error</h3>
@@ -85,24 +204,51 @@
 
       <h2>Where it appears</h2>
       <ul class="muted">
-        <li><strong>Cat edit + add forms</strong> — an image field at the top; optional, never blocks Save.</li>
-        <li><strong>Cat row / detail</strong> — small round thumbnail next to the name; falls back to a paw icon when there’s no photo or the image 404s.</li>
-        <li>Component is generic (<code>&lt;ImageUpload owner="cat" id=… /&gt;</code>) so colony &amp; incident photos can reuse it later.</li>
+        <li>
+          <strong>Cat edit + add forms</strong> — an image field at the top;
+          optional, never blocks Save.
+        </li>
+        <li>
+          <strong>Cat row / detail</strong> — small round thumbnail next to the
+          name; falls back to a paw icon when there’s no photo or the image
+          404s.
+        </li>
+        <li>
+          Component is generic (<code
+            >&lt;ImageUpload owner="cat" id=… /&gt;</code
+          >) so colony &amp; incident photos can reuse it later.
+        </li>
       </ul>
 
       <h2>Behaviour, permissions &amp; a11y</h2>
       <ul class="muted">
-        <li>Accepts images only (<code>image/*</code>, capture=camera on mobile); rejects non-images and oversized files with a clear message.</li>
-        <li>Resize/compress before upload keeps field uploads tiny on weak signal and storage small.</li>
-        <li>Presign endpoint authorises the caller (same as editing the record — Caretaker/Admin) and scopes the key to their org.</li>
-        <li>Replace overwrites; Remove clears the reference (old object deleted best-effort).</li>
-        <li>Alt text on the thumbnail (cat name); ≥44px controls; keyboard-operable picker.</li>
+        <li>
+          Accepts images only (<code>image/*</code>, capture=camera on mobile);
+          rejects non-images and oversized files with a clear message.
+        </li>
+        <li>
+          Resize/compress before upload keeps field uploads tiny on weak signal
+          and storage small.
+        </li>
+        <li>
+          Presign endpoint authorises the caller (same as editing the record —
+          Caretaker/Admin) and scopes the key to their org.
+        </li>
+        <li>
+          Replace overwrites; Remove clears the reference (old object deleted
+          best-effort).
+        </li>
+        <li>
+          Alt text on the thumbnail (cat name); ≥44px controls;
+          keyboard-operable picker.
+        </li>
       </ul>
 
       <h2>Decision for the gate (blocks build)</h2>
       <div class="note">
-        <strong>Storage backend.</strong> Plan = <strong>Cloudflare R2</strong>
-        (10 GB free, zero egress — per the cost research). That needs <em>you</em>
+        <strong>Storage backend.</strong> Plan =
+        <strong>Cloudflare R2</strong> (10 GB free, zero egress — per the cost
+        research). That needs <em>you</em>
         to create a Cloudflare R2 bucket + S3 API token and give me 5 env vars
         (account id, access key, secret, bucket, public base URL).
         <br /><strong>Or</strong> ship now on <strong>Supabase Storage</strong>

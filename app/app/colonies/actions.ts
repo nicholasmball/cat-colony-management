@@ -41,7 +41,10 @@ export async function setCatPhoto(
     .select("id");
   if (isFailedWrite({ error, rows: data })) {
     return {
-      error: writeErrorMessage({ error, rows: data }, "That cat no longer exists."),
+      error: writeErrorMessage(
+        { error, rows: data },
+        "That cat no longer exists.",
+      ),
     };
   }
 
@@ -76,7 +79,10 @@ export async function removeCatPhoto(catId: string): Promise<PhotoResult> {
     .select("id");
   if (isFailedWrite({ error, rows: data })) {
     return {
-      error: writeErrorMessage({ error, rows: data }, "That cat no longer exists."),
+      error: writeErrorMessage(
+        { error, rows: data },
+        "That cat no longer exists.",
+      ),
     };
   }
 

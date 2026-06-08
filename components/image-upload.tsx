@@ -6,7 +6,11 @@ import { PawIcon } from "@/components/icons";
 import { btnGhost, btnGhostDanger } from "@/lib/ui";
 
 // Downscale + JPEG-compress in the browser so field uploads are small.
-async function resizeToJpeg(file: File, max = 1600, quality = 0.82): Promise<Blob> {
+async function resizeToJpeg(
+  file: File,
+  max = 1600,
+  quality = 0.82,
+): Promise<Blob> {
   let bitmap: ImageBitmap;
   try {
     bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
@@ -28,7 +32,8 @@ async function resizeToJpeg(file: File, max = 1600, quality = 0.82): Promise<Blo
   bitmap.close?.();
   return await new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(
-      (b) => (b ? resolve(b) : reject(new Error("Couldn’t process the image."))),
+      (b) =>
+        b ? resolve(b) : reject(new Error("Couldn’t process the image.")),
       "image/jpeg",
       quality,
     ),
@@ -72,7 +77,9 @@ export function ImageUpload({
         body: JSON.stringify({ catId, contentType: "image/jpeg" }),
       });
       if (!res.ok) {
-        throw new Error((await res.json().catch(() => ({})))?.error ?? "Upload failed.");
+        throw new Error(
+          (await res.json().catch(() => ({})))?.error ?? "Upload failed.",
+        );
       }
       const { uploadUrl, key } = (await res.json()) as {
         uploadUrl: string;
@@ -104,7 +111,9 @@ export function ImageUpload({
       if ("error" in res) throw new Error(res.error);
       setSrc(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn’t remove the photo.");
+      setError(
+        err instanceof Error ? err.message : "Couldn’t remove the photo.",
+      );
     } finally {
       setBusy(false);
     }

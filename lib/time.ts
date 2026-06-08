@@ -69,7 +69,10 @@ export function todayInTz(tz: string, now: Date = new Date()): string {
   }).format(now);
 }
 
-function ymd(date: string | Date | undefined, tz: string): [number, number, number] {
+function ymd(
+  date: string | Date | undefined,
+  tz: string,
+): [number, number, number] {
   const iso =
     date == null
       ? todayInTz(tz)

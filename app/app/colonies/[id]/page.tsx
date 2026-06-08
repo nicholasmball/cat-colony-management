@@ -94,9 +94,7 @@ export default async function ColonyDetail({
     .order("name", { nullsFirst: false });
   // Derived ordering only (nothing stored): unconfirmed cats float to the top so
   // review work is visible, then alphabetical. Pure + tested comparator.
-  const cats = ((catsData ?? []) as Cat[])
-    .slice()
-    .sort(compareCatsForList);
+  const cats = ((catsData ?? []) as Cat[]).slice().sort(compareCatsForList);
 
   // Presigned thumbnail URL per cat (null → paw-icon fallback).
   const photos = new Map<string, string | null>(

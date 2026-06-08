@@ -16,7 +16,10 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
 
   if (tokenHash && type) {
-    const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
+    const { error } = await supabase.auth.verifyOtp({
+      type,
+      token_hash: tokenHash,
+    });
     if (!error) return NextResponse.redirect(new URL(next, origin));
   } else if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
@@ -25,7 +28,8 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.redirect(
     new URL(
-      "/login?error=" + encodeURIComponent("That invite link is invalid or has expired."),
+      "/login?error=" +
+        encodeURIComponent("That invite link is invalid or has expired."),
       origin,
     ),
   );

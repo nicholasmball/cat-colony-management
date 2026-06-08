@@ -18,7 +18,9 @@ export async function updateOrganisation(formData: FormData) {
   const notes = String(formData.get("notes") ?? "").trim() || null;
   const timezone = String(formData.get("timezone") ?? "").trim();
   if (!name) {
-    redirect(`/app/org?error=${encodeURIComponent("Organisation name is required.")}`);
+    redirect(
+      `/app/org?error=${encodeURIComponent("Organisation name is required.")}`,
+    );
   }
   // Reject anything that isn't a real IANA zone before it reaches day-math.
   if (!isValidTimeZone(timezone)) {

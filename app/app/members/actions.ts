@@ -59,9 +59,7 @@ export async function inviteVolunteer(formData: FormData) {
   // Block inviting someone who's already an active member of this org.
   const svc = createServiceClient();
   const { data: list } = await svc.auth.admin.listUsers();
-  const existing = list?.users.find(
-    (u) => u.email?.toLowerCase() === email,
-  );
+  const existing = list?.users.find((u) => u.email?.toLowerCase() === email);
   if (existing) {
     const { data: mem } = await svc
       .from("memberships")
@@ -93,7 +91,9 @@ export async function inviteVolunteer(formData: FormData) {
 
   const sent = await sendInviteEmail(email);
   revalidatePath(MEMBERS);
-  redirect(`${MEMBERS}?invited=${encodeURIComponent(email)}&sent=${sent ? 1 : 0}`);
+  redirect(
+    `${MEMBERS}?invited=${encodeURIComponent(email)}&sent=${sent ? 1 : 0}`,
+  );
 }
 
 export async function resendInvite(formData: FormData) {
@@ -212,7 +212,9 @@ export async function updateMemberRole(formData: FormData) {
     .is("deleted_at", null)
     .select("user_id");
   if (isFailedWrite({ error, rows: data })) {
-    err(writeErrorMessage({ error, rows: data }, "That member no longer exists."));
+    err(
+      writeErrorMessage({ error, rows: data }, "That member no longer exists."),
+    );
   }
 
   revalidatePath(MEMBERS);

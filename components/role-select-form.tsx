@@ -53,7 +53,8 @@ export function RoleSelectForm({
       >
         {ROLES.map((r) => {
           // Sole active admin: can't move away from admin until another exists.
-          const blocked = isLastAdmin && currentRole === "admin" && r !== "admin";
+          const blocked =
+            isLastAdmin && currentRole === "admin" && r !== "admin";
           return (
             <option key={r} value={r} disabled={blocked}>
               {blocked ? `${r} — promote another admin first` : r}
@@ -73,7 +74,10 @@ export function RoleSelectForm({
           Save
         </ConfirmButton>
       ) : (
-        <SubmitButton pendingText="…" className={`${btnPrimary} h-9 px-3 text-sm`}>
+        <SubmitButton
+          pendingText="…"
+          className={`${btnPrimary} h-9 px-3 text-sm`}
+        >
           Save
         </SubmitButton>
       )}

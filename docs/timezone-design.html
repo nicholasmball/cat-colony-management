@@ -1,125 +1,363 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Timezone &amp; "today" — UX design</title>
-<style>
-  :root{--bg:#f7f4f2;--fg:#191919;--muted:#6b6b6b;--accent:#170df2;--surface:#fff;--border:#e7e2dd}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--fg);font-family:"Raleway",system-ui,sans-serif;line-height:1.55}
-  .wrap{max-width:880px;margin:0 auto;padding:40px 24px 80px}
-  h1,h2,h3{font-family:"Cormorant Garamond",Georgia,serif;font-weight:600;line-height:1.15}
-  h1{font-size:2.5rem;margin:0 0 .2em}
-  h2{font-size:1.6rem;margin:2em 0 .5em;border-bottom:1px solid var(--border);padding-bottom:.2em}
-  .lede{color:var(--muted);font-size:1.05rem;max-width:64ch}
-  code{background:#efe9e4;padding:.1em .4em;border-radius:5px;font-size:.86em}
-  .phones{display:flex;gap:28px;flex-wrap:wrap;margin:18px 0}
-  .phone{width:320px;border:1px solid var(--border);border-radius:24px;background:var(--surface);padding:14px;box-shadow:0 6px 24px rgba(0,0,0,.06)}
-  .cap{font-size:.78rem;color:var(--muted);text-align:center;margin-bottom:8px;font-weight:600}
-  .screen{background:var(--bg);border-radius:16px;padding:14px}
-  .title{font-family:"Cormorant Garamond",serif;font-size:1.6rem}
-  .sub{color:var(--muted);font-size:.8rem;margin-bottom:14px}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:14px}
-  label{display:flex;flex-direction:column;gap:6px;font-size:.85rem;font-weight:600}
-  input,select{min-height:44px;border:1px solid var(--border);border-radius:9px;padding:0 11px;font-size:.9rem;background:#fff;font-family:inherit}
-  .hint{font-weight:400;color:var(--muted);font-size:.78rem}
-  .btn{align-self:flex-start;background:var(--accent);color:#fff;border:none;border-radius:9px;padding:11px 16px;font-weight:600;font-size:.88rem}
-  .note{background:#fff;border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:12px 14px;margin:10px 0;font-size:.92rem}
-  ul.ac{padding-left:0;list-style:none}
-  ul.ac li{padding:6px 0 6px 26px;position:relative}
-  ul.ac li::before{content:"✓";position:absolute;left:0;color:var(--accent);font-weight:700}
-  .diagram{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin:14px 0;font-size:.86rem}
-  .bar{position:relative;height:46px;background:linear-gradient(90deg,#eef0ff,#e9e6ff);border-radius:8px;margin:10px 0;border:1px solid var(--border)}
-  .tick{position:absolute;top:-6px;width:1px;height:58px;background:var(--muted)}
-  .tick span{position:absolute;top:60px;left:-30px;width:60px;text-align:center;font-size:.68rem;color:var(--muted)}
-  .seg{position:absolute;top:8px;height:30px;border-radius:6px;display:grid;place-items:center;font-size:.72rem;font-weight:600;color:#fff}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <h1>Timezone &amp; "today"</h1>
-  <p class="lede">Building on the approved Requirements (org-level timezone, default
-  <code>Europe/Lisbon</code>): this card is <strong>90% backend</strong> — a migration, a tested
-  <code>lib/time.ts</code>, and routing day math through it. The <em>only</em> new pixels are one field in
-  Org settings. Designing that field + the mental model so the value is legible.</p>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Timezone &amp; "today" — UX design</title>
+    <style>
+      :root {
+        --bg: #f7f4f2;
+        --fg: #191919;
+        --muted: #6b6b6b;
+        --accent: #170df2;
+        --surface: #fff;
+        --border: #e7e2dd;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: "Raleway", system-ui, sans-serif;
+        line-height: 1.55;
+      }
+      .wrap {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 40px 24px 80px;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-weight: 600;
+        line-height: 1.15;
+      }
+      h1 {
+        font-size: 2.5rem;
+        margin: 0 0 0.2em;
+      }
+      h2 {
+        font-size: 1.6rem;
+        margin: 2em 0 0.5em;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.2em;
+      }
+      .lede {
+        color: var(--muted);
+        font-size: 1.05rem;
+        max-width: 64ch;
+      }
+      code {
+        background: #efe9e4;
+        padding: 0.1em 0.4em;
+        border-radius: 5px;
+        font-size: 0.86em;
+      }
+      .phones {
+        display: flex;
+        gap: 28px;
+        flex-wrap: wrap;
+        margin: 18px 0;
+      }
+      .phone {
+        width: 320px;
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        background: var(--surface);
+        padding: 14px;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+      }
+      .cap {
+        font-size: 0.78rem;
+        color: var(--muted);
+        text-align: center;
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+      .screen {
+        background: var(--bg);
+        border-radius: 16px;
+        padding: 14px;
+      }
+      .title {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.6rem;
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 0.8rem;
+        margin-bottom: 14px;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+      input,
+      select {
+        min-height: 44px;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        padding: 0 11px;
+        font-size: 0.9rem;
+        background: #fff;
+        font-family: inherit;
+      }
+      .hint {
+        font-weight: 400;
+        color: var(--muted);
+        font-size: 0.78rem;
+      }
+      .btn {
+        align-self: flex-start;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 9px;
+        padding: 11px 16px;
+        font-weight: 600;
+        font-size: 0.88rem;
+      }
+      .note {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--accent);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin: 10px 0;
+        font-size: 0.92rem;
+      }
+      ul.ac {
+        padding-left: 0;
+        list-style: none;
+      }
+      ul.ac li {
+        padding: 6px 0 6px 26px;
+        position: relative;
+      }
+      ul.ac li::before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        color: var(--accent);
+        font-weight: 700;
+      }
+      .diagram {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px;
+        margin: 14px 0;
+        font-size: 0.86rem;
+      }
+      .bar {
+        position: relative;
+        height: 46px;
+        background: linear-gradient(90deg, #eef0ff, #e9e6ff);
+        border-radius: 8px;
+        margin: 10px 0;
+        border: 1px solid var(--border);
+      }
+      .tick {
+        position: absolute;
+        top: -6px;
+        width: 1px;
+        height: 58px;
+        background: var(--muted);
+      }
+      .tick span {
+        position: absolute;
+        top: 60px;
+        left: -30px;
+        width: 60px;
+        text-align: center;
+        font-size: 0.68rem;
+        color: var(--muted);
+      }
+      .seg {
+        position: absolute;
+        top: 8px;
+        height: 30px;
+        border-radius: 6px;
+        display: grid;
+        place-items: center;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Timezone &amp; "today"</h1>
+      <p class="lede">
+        Building on the approved Requirements (org-level timezone, default
+        <code>Europe/Lisbon</code>): this card is <strong>90% backend</strong> —
+        a migration, a tested <code>lib/time.ts</code>, and routing day math
+        through it. The <em>only</em> new pixels are one field in Org settings.
+        Designing that field + the mental model so the value is legible.
+      </p>
 
-  <h2>1. The only new UI — Org settings → Timezone</h2>
-  <p class="lede">Adds a single <code>&lt;select&gt;</code> to the existing <code>/app/org</code> form (admin-only,
-  already gated). Recognition over recall: the current zone is pre-selected and an inline hint shows the live
-  local date so the admin can confirm it's right without leaving the page.</p>
+      <h2>1. The only new UI — Org settings → Timezone</h2>
+      <p class="lede">
+        Adds a single <code>&lt;select&gt;</code> to the existing
+        <code>/app/org</code> form (admin-only, already gated). Recognition over
+        recall: the current zone is pre-selected and an inline hint shows the
+        live local date so the admin can confirm it's right without leaving the
+        page.
+      </p>
 
-  <div class="phones">
-    <div class="phone">
-      <div class="cap">Org settings (mobile) — new Timezone field</div>
-      <div class="screen">
-        <div class="title">Organisation</div>
-        <div class="sub">Created 2 June 2026</div>
-        <div class="card">
-          <label>Name<input value="Street Cats of Tavira" /></label>
-          <label>Notes<input value="Registered charity · main contact Ana" /></label>
-          <label>Timezone
-            <select><option>Europe/Lisbon — currently 02:14, Fri 5 Jun</option></select>
-            <span class="hint">Used to decide what counts as "today" for feeds, schedules and missed-feed alerts.</span>
-          </label>
-          <button class="btn">Save changes</button>
+      <div class="phones">
+        <div class="phone">
+          <div class="cap">Org settings (mobile) — new Timezone field</div>
+          <div class="screen">
+            <div class="title">Organisation</div>
+            <div class="sub">Created 2 June 2026</div>
+            <div class="card">
+              <label>Name<input value="Street Cats of Tavira" /></label>
+              <label
+                >Notes<input value="Registered charity · main contact Ana"
+              /></label>
+              <label
+                >Timezone
+                <select>
+                  <option>Europe/Lisbon — currently 02:14, Fri 5 Jun</option>
+                </select>
+                <span class="hint"
+                  >Used to decide what counts as "today" for feeds, schedules
+                  and missed-feed alerts.</span
+                >
+              </label>
+              <button class="btn">Save changes</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="phone">
+          <div class="cap">Zone picker open</div>
+          <div class="screen">
+            <div class="title">Timezone</div>
+            <div class="sub">
+              Curated shortlist + the stored value always present
+            </div>
+            <div class="card" style="gap: 6px">
+              <div
+                style="
+                  padding: 9px 11px;
+                  border: 1px solid var(--accent);
+                  border-radius: 8px;
+                  background: #eef0ff;
+                  font-size: 0.88rem;
+                  font-weight: 600;
+                "
+              >
+                Europe/Lisbon ✓
+              </div>
+              <div style="padding: 9px 11px; font-size: 0.88rem">
+                Atlantic/Azores
+              </div>
+              <div style="padding: 9px 11px; font-size: 0.88rem">
+                Europe/Madrid
+              </div>
+              <div style="padding: 9px 11px; font-size: 0.88rem">
+                Europe/London
+              </div>
+              <div style="padding: 9px 11px; font-size: 0.88rem">UTC</div>
+              <span class="hint" style="padding: 6px 2px 0"
+                >Short list keeps the decision fast (Hick's Law). If an org's
+                stored zone isn't listed, it's added to the top so it's never
+                lost.</span
+              >
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="phone">
-      <div class="cap">Zone picker open</div>
-      <div class="screen">
-        <div class="title">Timezone</div>
-        <div class="sub">Curated shortlist + the stored value always present</div>
-        <div class="card" style="gap:6px">
-          <div style="padding:9px 11px;border:1px solid var(--accent);border-radius:8px;background:#eef0ff;font-size:.88rem;font-weight:600">Europe/Lisbon ✓</div>
-          <div style="padding:9px 11px;font-size:.88rem">Atlantic/Azores</div>
-          <div style="padding:9px 11px;font-size:.88rem">Europe/Madrid</div>
-          <div style="padding:9px 11px;font-size:.88rem">Europe/London</div>
-          <div style="padding:9px 11px;font-size:.88rem">UTC</div>
-          <span class="hint" style="padding:6px 2px 0">Short list keeps the decision fast (Hick's Law). If an org's stored zone isn't listed, it's added to the top so it's never lost.</span>
-        </div>
+      <div class="note">
+        <strong>Accessibility:</strong> native
+        <code>&lt;select&gt;</code> (keyboard + screen-reader friendly, zero
+        JS), a real <code>&lt;label&gt;</code>, the hint is text not colour, the
+        field meets 44px. Save reuses the existing success/error banners on the
+        page.
       </div>
+
+      <h2>2. The mental model — where "today" begins</h2>
+      <p class="lede">
+        The thing volunteers must trust: "today" and "missed" follow
+        <em>Tavira's clock</em>, not the server's. A feed logged at 00:30 local
+        belongs to the new day even though the server (UTC) may still call it
+        yesterday.
+      </p>
+
+      <div class="diagram">
+        <strong
+          >One colony day in <code>Europe/Lisbon</code> (UTC+1 in
+          summer)</strong
+        >
+        <div class="bar">
+          <div class="seg" style="left: 2%; width: 30%; background: #9aa0b3">
+            night
+          </div>
+          <div class="seg" style="left: 33%; width: 14%; background: #1c7a3f">
+            feed window<br />08–09
+          </div>
+          <div class="seg" style="left: 47%; width: 38%; background: #cbb89a">
+            day
+          </div>
+          <div class="seg" style="left: 85%; width: 13%; background: #9a5b00">
+            missed?<br />+12h
+          </div>
+          <div class="tick" style="left: 2%"><span>00:00</span></div>
+          <div class="tick" style="left: 50%"><span>12:00</span></div>
+          <div class="tick" style="left: 98%"><span>24:00</span></div>
+        </div>
+        <span class="hint"
+          >Day boundaries (00:00–24:00) are computed in the org zone and
+          converted to UTC instants for querying. "Missed" fires 12h after the
+          local window close, also in-zone — so it survives DST and a UTC
+          server.</span
+        >
+      </div>
+
+      <h2>3. Downstream (not built here, shown for context)</h2>
+      <p class="lede">
+        Feeder "Today", Feeding schedules and the missed-feed alert are separate
+        cards; they'll read these helpers. This card just guarantees that when
+        they ask "is it today?" / "is this late?", the answer is in the right
+        timezone and unit-tested — including a non-Portugal org.
+      </p>
+
+      <h2>4. Acceptance-criteria coverage</h2>
+      <ul class="ac">
+        <li>
+          Admin can view + change the org timezone in <code>/app/org</code> → §1
+          field, pre-selected + hint.
+        </li>
+        <li>
+          Legibility / recognition → inline "currently HH:MM, day" confirmation.
+        </li>
+        <li>
+          Stored-but-unlisted zone never lost → pinned to top of the list.
+        </li>
+        <li>
+          Backend tz-correctness + tests → §2 model; no UI needed, no new states
+          beyond the existing save banners.
+        </li>
+      </ul>
     </div>
-  </div>
-
-  <div class="note"><strong>Accessibility:</strong> native <code>&lt;select&gt;</code> (keyboard + screen-reader
-  friendly, zero JS), a real <code>&lt;label&gt;</code>, the hint is text not colour, the field meets 44px.
-  Save reuses the existing success/error banners on the page.</div>
-
-  <h2>2. The mental model — where "today" begins</h2>
-  <p class="lede">The thing volunteers must trust: "today" and "missed" follow <em>Tavira's clock</em>, not the
-  server's. A feed logged at 00:30 local belongs to the new day even though the server (UTC) may still call it
-  yesterday.</p>
-
-  <div class="diagram">
-    <strong>One colony day in <code>Europe/Lisbon</code> (UTC+1 in summer)</strong>
-    <div class="bar">
-      <div class="seg" style="left:2%;width:30%;background:#9aa0b3">night</div>
-      <div class="seg" style="left:33%;width:14%;background:#1c7a3f">feed window<br>08–09</div>
-      <div class="seg" style="left:47%;width:38%;background:#cbb89a">day</div>
-      <div class="seg" style="left:85%;width:13%;background:#9a5b00">missed?<br>+12h</div>
-      <div class="tick" style="left:2%"><span>00:00</span></div>
-      <div class="tick" style="left:50%"><span>12:00</span></div>
-      <div class="tick" style="left:98%"><span>24:00</span></div>
-    </div>
-    <span class="hint">Day boundaries (00:00–24:00) are computed in the org zone and converted to UTC instants for
-    querying. "Missed" fires 12h after the local window close, also in-zone — so it survives DST and a UTC server.</span>
-  </div>
-
-  <h2>3. Downstream (not built here, shown for context)</h2>
-  <p class="lede">Feeder "Today", Feeding schedules and the missed-feed alert are separate cards; they'll read
-  these helpers. This card just guarantees that when they ask "is it today?" / "is this late?", the answer is in
-  the right timezone and unit-tested — including a non-Portugal org.</p>
-
-  <h2>4. Acceptance-criteria coverage</h2>
-  <ul class="ac">
-    <li>Admin can view + change the org timezone in <code>/app/org</code> → §1 field, pre-selected + hint.</li>
-    <li>Legibility / recognition → inline "currently HH:MM, day" confirmation.</li>
-    <li>Stored-but-unlisted zone never lost → pinned to top of the list.</li>
-    <li>Backend tz-correctness + tests → §2 model; no UI needed, no new states beyond the existing save banners.</li>
-  </ul>
-</div>
-</body>
+  </body>
 </html>

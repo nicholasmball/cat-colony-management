@@ -28,7 +28,10 @@ export function hasReportIdentifier(input: {
 // Confirm/Reject may only fire while the cat is still awaiting review. This is
 // the single rule both the UI gate and the server actions defer to, so Confirm
 // can never re-fire on an already-active cat (and Reject can't double-delete).
-export function canReviewCat(cat: { status: string; deleted_at?: string | null }): boolean {
+export function canReviewCat(cat: {
+  status: string;
+  deleted_at?: string | null;
+}): boolean {
   return cat.status === UNCONFIRMED_STATUS && !cat.deleted_at;
 }
 

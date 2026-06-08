@@ -20,9 +20,17 @@
         font-family: ui-sans-serif, system-ui, sans-serif;
         line-height: 1.55;
       }
-      .wrap { max-width: 960px; margin: 0 auto; }
-      h1, h2 { font-family: Georgia, serif; }
-      .muted { color: var(--muted); }
+      .wrap {
+        max-width: 960px;
+        margin: 0 auto;
+      }
+      h1,
+      h2 {
+        font-family: Georgia, serif;
+      }
+      .muted {
+        color: var(--muted);
+      }
       .flow {
         display: flex;
         flex-wrap: wrap;
@@ -37,15 +45,25 @@
         border-radius: 999px;
         padding: 0.35rem 0.7rem;
       }
-      .arrow { color: var(--muted); }
-      .screens { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-top: 1rem; }
+      .arrow {
+        color: var(--muted);
+      }
+      .screens {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        margin-top: 1rem;
+      }
       .screen {
         border: 1px solid var(--border);
         border-radius: 12px;
         background: #fff;
         padding: 0.9rem;
       }
-      .screen h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+      .screen h3 {
+        margin: 0 0 0.5rem;
+        font-size: 0.95rem;
+      }
       .mock {
         border: 1px dashed var(--border);
         border-radius: 8px;
@@ -62,8 +80,17 @@
         font-weight: 600;
         font-size: 0.8rem;
       }
-      .field { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.4rem 0.6rem; margin: 0.3rem 0; }
-      ul { margin: 0.3rem 0 0 1rem; padding: 0; }
+      .field {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.4rem 0.6rem;
+        margin: 0.3rem 0;
+      }
+      ul {
+        margin: 0.3rem 0 0 1rem;
+        padding: 0;
+      }
     </style>
   </head>
   <body>
@@ -72,7 +99,8 @@
       <p class="muted">
         Building on the Requirements step. Invite-only, email+password, with a
         bootstrap path so the first admin can exist. Mobile-first; uses the SCoT
-        design tokens (cream / near-black / lavender). (Backfill record — built.)
+        design tokens (cream / near-black / lavender). (Backfill record —
+        built.)
       </p>
 
       <h2>Flow</h2>
@@ -97,7 +125,9 @@
             <div>No account? Ask an administrator to invite you.</div>
           </div>
           <ul>
-            <li>Error state: inline red banner ("Invalid login credentials").</li>
+            <li>
+              Error state: inline red banner ("Invalid login credentials").
+            </li>
             <li>Submit disables + "Signing in…" (no double-submit).</li>
             <li>No public sign-up link — invite-only.</li>
           </ul>
@@ -112,7 +142,9 @@
             <div class="btn">Create organisation</div>
             <div>You'll become its administrator.</div>
           </div>
-          <ul><li>Onboarding empty state, not a blank screen.</li></ul>
+          <ul>
+            <li>Onboarding empty state, not a blank screen.</li>
+          </ul>
         </div>
 
         <div class="screen">
@@ -132,31 +164,73 @@
 
       <h2>Desktop layout (&ge;768px)</h2>
       <div class="screen">
-        <div class="mock" style="display:flex; gap:0.8rem; min-height:160px;">
-          <div style="width:140px; border-right:1px solid var(--border); padding-right:0.7rem;">
+        <div class="mock" style="display: flex; gap: 0.8rem; min-height: 160px">
+          <div
+            style="
+              width: 140px;
+              border-right: 1px solid var(--border);
+              padding-right: 0.7rem;
+            "
+          >
             <div>[ SCoT logo ]</div>
-            <div style="margin-top:0.5rem;">🏠 Home</div>
-            <div style="background:rgba(91,81,196,0.1); color:var(--accent); border-radius:6px; padding:0.15rem 0.3rem;">🐾 Colonies</div>
-            <div style="margin-top:auto; border-top:1px solid var(--border); padding-top:0.5rem;" class="muted">
+            <div style="margin-top: 0.5rem">🏠 Home</div>
+            <div
+              style="
+                background: rgba(91, 81, 196, 0.1);
+                color: var(--accent);
+                border-radius: 6px;
+                padding: 0.15rem 0.3rem;
+              "
+            >
+              🐾 Colonies
+            </div>
+            <div
+              style="
+                margin-top: auto;
+                border-top: 1px solid var(--border);
+                padding-top: 0.5rem;
+              "
+              class="muted"
+            >
               nick@…<br />Sign out
             </div>
           </div>
-          <div style="flex:1;">
+          <div style="flex: 1">
             <strong>Welcome back</strong>
-            <div class="muted" style="font-size:0.7rem; text-transform:uppercase; margin-top:0.4rem;">Your organisation</div>
+            <div
+              class="muted"
+              style="
+                font-size: 0.7rem;
+                text-transform: uppercase;
+                margin-top: 0.4rem;
+              "
+            >
+              Your organisation
+            </div>
             <div class="field">🐾 Street Cats of Tavira — admin&nbsp;›</div>
             <div class="muted">+ New organisation</div>
           </div>
         </div>
         <ul>
-          <li><strong>Left sidebar replaces the bottom tab bar</strong> on ≥768px (tabs on mobile, sidebar on desktop).</li>
-          <li>Sidebar = logo + nav (active state) + account/sign-out footer.</li>
-          <li>Content is <strong>left-aligned</strong> with a readable max-width — not centred in the empty space.</li>
-          <li><code>/login</code> stays a centred card with no app chrome on all sizes.</li>
+          <li>
+            <strong>Left sidebar replaces the bottom tab bar</strong> on ≥768px
+            (tabs on mobile, sidebar on desktop).
+          </li>
+          <li>
+            Sidebar = logo + nav (active state) + account/sign-out footer.
+          </li>
+          <li>
+            Content is <strong>left-aligned</strong> with a readable max-width —
+            not centred in the empty space.
+          </li>
+          <li>
+            <code>/login</code> stays a centred card with no app chrome on all
+            sizes.
+          </li>
         </ul>
       </div>
 
-      <p class="muted" style="margin-top:1rem">
+      <p class="muted" style="margin-top: 1rem">
         Accessibility: labelled fields (not placeholder-only), 44px targets,
         visible focus rings, status by text + colour. Responsive at 375 / 768 /
         1280px. Deferred: invite-accept screen + role-management UI (own tasks).

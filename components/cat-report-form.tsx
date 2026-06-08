@@ -5,7 +5,13 @@ import { SubmitButton } from "@/components/submit-button";
 import { reportCat } from "@/app/app/colonies/[id]/cats/report/actions";
 import { PawIcon } from "@/components/icons";
 import { hasReportIdentifier } from "@/lib/cat-report";
-import { btnGhost, btnGhostDanger, btnPrimary, fieldLabel, input } from "@/lib/ui";
+import {
+  btnGhost,
+  btnGhostDanger,
+  btnPrimary,
+  fieldLabel,
+  input,
+} from "@/lib/ui";
 
 // Tri-state segmented control, identical pattern to feed-form.tsx: three
 // radio buttons, "Unknown" pre-selected (neutral-strong on-class), the value
@@ -42,7 +48,9 @@ function Segmented({
             aria-checked={on}
             onClick={() => onChange(o.key)}
             className={`flex min-h-12 items-center justify-center gap-1.5 rounded-lg border text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/25 ${
-              on ? `${onClass} font-semibold` : "border-border font-medium text-foreground"
+              on
+                ? `${onClass} font-semibold`
+                : "border-border font-medium text-foreground"
             }`}
           >
             {o.label}
@@ -171,7 +179,10 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
       >
         <label className={fieldLabel}>
           <span>
-            Name <span className="font-normal text-muted">(or description below)</span>
+            Name{" "}
+            <span className="font-normal text-muted">
+              (or description below)
+            </span>
           </span>
           <input
             ref={nameRef}
@@ -211,7 +222,11 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
           Colour / markings{" "}
           <span className="font-normal text-muted">(optional)</span>
         </span>
-        <input name="colour" placeholder="e.g. tabby, white paws" className={input} />
+        <input
+          name="colour"
+          placeholder="e.g. tabby, white paws"
+          className={input}
+        />
       </label>
 
       {/* ── Sex (tri-state) ── */}
@@ -256,7 +271,9 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
 
       {/* ── Notes (optional) ── */}
       <label className={fieldLabel}>
-        <span>Notes <span className="font-normal text-muted">(optional)</span></span>
+        <span>
+          Notes <span className="font-normal text-muted">(optional)</span>
+        </span>
         <textarea
           name="notes"
           rows={2}
@@ -268,7 +285,8 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
       {/* ── Photo (optional, non-blocking) ── */}
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-          Photo <span className="font-normal normal-case text-muted">(optional)</span>
+          Photo{" "}
+          <span className="font-normal normal-case text-muted">(optional)</span>
         </h2>
         <div className="flex items-center gap-4">
           <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-surface">
@@ -338,7 +356,11 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
 
 // Downscale + JPEG-compress in the browser so field uploads are small.
 // Mirrors components/incident-form.tsx (kept local to avoid exporting it).
-async function resizeToJpeg(file: File, max = 1600, quality = 0.82): Promise<Blob> {
+async function resizeToJpeg(
+  file: File,
+  max = 1600,
+  quality = 0.82,
+): Promise<Blob> {
   let bitmap: ImageBitmap;
   try {
     bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
@@ -360,7 +382,8 @@ async function resizeToJpeg(file: File, max = 1600, quality = 0.82): Promise<Blo
   bitmap.close?.();
   return await new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(
-      (b) => (b ? resolve(b) : reject(new Error("Couldn’t process the image."))),
+      (b) =>
+        b ? resolve(b) : reject(new Error("Couldn’t process the image.")),
       "image/jpeg",
       quality,
     ),
