@@ -268,12 +268,12 @@ export default async function IncidentsPage({
         <div
           role="group"
           aria-label="Filter by status"
-          className="inline-flex w-fit rounded-full border border-border p-0.5"
+          className="inline-flex w-fit items-center rounded-full border border-border p-0.5"
         >
           <Link
             href={toggleHref(false)}
             aria-current={!showDone ? "true" : undefined}
-            className={`min-h-9 rounded-full px-4 text-sm font-medium transition ${
+            className={`inline-flex min-h-9 items-center justify-center rounded-full px-4 text-sm font-medium transition ${
               !showDone
                 ? "bg-accent text-accent-foreground"
                 : "text-muted hover:text-foreground"
@@ -284,7 +284,7 @@ export default async function IncidentsPage({
           <Link
             href={toggleHref(true)}
             aria-current={showDone ? "true" : undefined}
-            className={`min-h-9 rounded-full px-4 text-sm font-medium transition ${
+            className={`inline-flex min-h-9 items-center justify-center rounded-full px-4 text-sm font-medium transition ${
               showDone
                 ? "bg-accent text-accent-foreground"
                 : "text-muted hover:text-foreground"
