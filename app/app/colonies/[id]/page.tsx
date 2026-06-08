@@ -6,7 +6,12 @@ import { photoSrc } from "@/lib/photo";
 import { catLabel, formatStatus, statusTone } from "@/lib/cat-display";
 import { scheduleWhen } from "@/lib/schedule";
 import { createServiceClient } from "@/lib/supabase/service";
-import { PawIcon, ChevronIcon, CalendarIcon } from "@/components/icons";
+import {
+  PawIcon,
+  ChevronIcon,
+  CalendarIcon,
+  WarningIcon,
+} from "@/components/icons";
 import { EmptyState } from "@/components/empty-state";
 import { ConfirmButton } from "@/components/confirm-button";
 import { deleteSchedule } from "./schedules/actions";
@@ -49,10 +54,15 @@ export default async function ColonyDetail({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ updated?: string; error?: string }>;
+  searchParams: Promise<{
+    updated?: string;
+    error?: string;
+    reported?: string;
+    photo?: string;
+  }>;
 }) {
   const { id } = await params;
-  const { updated, error } = await searchParams;
+  const { updated, error, reported, photo } = await searchParams;
   const org = await getActiveOrg();
   const supabase = await createClient();
 
@@ -154,11 +164,37 @@ export default async function ColonyDetail({
         </p>
       ) : null}
 
+      {reported ? (
+        <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">
+          {/* Honest copy: "flagged for caretakers", NOT "notified" —
+              push/SMS isn't built yet. */}
+          ✓ Incident reported.
+          {reported === "urgent" ? " Flagged as urgent for caretakers." : ""}
+        </p>
+      ) : null}
+
+      {photo === "failed" ? (
+        <p
+          role="status"
+          className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+        >
+          The photo didn’t attach, but your report was saved.
+        </p>
+      ) : null}
+
       <Link
         href={`/app/colonies/${id}/feed`}
         className={`${btnPrimary} min-h-14 text-base`}
       >
         Record feeding update
+      </Link>
+
+      <Link
+        href={`/app/colonies/${id}/incidents/new`}
+        className={`${btnGhostDanger} -mt-3 inline-flex min-h-12 items-center justify-center gap-2 text-base`}
+      >
+        <WarningIcon className="h-5 w-5" aria-hidden />
+        Report an incident
       </Link>
 
       <section className="flex flex-col gap-2">
