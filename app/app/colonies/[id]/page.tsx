@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { photoSrc } from "@/lib/photo";
 import { catLabel, formatStatus, statusTone } from "@/lib/cat-display";
+import { UNCONFIRMED_STATUS, compareCatsForList } from "@/lib/cat-report";
 import { scheduleWhen } from "@/lib/schedule";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
@@ -65,10 +66,13 @@ export default async function ColonyDetail({
     error?: string;
     reported?: string;
     photo?: string;
+    confirmed?: string;
+    rejected?: string;
   }>;
 }) {
   const { id } = await params;
-  const { updated, error, reported, photo } = await searchParams;
+  const { updated, error, reported, photo, confirmed, rejected } =
+    await searchParams;
   const org = await getActiveOrg();
   const supabase = await createClient();
 
@@ -88,7 +92,11 @@ export default async function ColonyDetail({
     .eq("colony_id", id)
     .is("deleted_at", null)
     .order("name", { nullsFirst: false });
-  const cats = (catsData ?? []) as Cat[];
+  // Derived ordering only (nothing stored): unconfirmed cats float to the top so
+  // review work is visible, then alphabetical. Pure + tested comparator.
+  const cats = ((catsData ?? []) as Cat[])
+    .slice()
+    .sort(compareCatsForList);
 
   // Presigned thumbnail URL per cat (null → paw-icon fallback).
   const photos = new Map<string, string | null>(
@@ -202,12 +210,39 @@ export default async function ColonyDetail({
         </p>
       ) : null}
 
-      {reported ? (
+      {reported === "cat" ? (
+        <p
+          role="status"
+          className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
+        >
+          {/* Honest copy: "we'll review it", NOT "added" — a reported cat is
+              new_unconfirmed until a caretaker confirms it. */}
+          ✓ Cat reported. A caretaker will review it.
+        </p>
+      ) : reported ? (
         <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">
           {/* Honest copy: "flagged for caretakers", NOT "notified" —
               push/SMS isn't built yet. */}
           ✓ Incident reported.
           {reported === "urgent" ? " Flagged as urgent for caretakers." : ""}
+        </p>
+      ) : null}
+
+      {confirmed === "cat" ? (
+        <p
+          role="status"
+          className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
+        >
+          ✓ Cat confirmed and added to the colony.
+        </p>
+      ) : null}
+
+      {rejected === "cat" ? (
+        <p
+          role="status"
+          className="rounded-lg bg-foreground/5 px-3 py-2 text-sm text-muted"
+        >
+          Reported cat rejected and removed from the colony.
         </p>
       ) : null}
 
@@ -233,6 +268,16 @@ export default async function ColonyDetail({
       >
         <WarningIcon className="h-5 w-5" aria-hidden />
         Report an incident
+      </Link>
+
+      {/* Report a new cat — available to ALL roles (feeders included). The
+          manager-only "Add cat" full form stays in the Cats section header. */}
+      <Link
+        href={`/app/colonies/${id}/cats/report`}
+        className={`${btnGhost} -mt-3 inline-flex min-h-12 items-center justify-center gap-2 text-base`}
+      >
+        <PawIcon className="h-5 w-5" aria-hidden />
+        Report a new cat
       </Link>
 
       <section className="flex flex-col gap-2">
@@ -263,43 +308,50 @@ export default async function ColonyDetail({
           />
         ) : (
           <ul className="grid gap-2 sm:grid-cols-2">
-            {cats.map((c) => (
-              <li key={c.id}>
-                <Link
-                  href={`/app/colonies/${id}/cats/${c.id}`}
-                  className={`${card} flex min-h-[60px] items-center gap-3 px-4 py-3 transition hover:bg-foreground/5`}
-                >
-                  <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-surface">
-                    {photos.get(c.id) ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={photos.get(c.id)!}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <PawIcon className="h-5 w-5 text-muted" />
-                    )}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{catLabel(c)}</p>
-                    <p className="flex items-center gap-1.5 text-xs text-muted">
-                      {c.colour ? (
-                        <span className="capitalize">{c.colour}</span>
-                      ) : null}
-                      <span
-                        className={`rounded-full px-2 py-0.5 font-medium capitalize ${
-                          toneClass[statusTone(c.status)]
-                        }`}
-                      >
-                        {formatStatus(c.status)}
-                      </span>
-                    </p>
-                  </div>
-                  <ChevronIcon className="h-4 w-4 shrink-0 text-muted" />
-                </Link>
-              </li>
-            ))}
+            {cats.map((c) => {
+              const unconfirmed = c.status === UNCONFIRMED_STATUS;
+              return (
+                <li key={c.id}>
+                  <Link
+                    href={`/app/colonies/${id}/cats/${c.id}`}
+                    className={`${card} flex min-h-[60px] items-center gap-3 px-4 py-3 transition hover:bg-foreground/5 ${
+                      unconfirmed ? "border-l-4 border-l-accent" : ""
+                    }`}
+                  >
+                    <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-surface">
+                      {photos.get(c.id) ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={photos.get(c.id)!}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <PawIcon className="h-5 w-5 text-muted" />
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{catLabel(c)}</p>
+                      <p className="flex items-center gap-1.5 text-xs text-muted">
+                        {c.colour ? (
+                          <span className="capitalize">{c.colour}</span>
+                        ) : null}
+                        {/* not colour alone: ★ glyph + words accompany the tone */}
+                        <span
+                          className={`rounded-full px-2 py-0.5 font-medium ${
+                            unconfirmed ? "" : "capitalize"
+                          } ${toneClass[statusTone(c.status)]}`}
+                        >
+                          {unconfirmed ? "★ " : ""}
+                          {formatStatus(c.status)}
+                        </span>
+                      </p>
+                    </div>
+                    <ChevronIcon className="h-4 w-4 shrink-0 text-muted" />
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
