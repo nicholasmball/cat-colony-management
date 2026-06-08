@@ -82,8 +82,7 @@ export default async function AppHome({
   // ── First-run: active org exists but is still empty → guided welcome ──────
   // Active org honours the switcher cookie (falls back to earliest membership).
   const active = await getActiveOrg();
-  const canManage =
-    active?.role === "admin" || active?.role === "caretaker";
+  const canManage = active?.role === "admin" || active?.role === "caretaker";
   const orgName = active?.name ?? "your colony";
 
   let colonyCount = 0;
@@ -119,7 +118,10 @@ export default async function AppHome({
 
   if (active && step !== "done") {
     const steps = [
-      { label: "Add your first colony", state: step === "colony" ? "now" : "done" },
+      {
+        label: "Add your first colony",
+        state: step === "colony" ? "now" : "done",
+      },
       {
         label: "Add a cat to it",
         state: step === "cat" ? "now" : step === "colony" ? "todo" : "done",
@@ -166,9 +168,7 @@ export default async function AppHome({
                     {s.state === "done" ? "✓" : i + 1}
                   </span>
                   <span
-                    className={
-                      s.state === "now" ? "font-medium" : "text-muted"
-                    }
+                    className={s.state === "now" ? "font-medium" : "text-muted"}
                   >
                     {s.label}
                   </span>
@@ -218,11 +218,7 @@ export default async function AppHome({
                 {/* A form (not a link) so switching the active org is a POST —
                     avoids Next prefetch silently changing the active org. */}
                 <form action={switchOrg}>
-                  <input
-                    type="hidden"
-                    name="org"
-                    value={m.organisation_id}
-                  />
+                  <input type="hidden" name="org" value={m.organisation_id} />
                   <button
                     type="submit"
                     className={`${card} flex w-full items-center justify-between px-4 py-3.5 text-left transition hover:border-accent/50 ${

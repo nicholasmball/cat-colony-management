@@ -1,265 +1,735 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Feeder Today — UX design</title>
-<style>
-  :root{
-    --bg:#f7f4f2; --fg:#191919; --muted:#6b6b6b; --accent:#170df2;
-    --surface:#fff; --border:#e7e2dd; --radius:14px;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--fg);
-    font-family:"Raleway",system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.55}
-  .wrap{max-width:980px;margin:0 auto;padding:40px 24px 80px}
-  h1,h2,h3{font-family:"Cormorant Garamond",Georgia,serif;font-weight:600;line-height:1.15}
-  h1{font-size:2.6rem;margin:0 0 .2em}
-  h2{font-size:1.7rem;margin:2.2em 0 .5em;border-bottom:1px solid var(--border);padding-bottom:.2em}
-  h3{font-size:1.2rem;margin:1.4em 0 .4em}
-  .lede{color:var(--muted);font-size:1.05rem;max-width:62ch}
-  code{background:#efe9e4;padding:.1em .4em;border-radius:5px;font-size:.86em}
-  .phones{display:flex;gap:28px;flex-wrap:wrap;margin:18px 0}
-  .phone{width:300px;border:1px solid var(--border);border-radius:24px;background:var(--surface);
-    padding:14px;box-shadow:0 6px 24px rgba(0,0,0,.06)}
-  .phone .cap{font-size:.78rem;color:var(--muted);text-align:center;margin-bottom:8px;font-weight:600}
-  .screen{background:var(--bg);border-radius:16px;padding:12px;min-height:420px}
-  .crumb{color:var(--accent);font-size:.82rem;margin-bottom:8px}
-  .title{font-family:"Cormorant Garamond",serif;font-size:1.5rem;margin:.1em 0 .1em}
-  .sub{color:var(--muted);font-size:.8rem;margin-bottom:12px}
-  .btn{display:block;text-align:center;background:var(--accent);color:#fff;border-radius:11px;
-    padding:13px;font-weight:600;font-size:.9rem;margin:10px 0}
-  .row{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--border);
-    border-radius:12px;padding:11px;margin-bottom:9px;min-height:60px}
-  .row.tap{position:relative}
-  .row .chev{margin-left:auto;color:var(--muted);font-size:1.1rem}
-  .thumb{width:42px;height:42px;border-radius:50%;background:#efe9e4;flex:0 0 auto;display:grid;
-    place-items:center;color:var(--muted);overflow:hidden;font-size:1.1rem}
-  .nm{font-weight:600;font-size:.92rem}
-  .meta{color:var(--muted);font-size:.76rem}
-  .pill{display:inline-block;font-size:.68rem;padding:2px 8px;border-radius:999px;font-weight:600;
-    border:1px solid var(--border)}
-  .pill.fed{background:#e7f6ec;color:#1c7a3f;border-color:#bfe6cd}
-  .pill.pending{background:#efeaf6;color:#4b4660;border-color:#d8d1e6}
-  .pill.missed{background:#fde7e7;color:#a12525;border-color:#f3bcbc}
-  /* the row action is the destination link; it carries the verb */
-  .act{margin-left:auto;font-size:.8rem;font-weight:600;color:var(--accent);white-space:nowrap}
-  .act.view{color:var(--muted)}
-  .field{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 11px;margin-bottom:7px}
-  .field .k{font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
-  .field .v{font-size:.9rem}
-  .note{background:#fff;border:1px solid var(--border);border-left:3px solid var(--accent);
-    border-radius:8px;padding:12px 14px;margin:10px 0;font-size:.92rem}
-  .empty{background:var(--surface);border:1px solid var(--border);border-radius:14px;
-    padding:34px 18px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}
-  .empty .ball{width:54px;height:54px;border-radius:50%;background:#e9e6ff;color:var(--accent);
-    display:grid;place-items:center;font-size:1.5rem}
-  .empty .t{font-weight:600;font-size:.95rem}
-  .empty .b{color:var(--muted);font-size:.82rem;max-width:30ch}
-  ul.ac{padding-left:0;list-style:none}
-  ul.ac li{padding:6px 0 6px 26px;position:relative}
-  ul.ac li::before{content:"✓";position:absolute;left:0;color:var(--accent);font-weight:700}
-  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:.92rem}
-  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
-  th{font-size:.74rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
-  .tag{font-size:.72rem;background:#efe9e4;border-radius:6px;padding:1px 7px}
-  /* divider label between actionable + done groups */
-  .grouplbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:14px 2px 8px}
-  /* desktop frame */
-  .desk{border:1px solid var(--border);border-radius:14px;background:var(--surface);
-    box-shadow:0 6px 24px rgba(0,0,0,.06);overflow:hidden;margin:18px 0}
-  .desk .bar{display:flex;align-items:center;gap:7px;padding:9px 12px;background:#efe9e4;border-bottom:1px solid var(--border)}
-  .desk .bar i{width:11px;height:11px;border-radius:50%;background:#cfc7bf;display:inline-block}
-  .desk .bar .url{margin-left:10px;font-size:.74rem;color:var(--muted);background:#fff;border-radius:6px;padding:3px 10px}
-  .desk .app{display:flex;min-height:440px}
-  .desk .side{width:210px;flex:0 0 auto;border-right:1px solid var(--border);padding:16px 12px;background:#fbf9f7}
-  .desk .side .brand{font-family:"Cormorant Garamond",serif;font-size:1.2rem;margin-bottom:14px}
-  .desk .side a{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font-size:.84rem;color:var(--fg);margin-bottom:3px}
-  .desk .side a.on{background:#e9e6ff;color:var(--accent);font-weight:600}
-  .desk .main{flex:1;padding:22px 26px}
-  .desk .main .h{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px}
-  .ico{font-size:1rem;line-height:1}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <h1>Feeder Today</h1>
-  <p class="lede">Design for the new <code>/app/today</code> screen — the feeder's daily landing.
-  Building on the <strong>Requirements &amp; Acceptance Criteria</strong> step: one glance answers
-  <em>"was the colony fed?"</em> and one tap starts the 30-second feeding update. The screen lists
-  <strong>all active colonies in the active org</strong> (owner-decided scope — the "only my
-  assignments" filter is deferred to the Feeding-schedules card), ordered so the work that still
-  needs doing sits at the top.</p>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Feeder Today — UX design</title>
+    <style>
+      :root {
+        --bg: #f7f4f2;
+        --fg: #191919;
+        --muted: #6b6b6b;
+        --accent: #170df2;
+        --surface: #fff;
+        --border: #e7e2dd;
+        --radius: 14px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family:
+          "Raleway",
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          sans-serif;
+        line-height: 1.55;
+      }
+      .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 40px 24px 80px;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-weight: 600;
+        line-height: 1.15;
+      }
+      h1 {
+        font-size: 2.6rem;
+        margin: 0 0 0.2em;
+      }
+      h2 {
+        font-size: 1.7rem;
+        margin: 2.2em 0 0.5em;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.2em;
+      }
+      h3 {
+        font-size: 1.2rem;
+        margin: 1.4em 0 0.4em;
+      }
+      .lede {
+        color: var(--muted);
+        font-size: 1.05rem;
+        max-width: 62ch;
+      }
+      code {
+        background: #efe9e4;
+        padding: 0.1em 0.4em;
+        border-radius: 5px;
+        font-size: 0.86em;
+      }
+      .phones {
+        display: flex;
+        gap: 28px;
+        flex-wrap: wrap;
+        margin: 18px 0;
+      }
+      .phone {
+        width: 300px;
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        background: var(--surface);
+        padding: 14px;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+      }
+      .phone .cap {
+        font-size: 0.78rem;
+        color: var(--muted);
+        text-align: center;
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+      .screen {
+        background: var(--bg);
+        border-radius: 16px;
+        padding: 12px;
+        min-height: 420px;
+      }
+      .crumb {
+        color: var(--accent);
+        font-size: 0.82rem;
+        margin-bottom: 8px;
+      }
+      .title {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.5rem;
+        margin: 0.1em 0 0.1em;
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 0.8rem;
+        margin-bottom: 12px;
+      }
+      .btn {
+        display: block;
+        text-align: center;
+        background: var(--accent);
+        color: #fff;
+        border-radius: 11px;
+        padding: 13px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin: 10px 0;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 11px;
+        margin-bottom: 9px;
+        min-height: 60px;
+      }
+      .row.tap {
+        position: relative;
+      }
+      .row .chev {
+        margin-left: auto;
+        color: var(--muted);
+        font-size: 1.1rem;
+      }
+      .thumb {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: #efe9e4;
+        flex: 0 0 auto;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        overflow: hidden;
+        font-size: 1.1rem;
+      }
+      .nm {
+        font-weight: 600;
+        font-size: 0.92rem;
+      }
+      .meta {
+        color: var(--muted);
+        font-size: 0.76rem;
+      }
+      .pill {
+        display: inline-block;
+        font-size: 0.68rem;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-weight: 600;
+        border: 1px solid var(--border);
+      }
+      .pill.fed {
+        background: #e7f6ec;
+        color: #1c7a3f;
+        border-color: #bfe6cd;
+      }
+      .pill.pending {
+        background: #efeaf6;
+        color: #4b4660;
+        border-color: #d8d1e6;
+      }
+      .pill.missed {
+        background: #fde7e7;
+        color: #a12525;
+        border-color: #f3bcbc;
+      }
+      /* the row action is the destination link; it carries the verb */
+      .act {
+        margin-left: auto;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--accent);
+        white-space: nowrap;
+      }
+      .act.view {
+        color: var(--muted);
+      }
+      .field {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 9px 11px;
+        margin-bottom: 7px;
+      }
+      .field .k {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
+      .field .v {
+        font-size: 0.9rem;
+      }
+      .note {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--accent);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin: 10px 0;
+        font-size: 0.92rem;
+      }
+      .empty {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 34px 18px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+      .empty .ball {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        background: #e9e6ff;
+        color: var(--accent);
+        display: grid;
+        place-items: center;
+        font-size: 1.5rem;
+      }
+      .empty .t {
+        font-weight: 600;
+        font-size: 0.95rem;
+      }
+      .empty .b {
+        color: var(--muted);
+        font-size: 0.82rem;
+        max-width: 30ch;
+      }
+      ul.ac {
+        padding-left: 0;
+        list-style: none;
+      }
+      ul.ac li {
+        padding: 6px 0 6px 26px;
+        position: relative;
+      }
+      ul.ac li::before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        color: var(--accent);
+        font-weight: 700;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 12px 0;
+        font-size: 0.92rem;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      th {
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
+      .tag {
+        font-size: 0.72rem;
+        background: #efe9e4;
+        border-radius: 6px;
+        padding: 1px 7px;
+      }
+      /* divider label between actionable + done groups */
+      .grouplbl {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        margin: 14px 2px 8px;
+      }
+      /* desktop frame */
+      .desk {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--surface);
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        margin: 18px 0;
+      }
+      .desk .bar {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 12px;
+        background: #efe9e4;
+        border-bottom: 1px solid var(--border);
+      }
+      .desk .bar i {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: #cfc7bf;
+        display: inline-block;
+      }
+      .desk .bar .url {
+        margin-left: 10px;
+        font-size: 0.74rem;
+        color: var(--muted);
+        background: #fff;
+        border-radius: 6px;
+        padding: 3px 10px;
+      }
+      .desk .app {
+        display: flex;
+        min-height: 440px;
+      }
+      .desk .side {
+        width: 210px;
+        flex: 0 0 auto;
+        border-right: 1px solid var(--border);
+        padding: 16px 12px;
+        background: #fbf9f7;
+      }
+      .desk .side .brand {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.2rem;
+        margin-bottom: 14px;
+      }
+      .desk .side a {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 9px 10px;
+        border-radius: 9px;
+        font-size: 0.84rem;
+        color: var(--fg);
+        margin-bottom: 3px;
+      }
+      .desk .side a.on {
+        background: #e9e6ff;
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .desk .main {
+        flex: 1;
+        padding: 22px 26px;
+      }
+      .desk .main .h {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+      .ico {
+        font-size: 1rem;
+        line-height: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Feeder Today</h1>
+      <p class="lede">
+        Design for the new <code>/app/today</code> screen — the feeder's daily
+        landing. Building on the
+        <strong>Requirements &amp; Acceptance Criteria</strong> step: one glance
+        answers <em>"was the colony fed?"</em> and one tap starts the 30-second
+        feeding update. The screen lists
+        <strong>all active colonies in the active org</strong> (owner-decided
+        scope — the "only my assignments" filter is deferred to the
+        Feeding-schedules card), ordered so the work that still needs doing sits
+        at the top.
+      </p>
 
-  <h2>1. Flow</h2>
-  <p class="lede">Open app → (feeder lands on) <strong>Today</strong> → scan statuses → tap a
-  <strong>pending</strong> or <strong>missed</strong> row → quick <strong>Feed</strong> update →
-  save → back to Today, where that row now reads <strong>✓ fed · &lt;time&gt;</strong> and drops to
-  the bottom. A <strong>fed</strong> row instead offers <strong>View →</strong> into the colony.
-  No modals — full pages keep back-navigation honest in the field.</p>
-  <div class="note"><strong>Landing rule:</strong> a feeder hitting <code>/app</code> is redirected to
-  <code>/app/today</code>; Admins and Caretakers keep their current home. "Today" is also a primary
-  nav tab (calendar icon) for everyone, so managers can still open it.</div>
-
-  <h2>2. Mobile screens</h2>
-  <p class="lede">Realistic mixed list: one <strong>missed</strong>, two <strong>pending</strong> (one with
-  no window), and one <strong>fed</strong> — plus a long colony name and the empty state. Date shows in
-  the <strong>org's timezone</strong> (we just shipped tz-correct "today").</p>
-  <div class="phones">
-    <div class="phone">
-      <div class="cap">Today — mixed list (actionable first)</div>
-      <div class="screen">
-        <div class="crumb">🐾 Street Cats of Tavira</div>
-        <div class="title">Today</div>
-        <div class="sub">Monday, 6 June · Tavira time</div>
-
-        <div class="grouplbl">Needs feeding</div>
-
-        <div class="row tap">
-          <div class="thumb"><span class="ico" aria-hidden="true">⚠</span></div>
-          <div>
-            <div class="nm">Horta das Figueiras</div>
-            <div class="meta">08–09 · <span class="pill missed">⚠ missed</span></div>
-          </div>
-          <span class="act">Feed →</span>
-        </div>
-
-        <div class="row tap">
-          <div class="thumb"><span class="ico" aria-hidden="true">●</span></div>
-          <div>
-            <div class="nm">Largo de São Sebastião</div>
-            <div class="meta">18–19 · <span class="pill pending">● pending</span></div>
-          </div>
-          <span class="act">Feed →</span>
-        </div>
-
-        <div class="row tap">
-          <div class="thumb"><span class="ico" aria-hidden="true">●</span></div>
-          <div>
-            <div class="nm">Cemitério (no schedule)</div>
-            <div class="meta">no window · <span class="pill pending">● pending</span></div>
-          </div>
-          <span class="act">Feed →</span>
-        </div>
-
-        <div class="grouplbl">Done today</div>
-
-        <div class="row tap">
-          <div class="thumb"><span class="ico" aria-hidden="true">✓</span></div>
-          <div>
-            <div class="nm">Quinta do Morgado junto à praia</div>
-            <div class="meta">07–08 · <span class="pill fed">✓ fed</span> 07:42</div>
-          </div>
-          <span class="act view">View →</span>
-        </div>
+      <h2>1. Flow</h2>
+      <p class="lede">
+        Open app → (feeder lands on) <strong>Today</strong> → scan statuses →
+        tap a <strong>pending</strong> or <strong>missed</strong> row → quick
+        <strong>Feed</strong> update → save → back to Today, where that row now
+        reads <strong>✓ fed · &lt;time&gt;</strong> and drops to the bottom. A
+        <strong>fed</strong> row instead offers <strong>View →</strong> into the
+        colony. No modals — full pages keep back-navigation honest in the field.
+      </p>
+      <div class="note">
+        <strong>Landing rule:</strong> a feeder hitting <code>/app</code> is
+        redirected to <code>/app/today</code>; Admins and Caretakers keep their
+        current home. "Today" is also a primary nav tab (calendar icon) for
+        everyone, so managers can still open it.
       </div>
-    </div>
 
-    <div class="phone">
-      <div class="cap">Today — empty state (EmptyState pattern)</div>
-      <div class="screen">
-        <div class="crumb">🐾 Street Cats of Tavira</div>
-        <div class="title">Today</div>
-        <div class="sub">Monday, 6 June · Tavira time</div>
-        <div class="empty">
-          <span class="ball" aria-hidden="true">🐾</span>
-          <div class="t">No colonies to feed yet</div>
-          <div class="b">When a colony is added to this organisation, it'll show up here for the day.</div>
-        </div>
-        <div class="note" style="margin-top:14px">Feeders can't create colonies, so this state has
-        <strong>no CTA</strong> — the shared <code>EmptyState</code> simply omits the button rather
-        than showing a disabled one.</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="note">Each row is a single full-width link (≥60px tall). The status word and the action
-  verb both live in the row, so the feeder reads <em>state</em> and <em>next step</em> together —
-  "missed → Feed", "fed → View".</div>
-
-  <h2>3. Desktop / wide screen</h2>
-  <p class="lede">Same route, same data. The persistent left nav gains an active <strong>Today</strong>
-  tab (calendar icon); the list relaxes into a wider single column with more breathing room. Nothing new
-  server-side — the existing responsive breakpoints applied to the new markup.</p>
-
-  <div class="desk">
-    <div class="bar"><i></i><i></i><i></i><span class="url">app.streetcatsoftavira.org/app/today</span></div>
-    <div class="app">
-      <div class="side">
-        <div class="brand">Street Cats 🐾</div>
-        <a class="on"><span class="ico" aria-hidden="true">🗓</span> Today</a>
-        <a><span class="ico" aria-hidden="true">📍</span> Colonies</a>
-        <a><span class="ico" aria-hidden="true">👥</span> Members</a>
-        <a><span class="ico" aria-hidden="true">🏠</span> Organisation</a>
-      </div>
-      <div class="main">
-        <div class="h">
-          <div>
-            <div class="title" style="font-size:1.9rem">Today</div>
+      <h2>2. Mobile screens</h2>
+      <p class="lede">
+        Realistic mixed list: one <strong>missed</strong>, two
+        <strong>pending</strong> (one with no window), and one
+        <strong>fed</strong> — plus a long colony name and the empty state. Date
+        shows in the <strong>org's timezone</strong> (we just shipped tz-correct
+        "today").
+      </p>
+      <div class="phones">
+        <div class="phone">
+          <div class="cap">Today — mixed list (actionable first)</div>
+          <div class="screen">
+            <div class="crumb">🐾 Street Cats of Tavira</div>
+            <div class="title">Today</div>
             <div class="sub">Monday, 6 June · Tavira time</div>
+
+            <div class="grouplbl">Needs feeding</div>
+
+            <div class="row tap">
+              <div class="thumb">
+                <span class="ico" aria-hidden="true">⚠</span>
+              </div>
+              <div>
+                <div class="nm">Horta das Figueiras</div>
+                <div class="meta">
+                  08–09 · <span class="pill missed">⚠ missed</span>
+                </div>
+              </div>
+              <span class="act">Feed →</span>
+            </div>
+
+            <div class="row tap">
+              <div class="thumb">
+                <span class="ico" aria-hidden="true">●</span>
+              </div>
+              <div>
+                <div class="nm">Largo de São Sebastião</div>
+                <div class="meta">
+                  18–19 · <span class="pill pending">● pending</span>
+                </div>
+              </div>
+              <span class="act">Feed →</span>
+            </div>
+
+            <div class="row tap">
+              <div class="thumb">
+                <span class="ico" aria-hidden="true">●</span>
+              </div>
+              <div>
+                <div class="nm">Cemitério (no schedule)</div>
+                <div class="meta">
+                  no window · <span class="pill pending">● pending</span>
+                </div>
+              </div>
+              <span class="act">Feed →</span>
+            </div>
+
+            <div class="grouplbl">Done today</div>
+
+            <div class="row tap">
+              <div class="thumb">
+                <span class="ico" aria-hidden="true">✓</span>
+              </div>
+              <div>
+                <div class="nm">Quinta do Morgado junto à praia</div>
+                <div class="meta">
+                  07–08 · <span class="pill fed">✓ fed</span> 07:42
+                </div>
+              </div>
+              <span class="act view">View →</span>
+            </div>
           </div>
         </div>
-        <div class="grouplbl">Needs feeding</div>
-        <div class="row tap"><div class="thumb"><span class="ico" aria-hidden="true">⚠</span></div><div><div class="nm">Horta das Figueiras</div><div class="meta">08–09 · <span class="pill missed">⚠ missed</span></div></div><span class="act">Feed →</span></div>
-        <div class="row tap"><div class="thumb"><span class="ico" aria-hidden="true">●</span></div><div><div class="nm">Largo de São Sebastião</div><div class="meta">18–19 · <span class="pill pending">● pending</span></div></div><span class="act">Feed →</span></div>
-        <div class="row tap"><div class="thumb"><span class="ico" aria-hidden="true">●</span></div><div><div class="nm">Cemitério (no schedule)</div><div class="meta">no window · <span class="pill pending">● pending</span></div></div><span class="act">Feed →</span></div>
-        <div class="grouplbl">Done today</div>
-        <div class="row tap"><div class="thumb"><span class="ico" aria-hidden="true">✓</span></div><div><div class="nm">Quinta do Morgado junto à praia</div><div class="meta">07–08 · <span class="pill fed">✓ fed</span> 07:42</div></div><span class="act view">View →</span></div>
-        <div class="sub" style="margin-top:14px">Shows all active colonies in the active org. A per-feeder
-        "only my assignments" filter is deferred to the Feeding-schedules card.</div>
+
+        <div class="phone">
+          <div class="cap">Today — empty state (EmptyState pattern)</div>
+          <div class="screen">
+            <div class="crumb">🐾 Street Cats of Tavira</div>
+            <div class="title">Today</div>
+            <div class="sub">Monday, 6 June · Tavira time</div>
+            <div class="empty">
+              <span class="ball" aria-hidden="true">🐾</span>
+              <div class="t">No colonies to feed yet</div>
+              <div class="b">
+                When a colony is added to this organisation, it'll show up here
+                for the day.
+              </div>
+            </div>
+            <div class="note" style="margin-top: 14px">
+              Feeders can't create colonies, so this state has
+              <strong>no CTA</strong> — the shared
+              <code>EmptyState</code> simply omits the button rather than
+              showing a disabled one.
+            </div>
+          </div>
+        </div>
       </div>
+
+      <div class="note">
+        Each row is a single full-width link (≥60px tall). The status word and
+        the action verb both live in the row, so the feeder reads
+        <em>state</em> and <em>next step</em> together — "missed → Feed", "fed →
+        View".
+      </div>
+
+      <h2>3. Desktop / wide screen</h2>
+      <p class="lede">
+        Same route, same data. The persistent left nav gains an active
+        <strong>Today</strong> tab (calendar icon); the list relaxes into a
+        wider single column with more breathing room. Nothing new server-side —
+        the existing responsive breakpoints applied to the new markup.
+      </p>
+
+      <div class="desk">
+        <div class="bar">
+          <i></i><i></i><i></i
+          ><span class="url">app.streetcatsoftavira.org/app/today</span>
+        </div>
+        <div class="app">
+          <div class="side">
+            <div class="brand">Street Cats 🐾</div>
+            <a class="on"
+              ><span class="ico" aria-hidden="true">🗓</span> Today</a
+            >
+            <a><span class="ico" aria-hidden="true">📍</span> Colonies</a>
+            <a><span class="ico" aria-hidden="true">👥</span> Members</a>
+            <a><span class="ico" aria-hidden="true">🏠</span> Organisation</a>
+          </div>
+          <div class="main">
+            <div class="h">
+              <div>
+                <div class="title" style="font-size: 1.9rem">Today</div>
+                <div class="sub">Monday, 6 June · Tavira time</div>
+              </div>
+            </div>
+            <div class="grouplbl">Needs feeding</div>
+            <div class="row tap">
+              <div class="thumb">
+                <span class="ico" aria-hidden="true">⚠</span>
+              </div>
+              <div>
+                <div class="nm">Horta das Figueiras</div>
+                <div class="meta">
+                  08–09 · <span class="pill missed">⚠ missed</span>
+                </div>
+              </div>
+              <span class="act">Feed →</span>
+            </div>
+            <div class="row tap">
+              <div class="thumb">
+                <span class="ico" aria-hidden="true">●</span>
+              </div>
+              <div>
+                <div class="nm">Largo de São Sebastião</div>
+                <div class="meta">
+                  18–19 · <span class="pill pending">● pending</span>
+                </div>
+              </div>
+              <span class="act">Feed →</span>
+            </div>
+            <div class="row tap">
+              <div class="thumb">
+                <span class="ico" aria-hidden="true">●</span>
+              </div>
+              <div>
+                <div class="nm">Cemitério (no schedule)</div>
+                <div class="meta">
+                  no window · <span class="pill pending">● pending</span>
+                </div>
+              </div>
+              <span class="act">Feed →</span>
+            </div>
+            <div class="grouplbl">Done today</div>
+            <div class="row tap">
+              <div class="thumb">
+                <span class="ico" aria-hidden="true">✓</span>
+              </div>
+              <div>
+                <div class="nm">Quinta do Morgado junto à praia</div>
+                <div class="meta">
+                  07–08 · <span class="pill fed">✓ fed</span> 07:42
+                </div>
+              </div>
+              <span class="act view">View →</span>
+            </div>
+            <div class="sub" style="margin-top: 14px">
+              Shows all active colonies in the active org. A per-feeder "only my
+              assignments" filter is deferred to the Feeding-schedules card.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h2>4. Accessibility &amp; status vocabulary</h2>
+      <ul class="ac">
+        <li>
+          <strong>Icon + word, never colour alone</strong> (WCAG 1.4.1) — every
+          status is a glyph <em>and</em> a label:
+          <span class="pill fed">✓ fed</span>
+          <span class="pill pending">● pending</span>
+          <span class="pill missed">⚠ missed</span>. The list is fully legible
+          in greyscale.
+        </li>
+        <li>
+          <strong>Contrast ≥4.5:1</strong> — pill text on its tinted background
+          and the accent action verb on surface all clear AA. Tones are a hint,
+          not the message.
+        </li>
+        <li>
+          <strong>Whole row is the link, ≥60px tall</strong> — well above the
+          44px touch minimum; works at 320–375px without horizontal scroll.
+        </li>
+        <li>
+          <strong>No disabled buttons</strong> — feeders who can't add colonies
+          get an empty state with explanatory copy and no CTA, not a greyed-out
+          button.
+        </li>
+        <li>
+          <strong>Real headings &amp; group labels</strong> — "Today" is the
+          page <code>&lt;h1&gt;</code>; "Needs feeding" / "Done today" are real
+          subheadings that double as screen-reader landmarks.
+        </li>
+        <li>
+          <strong>Status glyphs are <code>aria-hidden</code></strong> — the
+          adjacent word carries meaning, so assistive tech reads "missed", not
+          "warning sign missed".
+        </li>
+        <li>
+          <strong>Timezone honesty</strong> — "today" is computed in the org's
+          timezone, so a feed at 23:50 counts for the right day everywhere.
+        </li>
+      </ul>
+
+      <table>
+        <tr>
+          <th>Status</th>
+          <th>Row badge</th>
+          <th>Applies when</th>
+          <th>Row action</th>
+        </tr>
+        <tr>
+          <td><span class="tag">fed</span></td>
+          <td><span class="pill fed">✓ fed</span></td>
+          <td>
+            A feeding has been logged today (org tz). Shows the time, e.g.
+            07:42.
+          </td>
+          <td>View →</td>
+        </tr>
+        <tr>
+          <td><span class="tag">pending</span></td>
+          <td><span class="pill pending">● pending</span></td>
+          <td>
+            Not fed yet <em>and</em> (no window, OR window not closed, OR closed
+            &lt;12h ago).
+          </td>
+          <td>Feed →</td>
+        </tr>
+        <tr>
+          <td><span class="tag">missed</span></td>
+          <td><span class="pill missed">⚠ missed</span></td>
+          <td>
+            Not fed <em>and</em> the feeding window closed ≥12h ago (the alert
+            threshold).
+          </td>
+          <td>Feed →</td>
+        </tr>
+      </table>
+      <div class="note">
+        <strong>Ordering:</strong> actionable first — <strong>missed</strong>,
+        then <strong>pending</strong> (by window start, no-window colonies last
+        within the group) — then <strong>fed</strong> at the bottom. The
+        feeder's eye lands on what still needs doing.
+      </div>
+      <div class="note">
+        <strong>Pure status logic</strong> lives in
+        <code
+          >feedingStatus({ fed, minutesAfterClose }) → "fed" | "pending" |
+          "missed"</code
+        >
+        — a side-effect-free function the engineer will unit-test (fed wins;
+        else ≥720 min after close ⇒ missed; else pending). The screen only
+        renders the result.
+      </div>
+
+      <h2>5. Mapping to acceptance criteria</h2>
+      <ul class="ac">
+        <li>
+          New <code>/app/today</code> lists all active colonies in the active
+          org → screens in §2–3.
+        </li>
+        <li>
+          Header "Today · &lt;local date&gt;" in the org timezone → §2 header,
+          §4 timezone note.
+        </li>
+        <li>
+          Per-row name + feeding window ("08–09" / "no window") + status → row
+          markup throughout.
+        </li>
+        <li>
+          Three statuses (fed / pending / missed) with the exact threshold rules
+          → §4 table + <code>feedingStatus</code>.
+        </li>
+        <li>Status is icon + word, never colour alone → §4 first bullet.</li>
+        <li>
+          Row action: fed → "View →" (colony); pending/missed → "Feed →"
+          (<code>/app/colonies/[id]/feed</code>) → row actions.
+        </li>
+        <li>
+          Ordering: actionable first (missed, then pending by window start), fed
+          last → §4 ordering note.
+        </li>
+        <li>
+          Empty state reuses <code>EmptyState</code> ("No colonies to feed yet",
+          no CTA) → §2 second phone.
+        </li>
+        <li>
+          "Today" is a primary nav tab (calendar) + the feeder's default
+          landing; managers keep their home → §1 landing rule, §3 left nav.
+        </li>
+        <li>
+          "Only my assignments" filter explicitly deferred to Feeding-schedules
+          → §3 note.
+        </li>
+      </ul>
     </div>
-  </div>
-
-  <h2>4. Accessibility &amp; status vocabulary</h2>
-  <ul class="ac">
-    <li><strong>Icon + word, never colour alone</strong> (WCAG 1.4.1) — every status is a glyph
-    <em>and</em> a label: <span class="pill fed">✓ fed</span> <span class="pill pending">● pending</span>
-    <span class="pill missed">⚠ missed</span>. The list is fully legible in greyscale.</li>
-    <li><strong>Contrast ≥4.5:1</strong> — pill text on its tinted background and the accent action verb on
-    surface all clear AA. Tones are a hint, not the message.</li>
-    <li><strong>Whole row is the link, ≥60px tall</strong> — well above the 44px touch minimum; works at
-    320–375px without horizontal scroll.</li>
-    <li><strong>No disabled buttons</strong> — feeders who can't add colonies get an empty state with
-    explanatory copy and no CTA, not a greyed-out button.</li>
-    <li><strong>Real headings &amp; group labels</strong> — "Today" is the page <code>&lt;h1&gt;</code>;
-    "Needs feeding" / "Done today" are real subheadings that double as screen-reader landmarks.</li>
-    <li><strong>Status glyphs are <code>aria-hidden</code></strong> — the adjacent word carries meaning, so
-    assistive tech reads "missed", not "warning sign missed".</li>
-    <li><strong>Timezone honesty</strong> — "today" is computed in the org's timezone, so a feed at 23:50
-    counts for the right day everywhere.</li>
-  </ul>
-
-  <table>
-    <tr><th>Status</th><th>Row badge</th><th>Applies when</th><th>Row action</th></tr>
-    <tr><td><span class="tag">fed</span></td><td><span class="pill fed">✓ fed</span></td>
-      <td>A feeding has been logged today (org tz). Shows the time, e.g. 07:42.</td><td>View →</td></tr>
-    <tr><td><span class="tag">pending</span></td><td><span class="pill pending">● pending</span></td>
-      <td>Not fed yet <em>and</em> (no window, OR window not closed, OR closed &lt;12h ago).</td><td>Feed →</td></tr>
-    <tr><td><span class="tag">missed</span></td><td><span class="pill missed">⚠ missed</span></td>
-      <td>Not fed <em>and</em> the feeding window closed ≥12h ago (the alert threshold).</td><td>Feed →</td></tr>
-  </table>
-  <div class="note"><strong>Ordering:</strong> actionable first — <strong>missed</strong>, then
-  <strong>pending</strong> (by window start, no-window colonies last within the group) — then
-  <strong>fed</strong> at the bottom. The feeder's eye lands on what still needs doing.</div>
-  <div class="note"><strong>Pure status logic</strong> lives in
-  <code>feedingStatus({ fed, minutesAfterClose }) → "fed" | "pending" | "missed"</code> — a side-effect-free
-  function the engineer will unit-test (fed wins; else ≥720 min after close ⇒ missed; else pending).
-  The screen only renders the result.</div>
-
-  <h2>5. Mapping to acceptance criteria</h2>
-  <ul class="ac">
-    <li>New <code>/app/today</code> lists all active colonies in the active org → screens in §2–3.</li>
-    <li>Header "Today · &lt;local date&gt;" in the org timezone → §2 header, §4 timezone note.</li>
-    <li>Per-row name + feeding window ("08–09" / "no window") + status → row markup throughout.</li>
-    <li>Three statuses (fed / pending / missed) with the exact threshold rules → §4 table + <code>feedingStatus</code>.</li>
-    <li>Status is icon + word, never colour alone → §4 first bullet.</li>
-    <li>Row action: fed → "View →" (colony); pending/missed → "Feed →" (<code>/app/colonies/[id]/feed</code>) → row actions.</li>
-    <li>Ordering: actionable first (missed, then pending by window start), fed last → §4 ordering note.</li>
-    <li>Empty state reuses <code>EmptyState</code> ("No colonies to feed yet", no CTA) → §2 second phone.</li>
-    <li>"Today" is a primary nav tab (calendar) + the feeder's default landing; managers keep their home → §1 landing rule, §3 left nav.</li>
-    <li>"Only my assignments" filter explicitly deferred to Feeding-schedules → §3 note.</li>
-  </ul>
-</div>
-</body>
+  </body>
 </html>

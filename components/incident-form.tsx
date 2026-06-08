@@ -268,7 +268,9 @@ export function IncidentForm({
                   aria-checked={on}
                   onClick={() => setUrgencyId(l.id)}
                   className={`flex min-h-12 items-center justify-center gap-1.5 rounded-lg border text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/25 ${
-                    on ? `${onClass} font-semibold` : "border-border text-foreground"
+                    on
+                      ? `${onClass} font-semibold`
+                      : "border-border text-foreground"
                   }`}
                 >
                   {l.alerts_immediately ? (
@@ -295,7 +297,8 @@ export function IncidentForm({
       {/* ── Cat (optional) ── */}
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-          Which cat? <span className="font-normal normal-case text-muted">(optional)</span>
+          Which cat?{" "}
+          <span className="font-normal normal-case text-muted">(optional)</span>
         </h2>
         <ul className="flex flex-col gap-2">
           <li>
@@ -313,8 +316,14 @@ export function IncidentForm({
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border bg-surface text-muted">
                 —
               </span>
-              <span className="flex-1 text-sm font-medium">No specific cat</span>
-              {catId === "" ? <span aria-hidden className="text-accent">✓</span> : null}
+              <span className="flex-1 text-sm font-medium">
+                No specific cat
+              </span>
+              {catId === "" ? (
+                <span aria-hidden className="text-accent">
+                  ✓
+                </span>
+              ) : null}
             </button>
           </li>
           {cats.map((c) => {
@@ -327,7 +336,9 @@ export function IncidentForm({
                   aria-checked={on}
                   onClick={() => setCatId(c.id)}
                   className={`flex min-h-14 w-full items-center gap-3 rounded-xl border px-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/25 ${
-                    on ? "border-accent bg-accent/10" : "border-border bg-surface"
+                    on
+                      ? "border-accent bg-accent/10"
+                      : "border-border bg-surface"
                   }`}
                 >
                   <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border bg-surface">
@@ -336,7 +347,11 @@ export function IncidentForm({
                   <span className="flex-1 text-sm font-medium">
                     {c.name ?? c.temp_id ?? "Unnamed cat"}
                   </span>
-                  {on ? <span aria-hidden className="text-accent">✓</span> : null}
+                  {on ? (
+                    <span aria-hidden className="text-accent">
+                      ✓
+                    </span>
+                  ) : null}
                 </button>
               </li>
             );
@@ -353,7 +368,8 @@ export function IncidentForm({
       {/* ── Photo (optional, non-blocking) ── */}
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-          Photo <span className="font-normal normal-case text-muted">(optional)</span>
+          Photo{" "}
+          <span className="font-normal normal-case text-muted">(optional)</span>
         </h2>
         <div className="flex items-center gap-4">
           <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-surface">
@@ -419,7 +435,8 @@ export function IncidentForm({
       >
         {urgent ? (
           <>
-            <WarningIcon className="h-4 w-4" aria-hidden /> Report urgent incident
+            <WarningIcon className="h-4 w-4" aria-hidden /> Report urgent
+            incident
           </>
         ) : (
           "Report incident"
@@ -431,7 +448,11 @@ export function IncidentForm({
 
 // Downscale + JPEG-compress in the browser so field uploads are small.
 // Mirrors components/image-upload.tsx (kept local to avoid exporting it).
-async function resizeToJpeg(file: File, max = 1600, quality = 0.82): Promise<Blob> {
+async function resizeToJpeg(
+  file: File,
+  max = 1600,
+  quality = 0.82,
+): Promise<Blob> {
   let bitmap: ImageBitmap;
   try {
     bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
@@ -453,7 +474,8 @@ async function resizeToJpeg(file: File, max = 1600, quality = 0.82): Promise<Blo
   bitmap.close?.();
   return await new Promise<Blob>((resolve, reject) =>
     canvas.toBlob(
-      (b) => (b ? resolve(b) : reject(new Error("Couldn’t process the image."))),
+      (b) =>
+        b ? resolve(b) : reject(new Error("Couldn’t process the image.")),
       "image/jpeg",
       quality,
     ),

@@ -1,667 +1,1596 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Incident reporting (create) — UX design</title>
-<link
-  href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Raleway:wght@400;500;600;700&display=swap"
-  rel="stylesheet"
-/>
-<style>
-  :root{
-    --bg:#f7f4f2; --fg:#191919; --muted:#6b6b6b; --accent:#170df2;
-    --surface:#fff; --border:#e7e2dd; --radius:14px;
-    --emerald:#059669;  /* emerald-600 — success / saved */
-    --amber:#f59e0b;    /* amber-500 */
-    --red:#dc2626;      /* red-600 — Urgent on-state + danger types */
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--fg);
-    font-family:"Raleway",system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.55}
-  .wrap{max-width:980px;margin:0 auto;padding:40px 24px 80px}
-  h1,h2,h3{font-family:"Cormorant Garamond",Georgia,serif;font-weight:600;line-height:1.15}
-  h1{font-size:2.6rem;margin:0 0 .2em}
-  h2{font-size:1.7rem;margin:2.2em 0 .5em;border-bottom:1px solid var(--border);padding-bottom:.2em}
-  h3{font-size:1.2rem;margin:1.4em 0 .4em}
-  .lede{color:var(--muted);font-size:1.05rem;max-width:64ch}
-  code{background:#efe9e4;padding:.1em .4em;border-radius:5px;font-size:.86em}
-  kbd{background:#fff;border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:0 .35em;font-size:.82em}
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Incident reporting (create) — UX design</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Raleway:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f7f4f2;
+        --fg: #191919;
+        --muted: #6b6b6b;
+        --accent: #170df2;
+        --surface: #fff;
+        --border: #e7e2dd;
+        --radius: 14px;
+        --emerald: #059669; /* emerald-600 — success / saved */
+        --amber: #f59e0b; /* amber-500 */
+        --red: #dc2626; /* red-600 — Urgent on-state + danger types */
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family:
+          "Raleway",
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          sans-serif;
+        line-height: 1.55;
+      }
+      .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 40px 24px 80px;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-weight: 600;
+        line-height: 1.15;
+      }
+      h1 {
+        font-size: 2.6rem;
+        margin: 0 0 0.2em;
+      }
+      h2 {
+        font-size: 1.7rem;
+        margin: 2.2em 0 0.5em;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.2em;
+      }
+      h3 {
+        font-size: 1.2rem;
+        margin: 1.4em 0 0.4em;
+      }
+      .lede {
+        color: var(--muted);
+        font-size: 1.05rem;
+        max-width: 64ch;
+      }
+      code {
+        background: #efe9e4;
+        padding: 0.1em 0.4em;
+        border-radius: 5px;
+        font-size: 0.86em;
+      }
+      kbd {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-bottom-width: 2px;
+        border-radius: 5px;
+        padding: 0 0.35em;
+        font-size: 0.82em;
+      }
 
-  /* phone + desktop frames (house style) */
-  .phones{display:flex;gap:28px;flex-wrap:wrap;margin:18px 0;align-items:flex-start}
-  .phone{width:347px;border:1px solid var(--border);border-radius:24px;background:var(--surface);
-    padding:14px;box-shadow:0 6px 24px rgba(0,0,0,.06)}
-  .phone .cap{font-size:.78rem;color:var(--muted);text-align:center;margin-bottom:8px;font-weight:600}
-  .screen{background:var(--bg);border-radius:16px;padding:14px;min-height:420px;width:319px}
-  .crumb{color:var(--accent);font-size:.82rem;margin-bottom:8px}
-  .title{font-family:"Cormorant Garamond",serif;font-size:1.6rem;margin:.1em 0 .35em}
+      /* phone + desktop frames (house style) */
+      .phones {
+        display: flex;
+        gap: 28px;
+        flex-wrap: wrap;
+        margin: 18px 0;
+        align-items: flex-start;
+      }
+      .phone {
+        width: 347px;
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        background: var(--surface);
+        padding: 14px;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+      }
+      .phone .cap {
+        font-size: 0.78rem;
+        color: var(--muted);
+        text-align: center;
+        margin-bottom: 8px;
+        font-weight: 600;
+      }
+      .screen {
+        background: var(--bg);
+        border-radius: 16px;
+        padding: 14px;
+        min-height: 420px;
+        width: 319px;
+      }
+      .crumb {
+        color: var(--accent);
+        font-size: 0.82rem;
+        margin-bottom: 8px;
+      }
+      .title {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.6rem;
+        margin: 0.1em 0 0.35em;
+      }
 
-  .seclbl{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:14px 2px 7px}
-  .req{color:var(--red);font-weight:700}
-  .opt{color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0}
+      .seclbl {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        margin: 14px 2px 7px;
+      }
+      .req {
+        color: var(--red);
+        font-weight: 700;
+      }
+      .opt {
+        color: var(--muted);
+        font-weight: 500;
+        text-transform: none;
+        letter-spacing: 0;
+      }
 
-  /* ── type picker — 9 types, 2-col grid of labelled icon buttons ── */
-  .types{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .tbtn{min-height:56px;border:1px solid var(--border);border-radius:12px;background:#fff;
-    font-size:.8rem;font-weight:600;color:var(--fg);display:flex;align-items:center;gap:8px;
-    padding:8px 10px;text-align:left;cursor:pointer;line-height:1.2}
-  .tbtn .ic{font-size:1.15rem;line-height:1;flex:0 0 auto}
-  .tbtn.on{border-color:var(--accent);background:#e9e6ff;color:var(--accent);font-weight:700;box-shadow:inset 0 0 0 1px var(--accent)}
-  .tbtn.on::after{content:"✓";margin-left:auto;color:var(--accent);font-weight:800}
-  .grouplbl{grid-column:1 / -1;font-size:.64rem;font-weight:700;text-transform:uppercase;
-    letter-spacing:.06em;color:var(--muted);margin:4px 2px 0;display:flex;align-items:center;gap:6px}
-  .grouplbl.danger{color:var(--red)}
-  .grouplbl .bar{flex:1;height:1px;background:var(--border)}
+      /* ── type picker — 9 types, 2-col grid of labelled icon buttons ── */
+      .types {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .tbtn {
+        min-height: 56px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--fg);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        text-align: left;
+        cursor: pointer;
+        line-height: 1.2;
+      }
+      .tbtn .ic {
+        font-size: 1.15rem;
+        line-height: 1;
+        flex: 0 0 auto;
+      }
+      .tbtn.on {
+        border-color: var(--accent);
+        background: #e9e6ff;
+        color: var(--accent);
+        font-weight: 700;
+        box-shadow: inset 0 0 0 1px var(--accent);
+      }
+      .tbtn.on::after {
+        content: "✓";
+        margin-left: auto;
+        color: var(--accent);
+        font-weight: 800;
+      }
+      .grouplbl {
+        grid-column: 1 / -1;
+        font-size: 0.64rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin: 4px 2px 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .grouplbl.danger {
+        color: var(--red);
+      }
+      .grouplbl .bar {
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
 
-  /* ── urgency segmented — mirrors "Was the colony fed?" ── */
-  .seg2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .segbtn{min-height:48px;border:1px solid var(--border);border-radius:12px;background:#fff;
-    font-size:.92rem;font-weight:600;color:var(--fg);display:flex;align-items:center;
-    justify-content:center;gap:6px;cursor:pointer}
-  .segbtn.on-urgent{background:var(--red);border-color:var(--red);color:#fff;font-weight:700}
-  .segbtn.on-not{background:#6b6b6b;border-color:#6b6b6b;color:#fff;font-weight:700}
-  .urg-hint{font-size:.74rem;color:var(--muted);margin:6px 2px 0}
-  .urg-hint.live{color:var(--red);font-weight:600}
+      /* ── urgency segmented — mirrors "Was the colony fed?" ── */
+      .seg2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .segbtn {
+        min-height: 48px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: var(--fg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        cursor: pointer;
+      }
+      .segbtn.on-urgent {
+        background: var(--red);
+        border-color: var(--red);
+        color: #fff;
+        font-weight: 700;
+      }
+      .segbtn.on-not {
+        background: #6b6b6b;
+        border-color: #6b6b6b;
+        color: #fff;
+        font-weight: 700;
+      }
+      .urg-hint {
+        font-size: 0.74rem;
+        color: var(--muted);
+        margin: 6px 2px 0;
+      }
+      .urg-hint.live {
+        color: var(--red);
+        font-weight: 600;
+      }
 
-  /* ── cat rows — reuse the avatar + row style ── */
-  .catrow{background:var(--surface);border:1px solid var(--border);border-radius:12px;
-    display:flex;align-items:center;gap:11px;padding:9px 11px;margin-bottom:8px;cursor:pointer;min-height:56px}
-  .catrow.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:#f3f1ff}
-  .av{height:40px;width:40px;flex:0 0 auto;border-radius:50%;border:1px solid var(--border);
-    background:#fff;display:grid;place-items:center;font-size:1rem;color:var(--muted);overflow:hidden}
-  .catrow .nm{font-size:.86rem;font-weight:600;flex:1;min-width:0}
-  .catrow .nm small{display:block;font-weight:500;color:var(--muted);font-size:.74rem}
-  .catrow .tick{color:var(--accent);font-weight:800;opacity:0}
-  .catrow.on .tick{opacity:1}
-  .catrow.none .av{font-size:.9rem}
+      /* ── cat rows — reuse the avatar + row style ── */
+      .catrow {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 9px 11px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        min-height: 56px;
+      }
+      .catrow.on {
+        border-color: var(--accent);
+        box-shadow: inset 0 0 0 1px var(--accent);
+        background: #f3f1ff;
+      }
+      .av {
+        height: 40px;
+        width: 40px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: #fff;
+        display: grid;
+        place-items: center;
+        font-size: 1rem;
+        color: var(--muted);
+        overflow: hidden;
+      }
+      .catrow .nm {
+        font-size: 0.86rem;
+        font-weight: 600;
+        flex: 1;
+        min-width: 0;
+      }
+      .catrow .nm small {
+        display: block;
+        font-weight: 500;
+        color: var(--muted);
+        font-size: 0.74rem;
+      }
+      .catrow .tick {
+        color: var(--accent);
+        font-weight: 800;
+        opacity: 0;
+      }
+      .catrow.on .tick {
+        opacity: 1;
+      }
+      .catrow.none .av {
+        font-size: 0.9rem;
+      }
 
-  .notes-lbl{font-size:.82rem;font-weight:600;display:block;margin:14px 2px 6px}
-  .ta{width:100%;background:#fff;border:1px solid var(--border);border-radius:10px;padding:9px 11px;
-    font-size:.82rem;color:var(--muted);min-height:48px}
+      .notes-lbl {
+        font-size: 0.82rem;
+        font-weight: 600;
+        display: block;
+        margin: 14px 2px 6px;
+      }
+      .ta {
+        width: 100%;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 9px 11px;
+        font-size: 0.82rem;
+        color: var(--muted);
+        min-height: 48px;
+      }
 
-  /* photo add — reuse image-upload look */
-  .photo{display:flex;align-items:center;gap:14px;margin-top:6px}
-  .photo .thumb{height:64px;width:64px;flex:0 0 auto;border-radius:12px;border:1px solid var(--border);
-    background:#fff;display:grid;place-items:center;font-size:1.3rem;color:var(--muted);overflow:hidden}
-  .photo .thumb.has{background:#dfeee6 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23059669'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3C/svg%3E") center/40px no-repeat}
-  .ghostbtn{display:inline-flex;align-items:center;justify-content:center;min-height:36px;border:1px solid var(--border);
-    border-radius:9px;background:#fff;font-size:.8rem;font-weight:600;color:var(--fg);padding:0 12px;cursor:pointer}
-  .ghostbtn.danger{border-color:#f3bcbc;color:#a12525}
-  .photo .hint{font-size:.72rem;color:var(--muted);margin-top:5px}
+      /* photo add — reuse image-upload look */
+      .photo {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 6px;
+      }
+      .photo .thumb {
+        height: 64px;
+        width: 64px;
+        flex: 0 0 auto;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: #fff;
+        display: grid;
+        place-items: center;
+        font-size: 1.3rem;
+        color: var(--muted);
+        overflow: hidden;
+      }
+      .photo .thumb.has {
+        background: #dfeee6
+          url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23059669'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3C/svg%3E")
+          center/40px no-repeat;
+      }
+      .ghostbtn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 36px;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        background: #fff;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--fg);
+        padding: 0 12px;
+        cursor: pointer;
+      }
+      .ghostbtn.danger {
+        border-color: #f3bcbc;
+        color: #a12525;
+      }
+      .photo .hint {
+        font-size: 0.72rem;
+        color: var(--muted);
+        margin-top: 5px;
+      }
 
-  /* the ONLY accent-blue button on the page */
-  .save{position:sticky;bottom:8px;display:flex;align-items:center;justify-content:center;gap:8px;
-    background:var(--accent);color:#fff;border-radius:11px;min-height:48px;font-weight:700;
-    font-size:.95rem;margin-top:18px;box-shadow:0 4px 14px rgba(23,13,242,.22)}
-  .save.urgent{background:var(--red);box-shadow:0 4px 14px rgba(220,38,38,.25)}
-  .save.busy{opacity:.7}
+      /* the ONLY accent-blue button on the page */
+      .save {
+        position: sticky;
+        bottom: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background: var(--accent);
+        color: #fff;
+        border-radius: 11px;
+        min-height: 48px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        margin-top: 18px;
+        box-shadow: 0 4px 14px rgba(23, 13, 242, 0.22);
+      }
+      .save.urgent {
+        background: var(--red);
+        box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25);
+      }
+      .save.busy {
+        opacity: 0.7;
+      }
 
-  .errbanner{background:#fde7e7;border:1px solid #f3bcbc;color:#a12525;border-radius:10px;
-    padding:10px 12px;font-size:.82rem;margin:8px 0 2px;font-weight:600}
-  .warnbanner{background:#fff7e6;border:1px solid #f3dcae;color:#8a5b00;border-radius:10px;
-    padding:10px 12px;font-size:.8rem;margin-top:10px}
+      .errbanner {
+        background: #fde7e7;
+        border: 1px solid #f3bcbc;
+        color: #a12525;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 0.82rem;
+        margin: 8px 0 2px;
+        font-weight: 600;
+      }
+      .warnbanner {
+        background: #fff7e6;
+        border: 1px solid #f3dcae;
+        color: #8a5b00;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 0.8rem;
+        margin-top: 10px;
+      }
 
-  /* success card */
-  .successwrap{text-align:center;padding:28px 14px}
-  .successwrap .big{font-size:2.4rem;line-height:1}
-  .successwrap h3{font-family:"Cormorant Garamond",serif;font-size:1.5rem;margin:.4em 0 .2em}
-  .successwrap p{font-size:.84rem;color:var(--muted);margin:.2em 0}
-  .badge{display:inline-flex;align-items:center;gap:6px;background:#fde7e7;color:#a12525;
-    border-radius:999px;padding:4px 12px;font-size:.74rem;font-weight:700;margin-top:8px}
-  .successbtns{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+      /* success card */
+      .successwrap {
+        text-align: center;
+        padding: 28px 14px;
+      }
+      .successwrap .big {
+        font-size: 2.4rem;
+        line-height: 1;
+      }
+      .successwrap h3 {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.5rem;
+        margin: 0.4em 0 0.2em;
+      }
+      .successwrap p {
+        font-size: 0.84rem;
+        color: var(--muted);
+        margin: 0.2em 0;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #fde7e7;
+        color: #a12525;
+        border-radius: 999px;
+        padding: 4px 12px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        margin-top: 8px;
+      }
+      .successbtns {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 18px;
+      }
 
-  .note{background:#fff;border:1px solid var(--border);border-left:3px solid var(--accent);
-    border-radius:8px;padding:12px 14px;margin:14px 0;font-size:.92rem}
-  .note.warn{border-left-color:var(--amber)}
-  .note.danger{border-left-color:var(--red)}
+      .note {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--accent);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin: 14px 0;
+        font-size: 0.92rem;
+      }
+      .note.warn {
+        border-left-color: var(--amber);
+      }
+      .note.danger {
+        border-left-color: var(--red);
+      }
 
-  /* desktop frame */
-  .desk{border:1px solid var(--border);border-radius:14px;background:var(--surface);
-    box-shadow:0 6px 24px rgba(0,0,0,.06);overflow:hidden;margin:18px 0}
-  .desk .bar{display:flex;align-items:center;gap:7px;padding:9px 12px;background:#efe9e4;border-bottom:1px solid var(--border)}
-  .desk .bar i{width:11px;height:11px;border-radius:50%;background:#cfc7bf;display:inline-block}
-  .desk .bar .url{margin-left:10px;font-size:.74rem;color:var(--muted);background:#fff;border-radius:6px;padding:3px 10px}
-  .desk .app{display:flex;min-height:440px}
-  .desk .side{width:200px;flex:0 0 auto;border-right:1px solid var(--border);padding:16px 12px;background:#fbf9f7}
-  .desk .side .brand{font-family:"Cormorant Garamond",serif;font-size:1.2rem;margin-bottom:14px}
-  .desk .side a{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font-size:.84rem;color:var(--fg);margin-bottom:3px}
-  .desk .side a.on{background:#e9e6ff;color:var(--accent);font-weight:600}
-  .desk .main{flex:1;padding:22px 28px}
-  .desk .form{max-width:520px} /* mirrors max-w-xl */
+      /* desktop frame */
+      .desk {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--surface);
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        margin: 18px 0;
+      }
+      .desk .bar {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 12px;
+        background: #efe9e4;
+        border-bottom: 1px solid var(--border);
+      }
+      .desk .bar i {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: #cfc7bf;
+        display: inline-block;
+      }
+      .desk .bar .url {
+        margin-left: 10px;
+        font-size: 0.74rem;
+        color: var(--muted);
+        background: #fff;
+        border-radius: 6px;
+        padding: 3px 10px;
+      }
+      .desk .app {
+        display: flex;
+        min-height: 440px;
+      }
+      .desk .side {
+        width: 200px;
+        flex: 0 0 auto;
+        border-right: 1px solid var(--border);
+        padding: 16px 12px;
+        background: #fbf9f7;
+      }
+      .desk .side .brand {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.2rem;
+        margin-bottom: 14px;
+      }
+      .desk .side a {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 9px 10px;
+        border-radius: 9px;
+        font-size: 0.84rem;
+        color: var(--fg);
+        margin-bottom: 3px;
+      }
+      .desk .side a.on {
+        background: #e9e6ff;
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .desk .main {
+        flex: 1;
+        padding: 22px 28px;
+      }
+      .desk .form {
+        max-width: 520px;
+      } /* mirrors max-w-xl */
 
-  /* entry-point button on colony detail */
-  .entry{display:flex;flex-direction:column;gap:8px;margin:6px 0}
-  .entry .primary{display:flex;align-items:center;justify-content:center;background:var(--accent);
-    color:#fff;border-radius:11px;min-height:52px;font-weight:700;font-size:.92rem}
-  .entry .report{display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid #f3bcbc;
-    color:#a12525;border-radius:11px;min-height:48px;font-weight:600;font-size:.88rem;background:#fff}
+      /* entry-point button on colony detail */
+      .entry {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin: 6px 0;
+      }
+      .entry .primary {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--accent);
+        color: #fff;
+        border-radius: 11px;
+        min-height: 52px;
+        font-weight: 700;
+        font-size: 0.92rem;
+      }
+      .entry .report {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        border: 1px solid #f3bcbc;
+        color: #a12525;
+        border-radius: 11px;
+        min-height: 48px;
+        font-weight: 600;
+        font-size: 0.88rem;
+        background: #fff;
+      }
 
-  ul.ac{padding-left:0;list-style:none}
-  ul.ac li{padding:6px 0 6px 26px;position:relative}
-  ul.ac li::before{content:"✓";position:absolute;left:0;color:var(--accent);font-weight:700}
-  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:.92rem}
-  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
-  th{font-size:.74rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
-  .tag{font-size:.72rem;background:#efe9e4;border-radius:6px;padding:1px 7px}
-  .swatch{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:middle;margin-right:5px}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <h1>Incident reporting — create flow</h1>
-  <p class="lede">Step 2 (UX) of the <strong>"Incident reporting (create)"</strong> task.
-  <strong>Step 1 (Requirements &amp; AC)</strong> set the north star: <strong>a Feeder reports an incident in
-  seconds in the field</strong> — the "30-second update" applied to problems. <strong>Only the incident type is
-  truly required</strong> (the colony comes from the route). Everything else — urgency (defaults to the org's
-  <em>Not urgent</em>), cat, notes, photo — is optional or pre-defaulted, honouring CLAUDE.md's rule:
-  <em>"accept incomplete data — never block creation because a field is missing."</em> This document covers the
-  CREATE flow only; the list / triage / resolution view, the alert engine, and settings are out of scope.</p>
+      ul.ac {
+        padding-left: 0;
+        list-style: none;
+      }
+      ul.ac li {
+        padding: 6px 0 6px 26px;
+        position: relative;
+      }
+      ul.ac li::before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        color: var(--accent);
+        font-weight: 700;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 12px 0;
+        font-size: 0.92rem;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      th {
+        font-size: 0.74rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
+      .tag {
+        font-size: 0.72rem;
+        background: #efe9e4;
+        border-radius: 6px;
+        padding: 1px 7px;
+      }
+      .swatch {
+        display: inline-block;
+        width: 11px;
+        height: 11px;
+        border-radius: 3px;
+        vertical-align: middle;
+        margin-right: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Incident reporting — create flow</h1>
+      <p class="lede">
+        Step 2 (UX) of the <strong>"Incident reporting (create)"</strong> task.
+        <strong>Step 1 (Requirements &amp; AC)</strong> set the north star:
+        <strong>a Feeder reports an incident in seconds in the field</strong> —
+        the "30-second update" applied to problems.
+        <strong>Only the incident type is truly required</strong> (the colony
+        comes from the route). Everything else — urgency (defaults to the org's
+        <em>Not urgent</em>), cat, notes, photo — is optional or pre-defaulted,
+        honouring CLAUDE.md's rule:
+        <em
+          >"accept incomplete data — never block creation because a field is
+          missing."</em
+        >
+        This document covers the CREATE flow only; the list / triage /
+        resolution view, the alert engine, and settings are out of scope.
+      </p>
 
-  <div class="note"><strong>House style reused, no new primitive.</strong> This screen is a sibling of
-  <code>components/feed-form.tsx</code>: a colony-scoped quick form with a single sticky accent CTA. The type picker is
-  the same selection-button family as the sighting tri-toggle (outline → fill); the urgency control is the exact
-  segmented pattern just shipped for <strong>"Was the colony fed?"</strong> (<code>docs/feeding-update-redesign.html</code>);
-  cat rows reuse the avatar row from <code>app/app/colonies/[id]/page.tsx</code>; the photo block reuses
-  <code>components/image-upload.tsx</code>. Tokens from <code>lib/ui.ts</code> (<code>btnPrimary</code>,
-  <code>input</code>, <code>card</code>). Route: <code>app/app/colonies/[id]/incidents/new</code>.</div>
-
-  <h2>1. Entry point — colony detail page</h2>
-  <p class="lede">The feeder is already on the colony they're standing in. We add a secondary <strong>"Report an
-  incident"</strong> action directly under the existing primary <em>Record feeding update</em> button
-  (<code>app/app/colonies/[id]/page.tsx</code>, line 157). It's styled as a <strong>danger-ghost</strong> outline
-  (red text, white fill) — visually subordinate to the blue feeding CTA (feeding is the daily norm; an incident is the
-  exception), but unmistakable and one tap away.</p>
-
-  <div class="phones">
-    <div class="phone">
-      <div class="cap">Colony detail — entry point</div>
-      <div class="screen">
-        <div class="crumb">← Colonies</div>
-        <div class="title">Horta das Figueiras</div>
-        <div style="font-size:.76rem;color:var(--muted);margin-bottom:12px">Feeds 08:00–10:00</div>
-        <div class="entry">
-          <div class="primary">Record feeding update</div>
-          <div class="report"><span aria-hidden="true">⚠</span> Report an incident</div>
-        </div>
-        <div class="seclbl" style="margin-top:18px">Cats (6)</div>
-        <div class="catrow"><span class="av">🐾</span><span class="nm">Ginger</span></div>
-        <div class="catrow"><span class="av">🐾</span><span class="nm">Smudge</span></div>
+      <div class="note">
+        <strong>House style reused, no new primitive.</strong> This screen is a
+        sibling of <code>components/feed-form.tsx</code>: a colony-scoped quick
+        form with a single sticky accent CTA. The type picker is the same
+        selection-button family as the sighting tri-toggle (outline → fill); the
+        urgency control is the exact segmented pattern just shipped for
+        <strong>"Was the colony fed?"</strong>
+        (<code>docs/feeding-update-redesign.html</code>); cat rows reuse the
+        avatar row from <code>app/app/colonies/[id]/page.tsx</code>; the photo
+        block reuses <code>components/image-upload.tsx</code>. Tokens from
+        <code>lib/ui.ts</code> (<code>btnPrimary</code>, <code>input</code>,
+        <code>card</code>). Route:
+        <code>app/app/colonies/[id]/incidents/new</code>.
       </div>
-    </div>
-    <div class="phone">
-      <div class="cap">Why ghost-danger, not a second blue</div>
-      <div class="screen" style="min-height:auto">
-        <div class="note danger" style="margin-top:0"><strong>Hierarchy (Fitts + single-CTA).</strong> Feeding is the
-        everyday task → it keeps the one filled accent-blue button. The incident report is the rarer, urgent-adjacent
-        action → a red-outline button: high-recognition (red = problem), large (≥48px), but not competing with the
-        primary blue. Mirrors how <code>lib/ui.ts</code> already pairs <code>btnPrimary</code> with
-        <code>btnGhostDanger</code>.</div>
-        <div class="note" style="margin-bottom:0"><strong>Visible to all roles.</strong> Any Feeder assigned to the
-        colony can report; close/resolve is Caretaker/Admin-only (round-2 decision) and lives in the out-of-scope
-        triage view — never on this create screen.</div>
-      </div>
-    </div>
-  </div>
 
-  <h2>2. The type picker — Hick's Law on 9 options</h2>
-  <p class="lede"><strong>The hardest UX call.</strong> Nine fixed types is a lot for "in seconds" (Hick's Law: choice
-  time rises with option count). We don't drop any — they're a fixed enum — but we <strong>tame the scan cost</strong>
-  four ways:</p>
-  <ul class="ac">
-    <li><strong>Group &amp; order by severity.</strong> A small <span class="req">Urgent / danger</span> header floats
-    the four serious, time-critical types to the top (poisoning, sick/injured, dog danger, threat from person) — the
-    ones where seconds matter. A neutral <em>Reports</em> group holds the rest (new cat, missing concern, dead cat,
-    feeding/access problem, other). Two short lists scan far faster than one flat nine (chunking).</li>
-    <li><strong>Icon + label, never icon-alone.</strong> Each button pairs a glyph with its word, so it's recognisable
-    at a glance <em>and</em> unambiguous (recognition over recall; never colour/icon-alone).</li>
-    <li><strong>2-up grid, large targets.</strong> Each tile is ≥56px tall and a full half-width — thumb-friendly, no
-    mis-taps, no horizontal scan across a wide row.</li>
-    <li><strong>Single-select, clear chosen state.</strong> Picking one fills it accent with a ✓; the rest stay
-    outline. The required field is obvious and self-correcting.</li>
-  </ul>
+      <h2>1. Entry point — colony detail page</h2>
+      <p class="lede">
+        The feeder is already on the colony they're standing in. We add a
+        secondary <strong>"Report an incident"</strong> action directly under
+        the existing primary <em>Record feeding update</em> button
+        (<code>app/app/colonies/[id]/page.tsx</code>, line 157). It's styled as
+        a <strong>danger-ghost</strong> outline (red text, white fill) —
+        visually subordinate to the blue feeding CTA (feeding is the daily norm;
+        an incident is the exception), but unmistakable and one tap away.
+      </p>
 
-  <div class="phones">
-    <div class="phone">
-      <div class="cap">Type — nothing chosen (required)</div>
-      <div class="screen">
-        <div class="crumb">← Horta das Figueiras</div>
-        <div class="title">Report an incident</div>
-        <div class="seclbl">What's happening? <span class="req">*</span></div>
-        <div class="types" role="radiogroup" aria-label="Incident type" aria-required="true">
-          <div class="grouplbl danger"><span aria-hidden="true">⚠</span> Urgent / danger <span class="bar"></span></div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">☠</span>Poisoning</div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">🩹</span>Sick / injured</div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">🐕</span>Dog danger</div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">🚫</span>Threat from person</div>
-          <div class="grouplbl">Reports <span class="bar"></span></div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">🐱</span>New cat</div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">❓</span>Missing concern</div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">✝</span>Dead cat</div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">🍽</span>Feeding / access</div>
-          <div class="tbtn" role="radio" aria-checked="false" style="grid-column:1 / -1"><span class="ic" aria-hidden="true">•••</span>Other</div>
+      <div class="phones">
+        <div class="phone">
+          <div class="cap">Colony detail — entry point</div>
+          <div class="screen">
+            <div class="crumb">← Colonies</div>
+            <div class="title">Horta das Figueiras</div>
+            <div
+              style="
+                font-size: 0.76rem;
+                color: var(--muted);
+                margin-bottom: 12px;
+              "
+            >
+              Feeds 08:00–10:00
+            </div>
+            <div class="entry">
+              <div class="primary">Record feeding update</div>
+              <div class="report">
+                <span aria-hidden="true">⚠</span> Report an incident
+              </div>
+            </div>
+            <div class="seclbl" style="margin-top: 18px">Cats (6)</div>
+            <div class="catrow">
+              <span class="av">🐾</span><span class="nm">Ginger</span>
+            </div>
+            <div class="catrow">
+              <span class="av">🐾</span><span class="nm">Smudge</span>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-    <div class="phone">
-      <div class="cap">Type — "Sick / injured" chosen</div>
-      <div class="screen">
-        <div class="crumb">← Horta das Figueiras</div>
-        <div class="title">Report an incident</div>
-        <div class="seclbl">What's happening? <span class="req">*</span></div>
-        <div class="types" role="radiogroup" aria-label="Incident type" aria-required="true">
-          <div class="grouplbl danger"><span aria-hidden="true">⚠</span> Urgent / danger <span class="bar"></span></div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">☠</span>Poisoning</div>
-          <div class="tbtn on" role="radio" aria-checked="true"><span class="ic" aria-hidden="true">🩹</span>Sick / injured</div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">🐕</span>Dog danger</div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">🚫</span>Threat from person</div>
-          <div class="grouplbl">Reports <span class="bar"></span></div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">🐱</span>New cat</div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">❓</span>Missing concern</div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">✝</span>Dead cat</div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">🍽</span>Feeding / access</div>
-          <div class="tbtn" role="radio" aria-checked="false" style="grid-column:1 / -1"><span class="ic" aria-hidden="true">•••</span>Other</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="note warn"><strong>Engineer note — icons.</strong> The HTML uses emoji as stand-ins so the mockup reads
-  without assets. In the build, swap to inline SVGs in the existing <code>components/icons.tsx</code> family (same
-  <code>viewBox="0 0 24 24"</code>, <code>currentColor</code> stroke) — e.g. a cross/skull for poisoning, a bandage for
-  sick/injured. The selected tile uses the accent fill exactly like the existing button-on pattern; the type value
-  posts as the fixed enum string (<code>poisoning | sick_injured | dog_danger | threat | new_cat | missing | dead | feeding_access | other</code>).</div>
-
-  <h2>3. Full form — mobile (375px)</h2>
-  <p class="lede">Top-to-bottom in priority order: <strong>Type</strong> (required) → <strong>Urgency</strong>
-  (defaulted) → <strong>Cat</strong> (optional) → <strong>Notes</strong> (optional) → <strong>Photo</strong> (optional)
-  → sticky <strong>Report incident</strong>. The whole form is single-screen-ish and the submit is always thumb-reachable.</p>
-
-  <div class="phones">
-    <div class="phone">
-      <div class="cap">Default — type chosen, Not urgent (org default)</div>
-      <div class="screen">
-        <div class="crumb">← Horta das Figueiras</div>
-        <div class="title">Report an incident</div>
-
-        <div class="seclbl">What's happening? <span class="req">*</span></div>
-        <div class="types" role="radiogroup" aria-label="Incident type" aria-required="true">
-          <div class="grouplbl danger"><span aria-hidden="true">⚠</span> Urgent / danger <span class="bar"></span></div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">☠</span>Poisoning</div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">🩹</span>Sick / injured</div>
-          <div class="grouplbl">Reports <span class="bar"></span></div>
-          <div class="tbtn on" role="radio" aria-checked="true"><span class="ic" aria-hidden="true">🍽</span>Feeding / access</div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">•••</span>Other</div>
-        </div>
-
-        <div class="seclbl">Urgency</div>
-        <div class="seg2" role="radiogroup" aria-label="Urgency">
-          <div class="segbtn" role="radio" aria-checked="false">Urgent</div>
-          <div class="segbtn on-not" role="radio" aria-checked="true">✓ Not urgent</div>
-        </div>
-        <div class="urg-hint">Defaults to your org's <em>Not urgent</em>. Tap <strong>Urgent</strong> to alert caretakers.</div>
-
-        <div class="seclbl">Which cat? <span class="opt">(optional)</span></div>
-        <div class="catrow on none"><span class="av">—</span><span class="nm">No specific cat</span><span class="tick">✓</span></div>
-        <div class="catrow"><span class="av">🐾</span><span class="nm">Ginger</span><span class="tick">✓</span></div>
-        <div class="catrow"><span class="av">🐾</span><span class="nm">Smudge</span><span class="tick">✓</span></div>
-
-        <label class="notes-lbl" for="n1">Notes (optional)</label>
-        <div class="ta" id="n1">&nbsp;</div>
-
-        <div class="seclbl">Photo <span class="opt">(optional)</span></div>
-        <div class="photo">
-          <div class="thumb">📷</div>
-          <div><span class="ghostbtn">Add photo</span><div class="hint">JPG/PNG/WebP · optional.</div></div>
-        </div>
-
-        <div class="save">Report incident</div>
-      </div>
-    </div>
-
-    <div class="phone">
-      <div class="cap">Serious path — Poisoning + Urgent on, cat + photo</div>
-      <div class="screen">
-        <div class="crumb">← Quinta do Lago</div>
-        <div class="title">Report an incident</div>
-
-        <div class="seclbl">What's happening? <span class="req">*</span></div>
-        <div class="types" role="radiogroup" aria-label="Incident type" aria-required="true">
-          <div class="grouplbl danger"><span aria-hidden="true">⚠</span> Urgent / danger <span class="bar"></span></div>
-          <div class="tbtn on" role="radio" aria-checked="true"><span class="ic" aria-hidden="true">☠</span>Poisoning</div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">🩹</span>Sick / injured</div>
-        </div>
-
-        <div class="seclbl">Urgency</div>
-        <div class="seg2" role="radiogroup" aria-label="Urgency">
-          <div class="segbtn on-urgent" role="radio" aria-checked="true">⚠ Urgent</div>
-          <div class="segbtn" role="radio" aria-checked="false">Not urgent</div>
-        </div>
-        <div class="urg-hint live">⚠ Caretakers will be alerted immediately when you submit.</div>
-
-        <div class="seclbl">Which cat? <span class="opt">(optional)</span></div>
-        <div class="catrow none"><span class="av">—</span><span class="nm">No specific cat</span><span class="tick">✓</span></div>
-        <div class="catrow on"><span class="av">🐾</span><span class="nm">Ginger</span><span class="tick">✓</span></div>
-
-        <label class="notes-lbl" for="n2">Notes (optional)</label>
-        <div class="ta" id="n2" style="color:var(--fg)">Foaming, found near the bins. Called the vet.</div>
-
-        <div class="seclbl">Photo <span class="opt">(optional)</span></div>
-        <div class="photo">
-          <div class="thumb has" aria-label="Photo attached"></div>
-          <div><span class="ghostbtn">Replace</span> <span class="ghostbtn danger">Remove</span><div class="hint">Photo attached.</div></div>
-        </div>
-
-        <div class="save urgent">⚠ Report urgent incident</div>
-      </div>
-    </div>
-  </div>
-
-  <p class="lede"><strong>Cat selector design.</strong> "No specific cat" is the pre-selected default (recognition over
-  recall — the most common case, and never a blocker). Each cat is a tappable row reusing the avatar style from the
-  colony detail page; the selected row gets an accent border + ✓. Single-select. Scoped to this colony's cats only.</p>
-
-  <h2>4. All states</h2>
-
-  <div class="phones">
-    <div class="phone">
-      <div class="cap">Validation — no type chosen on submit</div>
-      <div class="screen">
-        <div class="crumb">← Horta das Figueiras</div>
-        <div class="title">Report an incident</div>
-        <div class="errbanner" role="alert">Choose what's happening before you report.</div>
-        <div class="seclbl">What's happening? <span class="req">*</span></div>
-        <div class="types" role="radiogroup" aria-label="Incident type" aria-required="true" aria-invalid="true"
-             style="outline:2px solid var(--red);outline-offset:3px;border-radius:12px">
-          <div class="grouplbl danger"><span aria-hidden="true">⚠</span> Urgent / danger <span class="bar"></span></div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">☠</span>Poisoning</div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">🩹</span>Sick / injured</div>
-          <div class="grouplbl">Reports <span class="bar"></span></div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">🐱</span>New cat</div>
-          <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">•••</span>Other</div>
-        </div>
-        <div class="note danger" style="font-size:.76rem">Type is the <em>only</em> required field. On submit with
-        none chosen, an inline <code>role="alert"</code> message announces, the picker gets a red ring +
-        <code>aria-invalid</code>, and focus moves to the first type tile. Nothing else can block the report.</div>
-      </div>
-    </div>
-
-    <div class="phone">
-      <div class="cap">Submitting / pending</div>
-      <div class="screen">
-        <div class="crumb">← Horta das Figueiras</div>
-        <div class="title">Report an incident</div>
-        <div class="seclbl">What's happening? <span class="req">*</span></div>
-        <div class="types">
-          <div class="grouplbl danger"><span aria-hidden="true">⚠</span> Urgent / danger <span class="bar"></span></div>
-          <div class="tbtn on"><span class="ic" aria-hidden="true">🩹</span>Sick / injured</div>
-          <div class="tbtn"><span class="ic" aria-hidden="true">☠</span>Poisoning</div>
-        </div>
-        <div class="seclbl">Urgency</div>
-        <div class="seg2">
-          <div class="segbtn">Urgent</div><div class="segbtn on-not">✓ Not urgent</div>
-        </div>
-        <div class="save busy" aria-busy="true">Reporting…</div>
-        <div class="note" style="font-size:.76rem">The submit shows <code>pendingText="Reporting…"</code> and is
-        disabled (reuses <code>components/submit-button.tsx</code>, like FeedForm). The form is not cleared, so a slow
-        sync or offline retry never loses what was typed.</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="phones">
-    <div class="phone">
-      <div class="cap">Success — Urgent reported</div>
-      <div class="screen">
-        <div class="successwrap">
-          <div class="big" aria-hidden="true">✓</div>
-          <h3>Incident reported</h3>
-          <p>Poisoning · Ginger · Horta das Figueiras</p>
-          <span class="badge">⚠ Flagged urgent — caretakers notified</span>
-          <div class="successbtns">
-            <div class="entry"><div class="primary" style="min-height:48px">Back to colony</div></div>
-            <div class="report">Report another</div>
+        <div class="phone">
+          <div class="cap">Why ghost-danger, not a second blue</div>
+          <div class="screen" style="min-height: auto">
+            <div class="note danger" style="margin-top: 0">
+              <strong>Hierarchy (Fitts + single-CTA).</strong> Feeding is the
+              everyday task → it keeps the one filled accent-blue button. The
+              incident report is the rarer, urgent-adjacent action → a
+              red-outline button: high-recognition (red = problem), large
+              (≥48px), but not competing with the primary blue. Mirrors how
+              <code>lib/ui.ts</code> already pairs <code>btnPrimary</code> with
+              <code>btnGhostDanger</code>.
+            </div>
+            <div class="note" style="margin-bottom: 0">
+              <strong>Visible to all roles.</strong> Any Feeder assigned to the
+              colony can report; close/resolve is Caretaker/Admin-only (round-2
+              decision) and lives in the out-of-scope triage view — never on
+              this create screen.
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="phone">
-      <div class="cap">Success — Not urgent</div>
-      <div class="screen">
-        <div class="successwrap">
-          <div class="big" aria-hidden="true">✓</div>
-          <h3>Incident reported</h3>
-          <p>Feeding / access · Horta das Figueiras</p>
-          <p style="font-size:.78rem">It'll show on the colony's incident list for a caretaker to review.</p>
-          <div class="successbtns">
-            <div class="entry"><div class="primary" style="min-height:48px">Back to colony</div></div>
-            <div class="report">Report another</div>
+      <h2>2. The type picker — Hick's Law on 9 options</h2>
+      <p class="lede">
+        <strong>The hardest UX call.</strong> Nine fixed types is a lot for "in
+        seconds" (Hick's Law: choice time rises with option count). We don't
+        drop any — they're a fixed enum — but we
+        <strong>tame the scan cost</strong> four ways:
+      </p>
+      <ul class="ac">
+        <li>
+          <strong>Group &amp; order by severity.</strong> A small
+          <span class="req">Urgent / danger</span> header floats the four
+          serious, time-critical types to the top (poisoning, sick/injured, dog
+          danger, threat from person) — the ones where seconds matter. A neutral
+          <em>Reports</em> group holds the rest (new cat, missing concern, dead
+          cat, feeding/access problem, other). Two short lists scan far faster
+          than one flat nine (chunking).
+        </li>
+        <li>
+          <strong>Icon + label, never icon-alone.</strong> Each button pairs a
+          glyph with its word, so it's recognisable at a glance
+          <em>and</em> unambiguous (recognition over recall; never
+          colour/icon-alone).
+        </li>
+        <li>
+          <strong>2-up grid, large targets.</strong> Each tile is ≥56px tall and
+          a full half-width — thumb-friendly, no mis-taps, no horizontal scan
+          across a wide row.
+        </li>
+        <li>
+          <strong>Single-select, clear chosen state.</strong> Picking one fills
+          it accent with a ✓; the rest stay outline. The required field is
+          obvious and self-correcting.
+        </li>
+      </ul>
+
+      <div class="phones">
+        <div class="phone">
+          <div class="cap">Type — nothing chosen (required)</div>
+          <div class="screen">
+            <div class="crumb">← Horta das Figueiras</div>
+            <div class="title">Report an incident</div>
+            <div class="seclbl">
+              What's happening? <span class="req">*</span>
+            </div>
+            <div
+              class="types"
+              role="radiogroup"
+              aria-label="Incident type"
+              aria-required="true"
+            >
+              <div class="grouplbl danger">
+                <span aria-hidden="true">⚠</span> Urgent / danger
+                <span class="bar"></span>
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">☠</span>Poisoning
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">🩹</span>Sick / injured
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">🐕</span>Dog danger
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">🚫</span>Threat from person
+              </div>
+              <div class="grouplbl">Reports <span class="bar"></span></div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">🐱</span>New cat
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">❓</span>Missing concern
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">✝</span>Dead cat
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">🍽</span>Feeding / access
+              </div>
+              <div
+                class="tbtn"
+                role="radio"
+                aria-checked="false"
+                style="grid-column: 1 / -1"
+              >
+                <span class="ic" aria-hidden="true">•••</span>Other
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="phone">
+          <div class="cap">Type — "Sick / injured" chosen</div>
+          <div class="screen">
+            <div class="crumb">← Horta das Figueiras</div>
+            <div class="title">Report an incident</div>
+            <div class="seclbl">
+              What's happening? <span class="req">*</span>
+            </div>
+            <div
+              class="types"
+              role="radiogroup"
+              aria-label="Incident type"
+              aria-required="true"
+            >
+              <div class="grouplbl danger">
+                <span aria-hidden="true">⚠</span> Urgent / danger
+                <span class="bar"></span>
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">☠</span>Poisoning
+              </div>
+              <div class="tbtn on" role="radio" aria-checked="true">
+                <span class="ic" aria-hidden="true">🩹</span>Sick / injured
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">🐕</span>Dog danger
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">🚫</span>Threat from person
+              </div>
+              <div class="grouplbl">Reports <span class="bar"></span></div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">🐱</span>New cat
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">❓</span>Missing concern
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">✝</span>Dead cat
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">🍽</span>Feeding / access
+              </div>
+              <div
+                class="tbtn"
+                role="radio"
+                aria-checked="false"
+                style="grid-column: 1 / -1"
+              >
+                <span class="ic" aria-hidden="true">•••</span>Other
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <div class="note warn"><strong>Honest copy — alert engine is a future task.</strong> For Urgent we say
-  <em>"Flagged urgent — caretakers notified"</em> only where push/SMS is wired; until then the truthful wording is
-  <em>"Flagged as urgent for caretakers"</em>. The success screen never claims a notification was delivered that the
-  system can't yet guarantee. The list/triage destination behind "Back to colony" is out of scope here.</div>
-
-  <div class="phones">
-    <div class="phone">
-      <div class="cap">Photo failed — incident still saved (non-blocking)</div>
-      <div class="screen">
-        <div class="successwrap" style="padding-bottom:14px">
-          <div class="big" aria-hidden="true">✓</div>
-          <h3>Incident reported</h3>
-          <p>Sick / injured · Smudge</p>
-        </div>
-        <div class="warnbanner" role="status">
-          <strong>The photo didn't upload.</strong> Your report was saved without it — you're offline or the
-          connection dropped. <span style="text-decoration:underline">Retry photo</span> when you have signal, or carry on.
-        </div>
-        <div class="successbtns">
-          <div class="entry"><div class="primary" style="min-height:48px">Back to colony</div></div>
-        </div>
-        <div class="note danger" style="font-size:.76rem">The core requirement: a slow/failed photo <strong>must never
-        lose the incident</strong>. The text fields submit first and succeed; the photo uploads separately (presign →
-        PUT, like <code>image-upload.tsx</code>). If it fails, the incident is already saved and we surface a
-        non-blocking <code>role="status"</code> notice with a retry — field/offline reality.</div>
+      <div class="note warn">
+        <strong>Engineer note — icons.</strong> The HTML uses emoji as stand-ins
+        so the mockup reads without assets. In the build, swap to inline SVGs in
+        the existing <code>components/icons.tsx</code> family (same
+        <code>viewBox="0 0 24 24"</code>, <code>currentColor</code> stroke) —
+        e.g. a cross/skull for poisoning, a bandage for sick/injured. The
+        selected tile uses the accent fill exactly like the existing button-on
+        pattern; the type value posts as the fixed enum string (<code
+          >poisoning | sick_injured | dog_danger | threat | new_cat | missing |
+          dead | feeding_access | other</code
+        >).
       </div>
-    </div>
 
-    <div class="phone">
-      <div class="cap">Offline submit — queued</div>
-      <div class="screen">
-        <div class="crumb">← New colony, Olhão</div>
-        <div class="title">Report an incident</div>
-        <div class="warnbanner" role="status"><strong>You're offline.</strong> We'll queue this report and send it as
-        soon as you're back in signal.</div>
-        <div class="seclbl">What's happening? <span class="req">*</span></div>
-        <div class="types">
-          <div class="grouplbl danger"><span aria-hidden="true">⚠</span> Urgent / danger <span class="bar"></span></div>
-          <div class="tbtn on"><span class="ic" aria-hidden="true">🐕</span>Dog danger</div>
-          <div class="tbtn"><span class="ic" aria-hidden="true">🚫</span>Threat from person</div>
-        </div>
-        <div class="seclbl">Urgency</div>
-        <div class="seg2"><div class="segbtn on-urgent">⚠ Urgent</div><div class="segbtn">Not urgent</div></div>
-        <div class="save">Report incident</div>
-        <div class="note" style="font-size:.76rem">Offline-first (CLAUDE.md): the form fully works without signal,
-        the report is written to the local queue and synced later. The empty-colony case (no cats) is never a blocker —
-        "No specific cat" is the default.</div>
-      </div>
-    </div>
-  </div>
+      <h2>3. Full form — mobile (375px)</h2>
+      <p class="lede">
+        Top-to-bottom in priority order: <strong>Type</strong> (required) →
+        <strong>Urgency</strong> (defaulted) → <strong>Cat</strong> (optional) →
+        <strong>Notes</strong> (optional) → <strong>Photo</strong> (optional) →
+        sticky <strong>Report incident</strong>. The whole form is
+        single-screen-ish and the submit is always thumb-reachable.
+      </p>
 
-  <h2>5. Full form — desktop (within <code>max-w-xl</code>)</h2>
-  <p class="lede">Same route, same markup, left-aligned in a readable <code>max-w-xl</code> column inside the app shell
-  — exactly like the feeding-update page. The type grid stays 2-up; the single CTA sits at the foot of the column.</p>
+      <div class="phones">
+        <div class="phone">
+          <div class="cap">Default — type chosen, Not urgent (org default)</div>
+          <div class="screen">
+            <div class="crumb">← Horta das Figueiras</div>
+            <div class="title">Report an incident</div>
 
-  <div class="desk">
-    <div class="bar"><i></i><i></i><i></i><span class="url">app.streetcatsoftavira.org/app/colonies/horta/incidents/new</span></div>
-    <div class="app">
-      <div class="side">
-        <div class="brand">Street Cats 🐾</div>
-        <a><span aria-hidden="true">🗓</span> Today</a>
-        <a class="on"><span aria-hidden="true">📍</span> Colonies</a>
-        <a><span aria-hidden="true">👥</span> Members</a>
-        <a><span aria-hidden="true">🏠</span> Organisation</a>
-      </div>
-      <div class="main">
-        <div class="form">
-          <div class="crumb">← Horta das Figueiras</div>
-          <div class="title" style="font-size:1.9rem">Report an incident</div>
+            <div class="seclbl">
+              What's happening? <span class="req">*</span>
+            </div>
+            <div
+              class="types"
+              role="radiogroup"
+              aria-label="Incident type"
+              aria-required="true"
+            >
+              <div class="grouplbl danger">
+                <span aria-hidden="true">⚠</span> Urgent / danger
+                <span class="bar"></span>
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">☠</span>Poisoning
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">🩹</span>Sick / injured
+              </div>
+              <div class="grouplbl">Reports <span class="bar"></span></div>
+              <div class="tbtn on" role="radio" aria-checked="true">
+                <span class="ic" aria-hidden="true">🍽</span>Feeding / access
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">•••</span>Other
+              </div>
+            </div>
 
-          <div class="seclbl" style="margin-top:12px">What's happening? <span class="req">*</span></div>
-          <div class="types" role="radiogroup" aria-label="Incident type" aria-required="true">
-            <div class="grouplbl danger"><span aria-hidden="true">⚠</span> Urgent / danger <span class="bar"></span></div>
-            <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">☠</span>Poisoning</div>
-            <div class="tbtn on" role="radio" aria-checked="true"><span class="ic" aria-hidden="true">🩹</span>Sick / injured</div>
-            <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">🐕</span>Dog danger</div>
-            <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">🚫</span>Threat from person</div>
-            <div class="grouplbl">Reports <span class="bar"></span></div>
-            <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">🐱</span>New cat</div>
-            <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">❓</span>Missing concern</div>
-            <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">✝</span>Dead cat</div>
-            <div class="tbtn" role="radio" aria-checked="false"><span class="ic" aria-hidden="true">🍽</span>Feeding / access</div>
-            <div class="tbtn" role="radio" aria-checked="false" style="grid-column:1 / -1"><span class="ic" aria-hidden="true">•••</span>Other</div>
+            <div class="seclbl">Urgency</div>
+            <div class="seg2" role="radiogroup" aria-label="Urgency">
+              <div class="segbtn" role="radio" aria-checked="false">Urgent</div>
+              <div class="segbtn on-not" role="radio" aria-checked="true">
+                ✓ Not urgent
+              </div>
+            </div>
+            <div class="urg-hint">
+              Defaults to your org's <em>Not urgent</em>. Tap
+              <strong>Urgent</strong> to alert caretakers.
+            </div>
+
+            <div class="seclbl">
+              Which cat? <span class="opt">(optional)</span>
+            </div>
+            <div class="catrow on none">
+              <span class="av">—</span><span class="nm">No specific cat</span
+              ><span class="tick">✓</span>
+            </div>
+            <div class="catrow">
+              <span class="av">🐾</span><span class="nm">Ginger</span
+              ><span class="tick">✓</span>
+            </div>
+            <div class="catrow">
+              <span class="av">🐾</span><span class="nm">Smudge</span
+              ><span class="tick">✓</span>
+            </div>
+
+            <label class="notes-lbl" for="n1">Notes (optional)</label>
+            <div class="ta" id="n1">&nbsp;</div>
+
+            <div class="seclbl">Photo <span class="opt">(optional)</span></div>
+            <div class="photo">
+              <div class="thumb">📷</div>
+              <div>
+                <span class="ghostbtn">Add photo</span>
+                <div class="hint">JPG/PNG/WebP · optional.</div>
+              </div>
+            </div>
+
+            <div class="save">Report incident</div>
           </div>
+        </div>
 
-          <div class="seclbl">Urgency</div>
-          <div class="seg2" role="radiogroup" aria-label="Urgency">
-            <div class="segbtn on-urgent" role="radio" aria-checked="true">⚠ Urgent</div>
-            <div class="segbtn" role="radio" aria-checked="false">Not urgent</div>
+        <div class="phone">
+          <div class="cap">
+            Serious path — Poisoning + Urgent on, cat + photo
           </div>
-          <div class="urg-hint live">⚠ Caretakers will be alerted immediately when you submit.</div>
+          <div class="screen">
+            <div class="crumb">← Quinta do Lago</div>
+            <div class="title">Report an incident</div>
 
-          <div class="seclbl">Which cat? <span class="opt">(optional)</span></div>
-          <div class="catrow none"><span class="av">—</span><span class="nm">No specific cat</span><span class="tick">✓</span></div>
-          <div class="catrow on"><span class="av">🐾</span><span class="nm">Ginger</span><span class="tick">✓</span></div>
+            <div class="seclbl">
+              What's happening? <span class="req">*</span>
+            </div>
+            <div
+              class="types"
+              role="radiogroup"
+              aria-label="Incident type"
+              aria-required="true"
+            >
+              <div class="grouplbl danger">
+                <span aria-hidden="true">⚠</span> Urgent / danger
+                <span class="bar"></span>
+              </div>
+              <div class="tbtn on" role="radio" aria-checked="true">
+                <span class="ic" aria-hidden="true">☠</span>Poisoning
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">🩹</span>Sick / injured
+              </div>
+            </div>
 
-          <label class="notes-lbl" for="nd">Notes (optional)</label>
-          <div class="ta" id="nd">&nbsp;</div>
+            <div class="seclbl">Urgency</div>
+            <div class="seg2" role="radiogroup" aria-label="Urgency">
+              <div class="segbtn on-urgent" role="radio" aria-checked="true">
+                ⚠ Urgent
+              </div>
+              <div class="segbtn" role="radio" aria-checked="false">
+                Not urgent
+              </div>
+            </div>
+            <div class="urg-hint live">
+              ⚠ Caretakers will be alerted immediately when you submit.
+            </div>
 
-          <div class="seclbl">Photo <span class="opt">(optional)</span></div>
-          <div class="photo"><div class="thumb">📷</div><div><span class="ghostbtn">Add photo</span><div class="hint">JPG/PNG/WebP · optional.</div></div></div>
+            <div class="seclbl">
+              Which cat? <span class="opt">(optional)</span>
+            </div>
+            <div class="catrow none">
+              <span class="av">—</span><span class="nm">No specific cat</span
+              ><span class="tick">✓</span>
+            </div>
+            <div class="catrow on">
+              <span class="av">🐾</span><span class="nm">Ginger</span
+              ><span class="tick">✓</span>
+            </div>
 
-          <div class="save urgent" style="position:static">⚠ Report urgent incident</div>
+            <label class="notes-lbl" for="n2">Notes (optional)</label>
+            <div class="ta" id="n2" style="color: var(--fg)">
+              Foaming, found near the bins. Called the vet.
+            </div>
+
+            <div class="seclbl">Photo <span class="opt">(optional)</span></div>
+            <div class="photo">
+              <div class="thumb has" aria-label="Photo attached"></div>
+              <div>
+                <span class="ghostbtn">Replace</span>
+                <span class="ghostbtn danger">Remove</span>
+                <div class="hint">Photo attached.</div>
+              </div>
+            </div>
+
+            <div class="save urgent">⚠ Report urgent incident</div>
+          </div>
         </div>
       </div>
+
+      <p class="lede">
+        <strong>Cat selector design.</strong> "No specific cat" is the
+        pre-selected default (recognition over recall — the most common case,
+        and never a blocker). Each cat is a tappable row reusing the avatar
+        style from the colony detail page; the selected row gets an accent
+        border + ✓. Single-select. Scoped to this colony's cats only.
+      </p>
+
+      <h2>4. All states</h2>
+
+      <div class="phones">
+        <div class="phone">
+          <div class="cap">Validation — no type chosen on submit</div>
+          <div class="screen">
+            <div class="crumb">← Horta das Figueiras</div>
+            <div class="title">Report an incident</div>
+            <div class="errbanner" role="alert">
+              Choose what's happening before you report.
+            </div>
+            <div class="seclbl">
+              What's happening? <span class="req">*</span>
+            </div>
+            <div
+              class="types"
+              role="radiogroup"
+              aria-label="Incident type"
+              aria-required="true"
+              aria-invalid="true"
+              style="
+                outline: 2px solid var(--red);
+                outline-offset: 3px;
+                border-radius: 12px;
+              "
+            >
+              <div class="grouplbl danger">
+                <span aria-hidden="true">⚠</span> Urgent / danger
+                <span class="bar"></span>
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">☠</span>Poisoning
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">🩹</span>Sick / injured
+              </div>
+              <div class="grouplbl">Reports <span class="bar"></span></div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">🐱</span>New cat
+              </div>
+              <div class="tbtn" role="radio" aria-checked="false">
+                <span class="ic" aria-hidden="true">•••</span>Other
+              </div>
+            </div>
+            <div class="note danger" style="font-size: 0.76rem">
+              Type is the <em>only</em> required field. On submit with none
+              chosen, an inline <code>role="alert"</code> message announces, the
+              picker gets a red ring + <code>aria-invalid</code>, and focus
+              moves to the first type tile. Nothing else can block the report.
+            </div>
+          </div>
+        </div>
+
+        <div class="phone">
+          <div class="cap">Submitting / pending</div>
+          <div class="screen">
+            <div class="crumb">← Horta das Figueiras</div>
+            <div class="title">Report an incident</div>
+            <div class="seclbl">
+              What's happening? <span class="req">*</span>
+            </div>
+            <div class="types">
+              <div class="grouplbl danger">
+                <span aria-hidden="true">⚠</span> Urgent / danger
+                <span class="bar"></span>
+              </div>
+              <div class="tbtn on">
+                <span class="ic" aria-hidden="true">🩹</span>Sick / injured
+              </div>
+              <div class="tbtn">
+                <span class="ic" aria-hidden="true">☠</span>Poisoning
+              </div>
+            </div>
+            <div class="seclbl">Urgency</div>
+            <div class="seg2">
+              <div class="segbtn">Urgent</div>
+              <div class="segbtn on-not">✓ Not urgent</div>
+            </div>
+            <div class="save busy" aria-busy="true">Reporting…</div>
+            <div class="note" style="font-size: 0.76rem">
+              The submit shows <code>pendingText="Reporting…"</code> and is
+              disabled (reuses <code>components/submit-button.tsx</code>, like
+              FeedForm). The form is not cleared, so a slow sync or offline
+              retry never loses what was typed.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phones">
+        <div class="phone">
+          <div class="cap">Success — Urgent reported</div>
+          <div class="screen">
+            <div class="successwrap">
+              <div class="big" aria-hidden="true">✓</div>
+              <h3>Incident reported</h3>
+              <p>Poisoning · Ginger · Horta das Figueiras</p>
+              <span class="badge">⚠ Flagged urgent — caretakers notified</span>
+              <div class="successbtns">
+                <div class="entry">
+                  <div class="primary" style="min-height: 48px">
+                    Back to colony
+                  </div>
+                </div>
+                <div class="report">Report another</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="phone">
+          <div class="cap">Success — Not urgent</div>
+          <div class="screen">
+            <div class="successwrap">
+              <div class="big" aria-hidden="true">✓</div>
+              <h3>Incident reported</h3>
+              <p>Feeding / access · Horta das Figueiras</p>
+              <p style="font-size: 0.78rem">
+                It'll show on the colony's incident list for a caretaker to
+                review.
+              </p>
+              <div class="successbtns">
+                <div class="entry">
+                  <div class="primary" style="min-height: 48px">
+                    Back to colony
+                  </div>
+                </div>
+                <div class="report">Report another</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="note warn">
+        <strong>Honest copy — alert engine is a future task.</strong> For Urgent
+        we say <em>"Flagged urgent — caretakers notified"</em> only where
+        push/SMS is wired; until then the truthful wording is
+        <em>"Flagged as urgent for caretakers"</em>. The success screen never
+        claims a notification was delivered that the system can't yet guarantee.
+        The list/triage destination behind "Back to colony" is out of scope
+        here.
+      </div>
+
+      <div class="phones">
+        <div class="phone">
+          <div class="cap">
+            Photo failed — incident still saved (non-blocking)
+          </div>
+          <div class="screen">
+            <div class="successwrap" style="padding-bottom: 14px">
+              <div class="big" aria-hidden="true">✓</div>
+              <h3>Incident reported</h3>
+              <p>Sick / injured · Smudge</p>
+            </div>
+            <div class="warnbanner" role="status">
+              <strong>The photo didn't upload.</strong> Your report was saved
+              without it — you're offline or the connection dropped.
+              <span style="text-decoration: underline">Retry photo</span> when
+              you have signal, or carry on.
+            </div>
+            <div class="successbtns">
+              <div class="entry">
+                <div class="primary" style="min-height: 48px">
+                  Back to colony
+                </div>
+              </div>
+            </div>
+            <div class="note danger" style="font-size: 0.76rem">
+              The core requirement: a slow/failed photo
+              <strong>must never lose the incident</strong>. The text fields
+              submit first and succeed; the photo uploads separately (presign →
+              PUT, like <code>image-upload.tsx</code>). If it fails, the
+              incident is already saved and we surface a non-blocking
+              <code>role="status"</code> notice with a retry — field/offline
+              reality.
+            </div>
+          </div>
+        </div>
+
+        <div class="phone">
+          <div class="cap">Offline submit — queued</div>
+          <div class="screen">
+            <div class="crumb">← New colony, Olhão</div>
+            <div class="title">Report an incident</div>
+            <div class="warnbanner" role="status">
+              <strong>You're offline.</strong> We'll queue this report and send
+              it as soon as you're back in signal.
+            </div>
+            <div class="seclbl">
+              What's happening? <span class="req">*</span>
+            </div>
+            <div class="types">
+              <div class="grouplbl danger">
+                <span aria-hidden="true">⚠</span> Urgent / danger
+                <span class="bar"></span>
+              </div>
+              <div class="tbtn on">
+                <span class="ic" aria-hidden="true">🐕</span>Dog danger
+              </div>
+              <div class="tbtn">
+                <span class="ic" aria-hidden="true">🚫</span>Threat from person
+              </div>
+            </div>
+            <div class="seclbl">Urgency</div>
+            <div class="seg2">
+              <div class="segbtn on-urgent">⚠ Urgent</div>
+              <div class="segbtn">Not urgent</div>
+            </div>
+            <div class="save">Report incident</div>
+            <div class="note" style="font-size: 0.76rem">
+              Offline-first (CLAUDE.md): the form fully works without signal,
+              the report is written to the local queue and synced later. The
+              empty-colony case (no cats) is never a blocker — "No specific cat"
+              is the default.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h2>5. Full form — desktop (within <code>max-w-xl</code>)</h2>
+      <p class="lede">
+        Same route, same markup, left-aligned in a readable
+        <code>max-w-xl</code> column inside the app shell — exactly like the
+        feeding-update page. The type grid stays 2-up; the single CTA sits at
+        the foot of the column.
+      </p>
+
+      <div class="desk">
+        <div class="bar">
+          <i></i><i></i><i></i
+          ><span class="url"
+            >app.streetcatsoftavira.org/app/colonies/horta/incidents/new</span
+          >
+        </div>
+        <div class="app">
+          <div class="side">
+            <div class="brand">Street Cats 🐾</div>
+            <a><span aria-hidden="true">🗓</span> Today</a>
+            <a class="on"><span aria-hidden="true">📍</span> Colonies</a>
+            <a><span aria-hidden="true">👥</span> Members</a>
+            <a><span aria-hidden="true">🏠</span> Organisation</a>
+          </div>
+          <div class="main">
+            <div class="form">
+              <div class="crumb">← Horta das Figueiras</div>
+              <div class="title" style="font-size: 1.9rem">
+                Report an incident
+              </div>
+
+              <div class="seclbl" style="margin-top: 12px">
+                What's happening? <span class="req">*</span>
+              </div>
+              <div
+                class="types"
+                role="radiogroup"
+                aria-label="Incident type"
+                aria-required="true"
+              >
+                <div class="grouplbl danger">
+                  <span aria-hidden="true">⚠</span> Urgent / danger
+                  <span class="bar"></span>
+                </div>
+                <div class="tbtn" role="radio" aria-checked="false">
+                  <span class="ic" aria-hidden="true">☠</span>Poisoning
+                </div>
+                <div class="tbtn on" role="radio" aria-checked="true">
+                  <span class="ic" aria-hidden="true">🩹</span>Sick / injured
+                </div>
+                <div class="tbtn" role="radio" aria-checked="false">
+                  <span class="ic" aria-hidden="true">🐕</span>Dog danger
+                </div>
+                <div class="tbtn" role="radio" aria-checked="false">
+                  <span class="ic" aria-hidden="true">🚫</span>Threat from
+                  person
+                </div>
+                <div class="grouplbl">Reports <span class="bar"></span></div>
+                <div class="tbtn" role="radio" aria-checked="false">
+                  <span class="ic" aria-hidden="true">🐱</span>New cat
+                </div>
+                <div class="tbtn" role="radio" aria-checked="false">
+                  <span class="ic" aria-hidden="true">❓</span>Missing concern
+                </div>
+                <div class="tbtn" role="radio" aria-checked="false">
+                  <span class="ic" aria-hidden="true">✝</span>Dead cat
+                </div>
+                <div class="tbtn" role="radio" aria-checked="false">
+                  <span class="ic" aria-hidden="true">🍽</span>Feeding / access
+                </div>
+                <div
+                  class="tbtn"
+                  role="radio"
+                  aria-checked="false"
+                  style="grid-column: 1 / -1"
+                >
+                  <span class="ic" aria-hidden="true">•••</span>Other
+                </div>
+              </div>
+
+              <div class="seclbl">Urgency</div>
+              <div class="seg2" role="radiogroup" aria-label="Urgency">
+                <div class="segbtn on-urgent" role="radio" aria-checked="true">
+                  ⚠ Urgent
+                </div>
+                <div class="segbtn" role="radio" aria-checked="false">
+                  Not urgent
+                </div>
+              </div>
+              <div class="urg-hint live">
+                ⚠ Caretakers will be alerted immediately when you submit.
+              </div>
+
+              <div class="seclbl">
+                Which cat? <span class="opt">(optional)</span>
+              </div>
+              <div class="catrow none">
+                <span class="av">—</span><span class="nm">No specific cat</span
+                ><span class="tick">✓</span>
+              </div>
+              <div class="catrow on">
+                <span class="av">🐾</span><span class="nm">Ginger</span
+                ><span class="tick">✓</span>
+              </div>
+
+              <label class="notes-lbl" for="nd">Notes (optional)</label>
+              <div class="ta" id="nd">&nbsp;</div>
+
+              <div class="seclbl">
+                Photo <span class="opt">(optional)</span>
+              </div>
+              <div class="photo">
+                <div class="thumb">📷</div>
+                <div>
+                  <span class="ghostbtn">Add photo</span>
+                  <div class="hint">JPG/PNG/WebP · optional.</div>
+                </div>
+              </div>
+
+              <div class="save urgent" style="position: static">
+                ⚠ Report urgent incident
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h2>6. Accessibility notes (§)</h2>
+      <ul class="ac">
+        <li>
+          <strong>§ Type picker = single-select radiogroup.</strong> The 9 tiles
+          are one <code>role="radiogroup"</code> labelled "What's happening?"
+          with each tile a <code>role="radio"</code> /
+          <code>aria-checked</code> and <code>aria-required="true"</code>. The
+          two group dividers ("Urgent / danger", "Reports") are visual chunking
+          only — exactly one radio is checked across the whole group.
+        </li>
+        <li>
+          <strong>§ Urgency = the shipped segmented pattern.</strong> Two
+          segments, <code>role="radiogroup"</code> labelled "Urgency", each a
+          <code>role="radio"</code> / <code>aria-checked</code> — identical
+          semantics to the "Was the colony fed?" control. Exactly one selected
+          at all times; <em>Not urgent</em> is the default
+          <code>aria-checked</code> segment.
+        </li>
+        <li>
+          <strong>§ Never colour-alone.</strong> Urgent isn't only red — it
+          carries a <strong>⚠ glyph + bold weight + fill</strong>, plus the live
+          hint text changing to "Caretakers will be alerted". A selected type
+          tile shows a <strong>✓ + fill + accent border</strong>, not hue alone.
+          Legible in greyscale and to colour-blind users.
+        </li>
+        <li>
+          <strong>§ ≥44px targets.</strong> Every type tile (≥56px), both
+          urgency segments (≥48px), every cat row (≥56px), the photo "Add photo"
+          button, and the submit are all ≥44px — the 2-up grid holds full-width
+          hit areas at 375px with no overflow.
+        </li>
+        <li>
+          <strong>§ Visible focus.</strong> A <code>focus-visible</code> accent
+          ring on every control, the same the design system already applies
+          (<code>focus:ring-accent/25</code> in <code>lib/ui.ts</code>).
+        </li>
+        <li>
+          <strong>§ Keyboard order.</strong> Linear: <kbd>Tab</kbd> → Type group
+          (one stop, <kbd>←</kbd>/<kbd>→</kbd> between tiles) → Urgency (one
+          stop, arrows) → Cat group → Notes → Add photo →
+          <strong>Report incident</strong>. The submit is the only control that
+          submits.
+        </li>
+        <li>
+          <strong>§ Visible labels, not placeholders.</strong> "What's
+          happening?", "Urgency", "Which cat? (optional)", "Notes (optional)",
+          "Photo (optional)" are real on-screen headings — recognition over
+          recall, the required one marked with a visible
+          <span class="req">*</span> and <code>aria-required</code>.
+        </li>
+        <li>
+          <strong>§ Errors &amp; status announce.</strong> The "choose a type"
+          message is <code>role="alert"</code> (assertive); the offline/queued
+          and photo-failed notices are <code>role="status"</code> (polite) so
+          they announce without yanking focus from a saved report.
+        </li>
+      </ul>
+
+      <h2>7. Elements → Acceptance Criteria mapping</h2>
+      <table>
+        <tr>
+          <th>UI element</th>
+          <th>State / token</th>
+          <th>Posts</th>
+          <th>Step-1 acceptance criterion</th>
+          <th>Shown in</th>
+        </tr>
+        <tr>
+          <td>
+            <span class="swatch" style="background: var(--accent)"></span
+            ><strong>Type picker</strong> (9-tile radiogroup, grouped
+            urgent-first)
+          </td>
+          <td>accent fill + ✓ on select; <code>border-border</code> off</td>
+          <td><code>type</code> = fixed enum, <strong>required</strong></td>
+          <td>
+            Type is the only required field; 9 types selectable fast (Hick —
+            grouped/iconed/ordered); incomplete data never blocks except type
+          </td>
+          <td>§2, §3, §4, §5</td>
+        </tr>
+        <tr>
+          <td>
+            <span class="swatch" style="background: var(--red)"></span
+            ><strong>Urgency</strong> segmented (Urgent / Not urgent)
+          </td>
+          <td>
+            red fill + ⚠ (Urgent) · muted fill (Not urgent); default
+            <em>Not urgent</em>
+          </td>
+          <td>
+            <code>urgency</code> = org lookup id, defaults to org's "Not urgent"
+          </td>
+          <td>
+            Per-org urgency lookup (2 levels at launch); defaulted, one-tap to
+            Urgent; Urgent → caretakers alerted
+          </td>
+          <td>§3, §4, §5</td>
+        </tr>
+        <tr>
+          <td><strong>Cat selector</strong> ("No specific cat" + rows)</td>
+          <td>accent border + ✓ on select; "No specific cat" pre-selected</td>
+          <td><code>cat_id</code> = id or null (optional)</td>
+          <td>
+            Optional, scoped to this colony, clear no-cat default; reuses cat
+            row/avatar
+          </td>
+          <td>§3, §5</td>
+        </tr>
+        <tr>
+          <td><strong>Notes</strong> textarea</td>
+          <td><code>input</code> token, like FeedForm</td>
+          <td><code>notes</code> (optional)</td>
+          <td>Optional free text, never required</td>
+          <td>§3, §5</td>
+        </tr>
+        <tr>
+          <td><strong>Photo</strong> add (presign + PUT, downscale)</td>
+          <td>
+            empty / preview / "Photo attached"; reuses
+            <code>image-upload.tsx</code>
+          </td>
+          <td>R2 key attached after save (separate upload)</td>
+          <td>
+            Optional photo; <strong>non-blocking</strong> — a slow/failed upload
+            never loses the incident
+          </td>
+          <td>§3, §4 (failed state), §5</td>
+        </tr>
+        <tr>
+          <td>
+            <span class="swatch" style="background: var(--accent)"></span
+            ><strong>Report incident</strong> (sticky submit)
+          </td>
+          <td>
+            <code>btnPrimary</code> (red variant when Urgent); only
+            <code>type="submit"</code>
+          </td>
+          <td>creates incident on this colony</td>
+          <td>
+            Single primary CTA, thumb-reachable; "30-second" report; submits
+            with just a type
+          </td>
+          <td>§3, §5</td>
+        </tr>
+        <tr>
+          <td><strong>Entry point</strong> on colony detail</td>
+          <td>ghost-danger button under "Record feeding update"</td>
+          <td>navigates to <code>/incidents/new</code></td>
+          <td>Feeder starts a report from the colony they're standing in</td>
+          <td>§1</td>
+        </tr>
+        <tr>
+          <td><strong>Validation</strong> (no type)</td>
+          <td>
+            <code>role="alert"</code> + red ring + <code>aria-invalid</code>,
+            focus to first tile
+          </td>
+          <td>—</td>
+          <td>Block only on missing required type; inline announced error</td>
+          <td>§4</td>
+        </tr>
+        <tr>
+          <td><strong>Success</strong> confirmation</td>
+          <td>
+            ✓ card; "Flagged urgent — caretakers notified" (truthful) for Urgent
+          </td>
+          <td>—</td>
+          <td>
+            Confirm the report; hint caretaker alerting for urgent without
+            claiming undelivered notifications
+          </td>
+          <td>§4</td>
+        </tr>
+        <tr>
+          <td>
+            <strong>Offline / queued</strong> &amp;
+            <strong>photo-failed</strong>
+          </td>
+          <td><code>role="status"</code> non-blocking notices</td>
+          <td>local queue → sync later</td>
+          <td>Offline-first; report survives lost signal and failed photo</td>
+          <td>§4</td>
+        </tr>
+      </table>
+
+      <div class="note">
+        <strong>New primitive needed?</strong> None. Type picker = the existing
+        selection-button family (<code>components/feed-form.tsx</code> sighting
+        toggles) at a 2-col grid with icon+label. Urgency = the shipped "Was the
+        colony fed?" segmented control
+        (<code>docs/feeding-update-redesign.html</code>). Cat rows = the avatar
+        row from <code>app/app/colonies/[id]/page.tsx</code>. Photo =
+        <code>components/image-upload.tsx</code> verbatim. Wrapper (back link,
+        h1, error banner, <code>max-w-xl</code>) =
+        <code>app/app/colonies/[id]/feed/page.tsx</code>. Submit =
+        <code>components/submit-button.tsx</code> + <code>btnPrimary</code>.
+        Only genuinely new content is the fixed incident-type enum and its icon
+        set in <code>components/icons.tsx</code>.
+      </div>
     </div>
-  </div>
-
-  <h2>6. Accessibility notes (§)</h2>
-  <ul class="ac">
-    <li><strong>§ Type picker = single-select radiogroup.</strong> The 9 tiles are one
-    <code>role="radiogroup"</code> labelled "What's happening?" with each tile a <code>role="radio"</code> /
-    <code>aria-checked</code> and <code>aria-required="true"</code>. The two group dividers ("Urgent / danger",
-    "Reports") are visual chunking only — exactly one radio is checked across the whole group.</li>
-    <li><strong>§ Urgency = the shipped segmented pattern.</strong> Two segments, <code>role="radiogroup"</code>
-    labelled "Urgency", each a <code>role="radio"</code> / <code>aria-checked</code> — identical semantics to the
-    "Was the colony fed?" control. Exactly one selected at all times; <em>Not urgent</em> is the default
-    <code>aria-checked</code> segment.</li>
-    <li><strong>§ Never colour-alone.</strong> Urgent isn't only red — it carries a <strong>⚠ glyph + bold weight +
-    fill</strong>, plus the live hint text changing to "Caretakers will be alerted". A selected type tile shows a
-    <strong>✓ + fill + accent border</strong>, not hue alone. Legible in greyscale and to colour-blind users.</li>
-    <li><strong>§ ≥44px targets.</strong> Every type tile (≥56px), both urgency segments (≥48px), every cat row
-    (≥56px), the photo "Add photo" button, and the submit are all ≥44px — the 2-up grid holds full-width hit areas at
-    375px with no overflow.</li>
-    <li><strong>§ Visible focus.</strong> A <code>focus-visible</code> accent ring on every control, the same the
-    design system already applies (<code>focus:ring-accent/25</code> in <code>lib/ui.ts</code>).</li>
-    <li><strong>§ Keyboard order.</strong> Linear: <kbd>Tab</kbd> → Type group (one stop, <kbd>←</kbd>/<kbd>→</kbd>
-    between tiles) → Urgency (one stop, arrows) → Cat group → Notes → Add photo → <strong>Report incident</strong>.
-    The submit is the only control that submits.</li>
-    <li><strong>§ Visible labels, not placeholders.</strong> "What's happening?", "Urgency", "Which cat?
-    (optional)", "Notes (optional)", "Photo (optional)" are real on-screen headings — recognition over recall, the
-    required one marked with a visible <span class="req">*</span> and <code>aria-required</code>.</li>
-    <li><strong>§ Errors &amp; status announce.</strong> The "choose a type" message is <code>role="alert"</code>
-    (assertive); the offline/queued and photo-failed notices are <code>role="status"</code> (polite) so they announce
-    without yanking focus from a saved report.</li>
-  </ul>
-
-  <h2>7. Elements → Acceptance Criteria mapping</h2>
-  <table>
-    <tr><th>UI element</th><th>State / token</th><th>Posts</th><th>Step-1 acceptance criterion</th><th>Shown in</th></tr>
-    <tr>
-      <td><span class="swatch" style="background:var(--accent)"></span><strong>Type picker</strong> (9-tile radiogroup, grouped urgent-first)</td>
-      <td>accent fill + ✓ on select; <code>border-border</code> off</td>
-      <td><code>type</code> = fixed enum, <strong>required</strong></td>
-      <td>Type is the only required field; 9 types selectable fast (Hick — grouped/iconed/ordered); incomplete data never blocks except type</td>
-      <td>§2, §3, §4, §5</td>
-    </tr>
-    <tr>
-      <td><span class="swatch" style="background:var(--red)"></span><strong>Urgency</strong> segmented (Urgent / Not urgent)</td>
-      <td>red fill + ⚠ (Urgent) · muted fill (Not urgent); default <em>Not urgent</em></td>
-      <td><code>urgency</code> = org lookup id, defaults to org's "Not urgent"</td>
-      <td>Per-org urgency lookup (2 levels at launch); defaulted, one-tap to Urgent; Urgent → caretakers alerted</td>
-      <td>§3, §4, §5</td>
-    </tr>
-    <tr>
-      <td><strong>Cat selector</strong> ("No specific cat" + rows)</td>
-      <td>accent border + ✓ on select; "No specific cat" pre-selected</td>
-      <td><code>cat_id</code> = id or null (optional)</td>
-      <td>Optional, scoped to this colony, clear no-cat default; reuses cat row/avatar</td>
-      <td>§3, §5</td>
-    </tr>
-    <tr>
-      <td><strong>Notes</strong> textarea</td>
-      <td><code>input</code> token, like FeedForm</td>
-      <td><code>notes</code> (optional)</td>
-      <td>Optional free text, never required</td>
-      <td>§3, §5</td>
-    </tr>
-    <tr>
-      <td><strong>Photo</strong> add (presign + PUT, downscale)</td>
-      <td>empty / preview / "Photo attached"; reuses <code>image-upload.tsx</code></td>
-      <td>R2 key attached after save (separate upload)</td>
-      <td>Optional photo; <strong>non-blocking</strong> — a slow/failed upload never loses the incident</td>
-      <td>§3, §4 (failed state), §5</td>
-    </tr>
-    <tr>
-      <td><span class="swatch" style="background:var(--accent)"></span><strong>Report incident</strong> (sticky submit)</td>
-      <td><code>btnPrimary</code> (red variant when Urgent); only <code>type="submit"</code></td>
-      <td>creates incident on this colony</td>
-      <td>Single primary CTA, thumb-reachable; "30-second" report; submits with just a type</td>
-      <td>§3, §5</td>
-    </tr>
-    <tr>
-      <td><strong>Entry point</strong> on colony detail</td>
-      <td>ghost-danger button under "Record feeding update"</td>
-      <td>navigates to <code>/incidents/new</code></td>
-      <td>Feeder starts a report from the colony they're standing in</td>
-      <td>§1</td>
-    </tr>
-    <tr>
-      <td><strong>Validation</strong> (no type)</td>
-      <td><code>role="alert"</code> + red ring + <code>aria-invalid</code>, focus to first tile</td>
-      <td>—</td>
-      <td>Block only on missing required type; inline announced error</td>
-      <td>§4</td>
-    </tr>
-    <tr>
-      <td><strong>Success</strong> confirmation</td>
-      <td>✓ card; "Flagged urgent — caretakers notified" (truthful) for Urgent</td>
-      <td>—</td>
-      <td>Confirm the report; hint caretaker alerting for urgent without claiming undelivered notifications</td>
-      <td>§4</td>
-    </tr>
-    <tr>
-      <td><strong>Offline / queued</strong> &amp; <strong>photo-failed</strong></td>
-      <td><code>role="status"</code> non-blocking notices</td>
-      <td>local queue → sync later</td>
-      <td>Offline-first; report survives lost signal and failed photo</td>
-      <td>§4</td>
-    </tr>
-  </table>
-
-  <div class="note"><strong>New primitive needed?</strong> None. Type picker = the existing selection-button family
-  (<code>components/feed-form.tsx</code> sighting toggles) at a 2-col grid with icon+label. Urgency = the shipped
-  "Was the colony fed?" segmented control (<code>docs/feeding-update-redesign.html</code>). Cat rows = the avatar row
-  from <code>app/app/colonies/[id]/page.tsx</code>. Photo = <code>components/image-upload.tsx</code> verbatim. Wrapper
-  (back link, h1, error banner, <code>max-w-xl</code>) = <code>app/app/colonies/[id]/feed/page.tsx</code>. Submit =
-  <code>components/submit-button.tsx</code> + <code>btnPrimary</code>. Only genuinely new content is the fixed
-  incident-type enum and its icon set in <code>components/icons.tsx</code>.</div>
-</div>
-</body>
+  </body>
 </html>

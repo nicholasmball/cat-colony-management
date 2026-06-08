@@ -5,36 +5,127 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>App shell & navigation — layout design</title>
     <style>
-      :root { --bg:#faf8f4; --fg:#211e1a; --muted:#6f6a60; --border:#e8e2d6; --accent:#5b51c4; }
-      body { margin:0; padding:2rem; background:var(--bg); color:var(--fg);
-        font-family: ui-sans-serif, system-ui, sans-serif; line-height:1.55; }
-      .wrap { max-width:980px; margin:0 auto; }
-      h1,h2 { font-family: Georgia, serif; }
-      .muted { color: var(--muted); }
-      .row { display:flex; gap:1.5rem; flex-wrap:wrap; margin-top:1rem; }
-      .frame { border:1px solid var(--border); border-radius:12px; background:#fff; overflow:hidden; }
-      .label { font-size:0.8rem; color:var(--muted); margin-bottom:0.3rem; }
+      :root {
+        --bg: #faf8f4;
+        --fg: #211e1a;
+        --muted: #6f6a60;
+        --border: #e8e2d6;
+        --accent: #5b51c4;
+      }
+      body {
+        margin: 0;
+        padding: 2rem;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        line-height: 1.55;
+      }
+      .wrap {
+        max-width: 980px;
+        margin: 0 auto;
+      }
+      h1,
+      h2 {
+        font-family: Georgia, serif;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .row {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+      }
+      .frame {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+        overflow: hidden;
+      }
+      .label {
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-bottom: 0.3rem;
+      }
       /* mobile mock */
-      .mobile { width:240px; }
-      .mobile .top { display:flex; justify-content:space-between; align-items:center;
-        border-bottom:1px solid var(--border); padding:0.5rem 0.7rem; font-size:0.8rem; }
-      .mobile .body { padding:0.8rem; min-height:230px; font-size:0.82rem; }
-      .mobile .tabs { display:grid; grid-template-columns:1fr 1fr; border-top:1px solid var(--border); }
-      .mobile .tabs div { padding:0.6rem; text-align:center; font-size:0.75rem; }
+      .mobile {
+        width: 240px;
+      }
+      .mobile .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border);
+        padding: 0.5rem 0.7rem;
+        font-size: 0.8rem;
+      }
+      .mobile .body {
+        padding: 0.8rem;
+        min-height: 230px;
+        font-size: 0.82rem;
+      }
+      .mobile .tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border-top: 1px solid var(--border);
+      }
+      .mobile .tabs div {
+        padding: 0.6rem;
+        text-align: center;
+        font-size: 0.75rem;
+      }
       /* desktop mock */
-      .desktop { flex:1; min-width:340px; display:flex; min-height:280px; }
-      .desktop .side { width:130px; border-right:1px solid var(--border); padding:0.7rem; font-size:0.78rem; display:flex; flex-direction:column; }
-      .desktop .main { flex:1; padding:0.9rem; font-size:0.82rem; }
-      .active { background:rgba(91,81,196,0.1); color:var(--accent); border-radius:6px; padding:0.1rem 0.35rem; }
-      .avatar { display:inline-grid; place-items:center; width:24px; height:24px; border-radius:999px; background:rgba(91,81,196,0.15); color:var(--accent); font-size:0.7rem; font-weight:700; }
-      .foot { margin-top:auto; border-top:1px solid var(--border); padding-top:0.5rem; color:var(--muted); }
+      .desktop {
+        flex: 1;
+        min-width: 340px;
+        display: flex;
+        min-height: 280px;
+      }
+      .desktop .side {
+        width: 130px;
+        border-right: 1px solid var(--border);
+        padding: 0.7rem;
+        font-size: 0.78rem;
+        display: flex;
+        flex-direction: column;
+      }
+      .desktop .main {
+        flex: 1;
+        padding: 0.9rem;
+        font-size: 0.82rem;
+      }
+      .active {
+        background: rgba(91, 81, 196, 0.1);
+        color: var(--accent);
+        border-radius: 6px;
+        padding: 0.1rem 0.35rem;
+      }
+      .avatar {
+        display: inline-grid;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        background: rgba(91, 81, 196, 0.15);
+        color: var(--accent);
+        font-size: 0.7rem;
+        font-weight: 700;
+      }
+      .foot {
+        margin-top: auto;
+        border-top: 1px solid var(--border);
+        padding-top: 0.5rem;
+        color: var(--muted);
+      }
     </style>
   </head>
   <body>
     <div class="wrap">
       <h1>App shell &amp; navigation — layout</h1>
       <p class="muted">
-        Building on the Requirements. One responsive shell for all <code>/app/*</code>
+        Building on the Requirements. One responsive shell for all
+        <code>/app/*</code>
         pages: bottom tabs on mobile, left sidebar on desktop. SCoT tokens.
         (Backfill record — built &amp; live.)
       </p>
@@ -43,7 +134,9 @@
         <div>
           <div class="label">Mobile (&lt; 768px)</div>
           <div class="frame mobile">
-            <div class="top"><span>[ SCoT logo ]</span><span class="avatar">N</span></div>
+            <div class="top">
+              <span>[ SCoT logo ]</span><span class="avatar">N</span>
+            </div>
             <div class="body">
               <strong>Page content</strong><br />
               <span class="muted">scrolls; left-aligned, full width</span>
@@ -53,27 +146,30 @@
               <div class="active">🐾 Colonies</div>
             </div>
           </div>
-          <ul class="muted" style="font-size:0.8rem;">
+          <ul class="muted" style="font-size: 0.8rem">
             <li>Bottom tabs = thumb-reachable, one-handed in the field.</li>
             <li>Account/sign-out behind the avatar (top-right).</li>
           </ul>
         </div>
 
-        <div style="flex:1;">
+        <div style="flex: 1">
           <div class="label">Desktop (&ge; 768px)</div>
           <div class="frame desktop">
             <div class="side">
               <div>[ SCoT logo ]</div>
-              <div style="margin-top:0.6rem;">🏠 Home</div>
+              <div style="margin-top: 0.6rem">🏠 Home</div>
               <div class="active">🐾 Colonies</div>
               <div class="foot">nick@…<br />Sign out</div>
             </div>
             <div class="main">
               <strong>Page content</strong><br />
-              <span class="muted">left-aligned, readable max-width — not centred in the void</span>
+              <span class="muted"
+                >left-aligned, readable max-width — not centred in the
+                void</span
+              >
             </div>
           </div>
-          <ul class="muted" style="font-size:0.8rem;">
+          <ul class="muted" style="font-size: 0.8rem">
             <li>Sidebar replaces the tab bar; nav shows active state.</li>
             <li>Account + sign-out in the sidebar footer.</li>
             <li>Content anchored left next to the sidebar.</li>
@@ -86,7 +182,10 @@
         <li>Shell only renders for signed-in users (else → /login).</li>
         <li>Active nav item reflects the current route.</li>
         <li>Nav scales as features land (Cats, Incidents, Today).</li>
-        <li>A11y: 44px targets, visible focus, status by icon + label (not colour alone).</li>
+        <li>
+          A11y: 44px targets, visible focus, status by icon + label (not colour
+          alone).
+        </li>
       </ul>
     </div>
   </body>

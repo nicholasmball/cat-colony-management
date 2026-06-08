@@ -78,7 +78,10 @@ export default async function AcceptPage({
             ? "There’s no pending invite for your account. If you already joined, just open the app."
             : "This invite link is missing, invalid, or already used. Ask whoever invited you to send it again."}
         </p>
-        <Link href={user ? "/app" : "/login"} className={`${btnPrimary} justify-center`}>
+        <Link
+          href={user ? "/app" : "/login"}
+          className={`${btnPrimary} justify-center`}
+        >
           {user ? "Open the app" : "Go to sign in"}
         </Link>
       </Shell>
@@ -91,8 +94,8 @@ export default async function AcceptPage({
       <Shell>
         <h1 className="font-display text-2xl">Wrong account</h1>
         <p className="text-sm text-muted">
-          This invite is for <strong>{inv.email}</strong>, but you’re signed in as{" "}
-          <strong>{user.email}</strong>. Sign out, then open the link again.
+          This invite is for <strong>{inv.email}</strong>, but you’re signed in
+          as <strong>{user.email}</strong>. Sign out, then open the link again.
         </p>
         <Link href="/login" className="text-sm text-accent">
           Go to sign in
@@ -105,8 +108,8 @@ export default async function AcceptPage({
     <Shell>
       <h1 className="font-display text-2xl">Welcome to {orgName} 🐾</h1>
       <p className="text-sm text-muted">
-        You’ve been invited as a <strong>{inv.role}</strong> ({inv.email}). Choose
-        a password to set up your account.
+        You’ve been invited as a <strong>{inv.role}</strong> ({inv.email}).
+        Choose a password to set up your account.
       </p>
 
       {error ? <p className={errorClass}>{error}</p> : null}
@@ -136,7 +139,10 @@ export default async function AcceptPage({
           />
         </label>
         <p className="-mt-1 text-xs text-muted">At least 8 characters.</p>
-        <SubmitButton pendingText="Setting up…" className={`${btnPrimary} w-full`}>
+        <SubmitButton
+          pendingText="Setting up…"
+          className={`${btnPrimary} w-full`}
+        >
           Set password &amp; join
         </SubmitButton>
       </form>

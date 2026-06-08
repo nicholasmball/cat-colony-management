@@ -116,7 +116,11 @@ export default async function EditCat({
           </label>
           <label className={fieldLabel}>
             <span>Neutered</span>
-            <select name="neutered" defaultValue={neuteredValue} className={input}>
+            <select
+              name="neutered"
+              defaultValue={neuteredValue}
+              className={input}
+            >
               <option value="">Unknown</option>
               <option value="yes">Yes</option>
               <option value="no">No</option>

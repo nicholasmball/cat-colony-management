@@ -4,7 +4,13 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { SubmitButton } from "@/components/submit-button";
 import { ConfirmButton } from "@/components/confirm-button";
-import { btnGhost, btnGhostDanger, btnPrimary, fieldLabel, input } from "@/lib/ui";
+import {
+  btnGhost,
+  btnGhostDanger,
+  btnPrimary,
+  fieldLabel,
+  input,
+} from "@/lib/ui";
 import { scheduleWhen } from "@/lib/schedule";
 import { updateSchedule, deleteSchedule } from "../../actions";
 import { getAssignableFeeders } from "../../feeders";
@@ -31,7 +37,9 @@ export default async function EditSchedule({
   const supabase = await createClient();
   const { data: schedule } = await supabase
     .from("feeding_schedules")
-    .select("id, feeder_id, weekday, specific_date, approx_time, notes, is_active")
+    .select(
+      "id, feeder_id, weekday, specific_date, approx_time, notes, is_active",
+    )
     .eq("id", sid)
     .is("deleted_at", null)
     .maybeSingle();

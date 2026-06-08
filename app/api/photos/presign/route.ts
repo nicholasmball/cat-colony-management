@@ -36,7 +36,8 @@ export async function POST(req: Request) {
   }
 
   const org = await getActiveOrg();
-  if (!org) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+  if (!org)
+    return NextResponse.json({ error: "Not signed in." }, { status: 401 });
 
   let body: {
     entityType?: string;
@@ -52,7 +53,10 @@ export async function POST(req: Request) {
 
   const ext = EXT[String(body.contentType ?? "")];
   if (!ext) {
-    return NextResponse.json({ error: "Unsupported image type." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Unsupported image type." },
+      { status: 400 },
+    );
   }
 
   // Default to the cat branch so the existing caller (image-upload.tsx, which
@@ -98,7 +102,10 @@ export async function POST(req: Request) {
   }
   const catId = String(body.catId ?? "");
   if (!catId) {
-    return NextResponse.json({ error: "Unsupported image type." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Unsupported image type." },
+      { status: 400 },
+    );
   }
   // The cat must belong to the caller's org (RLS also scopes this read).
   const { data: cat } = await supabase
@@ -108,7 +115,8 @@ export async function POST(req: Request) {
     .eq("organisation_id", org.organisation_id)
     .is("deleted_at", null)
     .maybeSingle();
-  if (!cat) return NextResponse.json({ error: "Cat not found." }, { status: 404 });
+  if (!cat)
+    return NextResponse.json({ error: "Cat not found." }, { status: 404 });
 
   const key = `org/${org.organisation_id}/cats/${catId}/${crypto.randomUUID()}.${ext}`;
   const uploadUrl = await presignPut(key);

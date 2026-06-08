@@ -62,11 +62,14 @@
       <p class="note">
         Design artefact for the Row-Level Security task. Roles come from
         <code>memberships(user, org, role)</code>; every action is scoped to the
-        caller's own organisation. Deny-by-default — absence of a policy means no
-        access. (Backfilled record; implemented in <code>0003_rls.sql</code>.)
+        caller's own organisation. Deny-by-default — absence of a policy means
+        no access. (Backfilled record; implemented in
+        <code>0003_rls.sql</code>.)
       </p>
       <table>
-        <caption>Within the user's own organisation</caption>
+        <caption>
+          Within the user's own organisation
+        </caption>
         <thead>
           <tr>
             <th>Action</th>
@@ -76,21 +79,61 @@
           </tr>
         </thead>
         <tbody>
-          <tr><td>Read all org data</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td></tr>
-          <tr><td>Manage colonies / schedules</td><td class="y">Yes</td><td class="y">Yes</td><td class="n">No</td></tr>
-          <tr><td>Add / edit cats, mark missing</td><td class="y">Yes</td><td class="y">Yes</td><td class="n">Report new only</td></tr>
-          <tr><td>Record feeds &amp; sightings</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td></tr>
-          <tr><td>Report incidents / new cats</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td></tr>
-          <tr><td>Close / resolve incidents (Q18)</td><td class="y">Yes</td><td class="y">Yes</td><td class="n">No</td></tr>
-          <tr><td>Edit alert thresholds / urgency</td><td class="y">Yes</td><td class="y">Yes</td><td class="n">No</td></tr>
-          <tr><td>Invite / manage members &amp; roles</td><td class="y">Yes</td><td class="n">No</td><td class="n">No</td></tr>
+          <tr>
+            <td>Read all org data</td>
+            <td class="y">Yes</td>
+            <td class="y">Yes</td>
+            <td class="y">Yes</td>
+          </tr>
+          <tr>
+            <td>Manage colonies / schedules</td>
+            <td class="y">Yes</td>
+            <td class="y">Yes</td>
+            <td class="n">No</td>
+          </tr>
+          <tr>
+            <td>Add / edit cats, mark missing</td>
+            <td class="y">Yes</td>
+            <td class="y">Yes</td>
+            <td class="n">Report new only</td>
+          </tr>
+          <tr>
+            <td>Record feeds &amp; sightings</td>
+            <td class="y">Yes</td>
+            <td class="y">Yes</td>
+            <td class="y">Yes</td>
+          </tr>
+          <tr>
+            <td>Report incidents / new cats</td>
+            <td class="y">Yes</td>
+            <td class="y">Yes</td>
+            <td class="y">Yes</td>
+          </tr>
+          <tr>
+            <td>Close / resolve incidents (Q18)</td>
+            <td class="y">Yes</td>
+            <td class="y">Yes</td>
+            <td class="n">No</td>
+          </tr>
+          <tr>
+            <td>Edit alert thresholds / urgency</td>
+            <td class="y">Yes</td>
+            <td class="y">Yes</td>
+            <td class="n">No</td>
+          </tr>
+          <tr>
+            <td>Invite / manage members &amp; roles</td>
+            <td class="y">Yes</td>
+            <td class="n">No</td>
+            <td class="n">No</td>
+          </tr>
         </tbody>
       </table>
       <p class="note">
         Append-only event tables (feeding_events, cat_sightings) are insert-only
-        for any member; deletes are soft (manager UPDATE of <code>deleted_at</code>).
-        Cross-org access is impossible (verified: anon read returns
-        <code>[]</code>, anon write returns 401).
+        for any member; deletes are soft (manager UPDATE of
+        <code>deleted_at</code>). Cross-org access is impossible (verified: anon
+        read returns <code>[]</code>, anon write returns 401).
       </p>
     </div>
   </body>

@@ -12,15 +12,17 @@ export async function completeAccept(formData: FormData) {
   const token = String(formData.get("token") ?? "");
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
-  const back = token
-    ? `/accept?token=${encodeURIComponent(token)}`
-    : "/accept";
+  const back = token ? `/accept?token=${encodeURIComponent(token)}` : "/accept";
 
   if (password.length < 8) {
-    redirect(`${back}${token ? "&" : "?"}error=${encodeURIComponent("Password must be at least 8 characters.")}`);
+    redirect(
+      `${back}${token ? "&" : "?"}error=${encodeURIComponent("Password must be at least 8 characters.")}`,
+    );
   }
   if (password !== confirm) {
-    redirect(`${back}${token ? "&" : "?"}error=${encodeURIComponent("The two passwords don’t match.")}`);
+    redirect(
+      `${back}${token ? "&" : "?"}error=${encodeURIComponent("The two passwords don’t match.")}`,
+    );
   }
 
   const supabase = await createClient();
@@ -51,19 +53,26 @@ export async function completeAccept(formData: FormData) {
       .eq("token", token)
       .maybeSingle();
     if (!inv || inv.accepted_at) {
-      redirect(`${back}${token ? "&" : "?"}error=${encodeURIComponent("This invite is invalid or already used.")}`);
+      redirect(
+        `${back}${token ? "&" : "?"}error=${encodeURIComponent("This invite is invalid or already used.")}`,
+      );
     }
     inviteEmail = inv.email;
   }
 
   if (!inviteToken || !inviteEmail) {
-    redirect(`${back}${token ? "&" : "?"}error=${encodeURIComponent("No pending invite found for this account.")}`);
+    redirect(
+      `${back}${token ? "&" : "?"}error=${encodeURIComponent("No pending invite found for this account.")}`,
+    );
   }
 
   if (user) {
     // Already authenticated (email path): just set the password.
     const { error: pwErr } = await supabase.auth.updateUser({ password });
-    if (pwErr) redirect(`${back}${token ? "&" : "?"}error=${encodeURIComponent(pwErr.message)}`);
+    if (pwErr)
+      redirect(
+        `${back}${token ? "&" : "?"}error=${encodeURIComponent(pwErr.message)}`,
+      );
   } else {
     // Copy-link path: ensure an account exists with this password, then sign in.
     const { data: list } = await svc.auth.admin.listUsers();
@@ -83,14 +92,19 @@ export async function completeAccept(formData: FormData) {
       email: inviteEmail,
       password,
     });
-    if (signErr) redirect(`${back}${token ? "&" : "?"}error=${encodeURIComponent(signErr.message)}`);
+    if (signErr)
+      redirect(
+        `${back}${token ? "&" : "?"}error=${encodeURIComponent(signErr.message)}`,
+      );
   }
 
   const { error: rpcErr } = await supabase.rpc("accept_invitation", {
     p_token: inviteToken,
   });
   if (rpcErr) {
-    redirect(`${back}${token ? "&" : "?"}error=${encodeURIComponent(rpcErr.message)}`);
+    redirect(
+      `${back}${token ? "&" : "?"}error=${encodeURIComponent(rpcErr.message)}`,
+    );
   }
   redirect("/app");
 }

@@ -27,35 +27,135 @@
         font-family: Raleway, ui-sans-serif, system-ui, sans-serif;
         line-height: 1.55;
       }
-      .wrap { max-width: 920px; margin: 0 auto; }
-      h1, h2, h3 { font-family: "Cormorant Garamond", Georgia, serif; }
-      h1 { margin-bottom: 0.2rem; }
-      .muted { color: var(--muted); }
-      section { margin-top: 2rem; }
-      .swatches { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 0.8rem; }
-      .swatch { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; width: 130px; background: var(--surface); }
-      .swatch .chip { height: 56px; }
-      .swatch .meta { padding: 0.4rem 0.55rem; font-size: 0.72rem; }
-      .swatch .meta b { display: block; font-size: 0.78rem; }
-      .row { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center; margin-top: 0.8rem; }
-      .btnPrimary { background: var(--accent); color: var(--accent-foreground); border: none; border-radius: 10px; padding: 0.7rem 1.1rem; font-weight: 600; font-size: 0.95rem; min-height: 44px; cursor: pointer; }
-      .btnGhost { background: transparent; color: var(--foreground); border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem 1.1rem; font-weight: 600; font-size: 0.95rem; min-height: 44px; cursor: pointer; }
-      .input { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.6rem 0.8rem; font-size: 0.95rem; width: 240px; }
-      .input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-      .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1rem 1.1rem; max-width: 320px; }
-      .pill { display: inline-block; background: rgba(91,81,196,0.1); color: var(--accent); border-radius: 999px; padding: 0.15rem 0.6rem; font-size: 0.78rem; font-weight: 600; }
-      .type-display { font-family: "Cormorant Garamond", Georgia, serif; font-size: 2rem; font-weight: 500; }
-      .type-body { font-size: 1rem; }
-      .type-muted { color: var(--muted); font-size: 0.85rem; }
-      code { background: #f3efe7; border-radius: 4px; padding: 0.05rem 0.3rem; font-size: 0.85em; }
-      ul { margin: 0.4rem 0 0 1rem; padding: 0; }
+      .wrap {
+        max-width: 920px;
+        margin: 0 auto;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: "Cormorant Garamond", Georgia, serif;
+      }
+      h1 {
+        margin-bottom: 0.2rem;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      section {
+        margin-top: 2rem;
+      }
+      .swatches {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        margin-top: 0.8rem;
+      }
+      .swatch {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+        width: 130px;
+        background: var(--surface);
+      }
+      .swatch .chip {
+        height: 56px;
+      }
+      .swatch .meta {
+        padding: 0.4rem 0.55rem;
+        font-size: 0.72rem;
+      }
+      .swatch .meta b {
+        display: block;
+        font-size: 0.78rem;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        align-items: center;
+        margin-top: 0.8rem;
+      }
+      .btnPrimary {
+        background: var(--accent);
+        color: var(--accent-foreground);
+        border: none;
+        border-radius: 10px;
+        padding: 0.7rem 1.1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        min-height: 44px;
+        cursor: pointer;
+      }
+      .btnGhost {
+        background: transparent;
+        color: var(--foreground);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.7rem 1.1rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        min-height: 44px;
+        cursor: pointer;
+      }
+      .input {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.6rem 0.8rem;
+        font-size: 0.95rem;
+        width: 240px;
+      }
+      .input:focus {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+      }
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1rem 1.1rem;
+        max-width: 320px;
+      }
+      .pill {
+        display: inline-block;
+        background: rgba(91, 81, 196, 0.1);
+        color: var(--accent);
+        border-radius: 999px;
+        padding: 0.15rem 0.6rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+      }
+      .type-display {
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-size: 2rem;
+        font-weight: 500;
+      }
+      .type-body {
+        font-size: 1rem;
+      }
+      .type-muted {
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      code {
+        background: #f3efe7;
+        border-radius: 4px;
+        padding: 0.05rem 0.3rem;
+        font-size: 0.85em;
+      }
+      ul {
+        margin: 0.4rem 0 0 1rem;
+        padding: 0;
+      }
     </style>
   </head>
   <body>
     <div class="wrap">
       <h1>Design system &amp; shared UI</h1>
       <p class="muted">
-        Building on the Requirements. The single source of brand truth: tokens in
+        Building on the Requirements. The single source of brand truth: tokens
+        in
         <code>globals.css</code> (<code>@theme</code>), class primitives in
         <code>lib/ui.ts</code>, reusable components in <code>components/</code>.
         <strong>Matched to the live SCoT public site</strong>
@@ -67,23 +167,59 @@
       <section>
         <h2>Colour tokens</h2>
         <div class="swatches">
-          <div class="swatch"><div class="chip" style="background:#f7f4f2"></div><div class="meta"><b>background</b>#f7f4f2 · warm-white</div></div>
-          <div class="swatch"><div class="chip" style="background:#ffffff"></div><div class="meta"><b>surface</b>#ffffff · cards</div></div>
-          <div class="swatch"><div class="chip" style="background:#191919"></div><div class="meta"><b>foreground</b>#191919 · text</div></div>
-          <div class="swatch"><div class="chip" style="background:#5f5f5f"></div><div class="meta"><b>muted</b>#5f5f5f</div></div>
-          <div class="swatch"><div class="chip" style="background:#e6e2db"></div><div class="meta"><b>border</b>#e6e2db</div></div>
-          <div class="swatch"><div class="chip" style="background:#170df2"></div><div class="meta"><b>accent</b>#170df2 · indigo</div></div>
-          <div class="swatch"><div class="chip" style="background:#afacfb"></div><div class="meta"><b>accent-soft</b>#afacfb · periwinkle</div></div>
+          <div class="swatch">
+            <div class="chip" style="background: #f7f4f2"></div>
+            <div class="meta"><b>background</b>#f7f4f2 · warm-white</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background: #ffffff"></div>
+            <div class="meta"><b>surface</b>#ffffff · cards</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background: #191919"></div>
+            <div class="meta"><b>foreground</b>#191919 · text</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background: #5f5f5f"></div>
+            <div class="meta"><b>muted</b>#5f5f5f</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background: #e6e2db"></div>
+            <div class="meta"><b>border</b>#e6e2db</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background: #170df2"></div>
+            <div class="meta"><b>accent</b>#170df2 · indigo</div>
+          </div>
+          <div class="swatch">
+            <div class="chip" style="background: #afacfb"></div>
+            <div class="meta"><b>accent-soft</b>#afacfb · periwinkle</div>
+          </div>
         </div>
-        <p class="type-muted">Exposed as CSS variables and mapped to Tailwind utilities: <code>bg-surface</code>, <code>text-muted</code>, <code>text-accent</code>, <code>border-border</code>. Accent (#170df2) is the site's <code>--wst-color-action</code>; white-on-accent contrast ≈ 8.8:1 (AAA).</p>
+        <p class="type-muted">
+          Exposed as CSS variables and mapped to Tailwind utilities:
+          <code>bg-surface</code>, <code>text-muted</code>,
+          <code>text-accent</code>, <code>border-border</code>. Accent (#170df2)
+          is the site's <code>--wst-color-action</code>; white-on-accent
+          contrast ≈ 8.8:1 (AAA).
+        </p>
       </section>
 
       <section>
         <h2>Typography</h2>
         <div class="type-display">Cormorant Garamond — display / headings</div>
-        <div class="type-body">Raleway — body text, the workhorse for forms and lists.</div>
-        <div class="type-muted">Muted caption — timestamps, helper text, secondary metadata.</div>
-        <p class="type-muted">Loaded via <code>next/font/google</code>: <code>--font-display-var</code> (Cormorant Garamond, weights 400/500/600) + Raleway as the base sans — the same pairing as the public site.</p>
+        <div class="type-body">
+          Raleway — body text, the workhorse for forms and lists.
+        </div>
+        <div class="type-muted">
+          Muted caption — timestamps, helper text, secondary metadata.
+        </div>
+        <p class="type-muted">
+          Loaded via <code>next/font/google</code>:
+          <code>--font-display-var</code> (Cormorant Garamond, weights
+          400/500/600) + Raleway as the base sans — the same pairing as the
+          public site.
+        </p>
       </section>
 
       <section>
@@ -95,35 +231,62 @@
         </div>
         <div class="row">
           <label>
-            <div class="type-muted" style="margin-bottom:0.2rem;">fieldLabel</div>
+            <div class="type-muted" style="margin-bottom: 0.2rem">
+              fieldLabel
+            </div>
             <input class="input" placeholder="input — focus me" />
           </label>
         </div>
         <div class="row">
           <div class="card">
             <strong>card</strong>
-            <p class="type-muted" style="margin:0.3rem 0 0;">Surface container with border + radius. Used for org cards, colony rows, cat tiles.</p>
+            <p class="type-muted" style="margin: 0.3rem 0 0">
+              Surface container with border + radius. Used for org cards, colony
+              rows, cat tiles.
+            </p>
           </div>
         </div>
-        <p class="type-muted">Tokens: <code>btnPrimary</code>, <code>btnGhost</code>, <code>card</code>, <code>input</code>, <code>fieldLabel</code>, <code>pill</code> — one definition, applied everywhere.</p>
+        <p class="type-muted">
+          Tokens: <code>btnPrimary</code>, <code>btnGhost</code>,
+          <code>card</code>, <code>input</code>, <code>fieldLabel</code>,
+          <code>pill</code> — one definition, applied everywhere.
+        </p>
       </section>
 
       <section>
         <h2>Reusable components</h2>
         <ul>
-          <li><code>&lt;Logo /&gt;</code> — SCoT mark (<code>dark:invert</code> for contexts that need it).</li>
-          <li><code>&lt;SubmitButton /&gt;</code> — <code>useFormStatus</code> pending state ("Saving…"), disables to prevent double-submit (fixed the duplicate-colony bug).</li>
-          <li><code>components/icons.tsx</code> — Home / Paw / Chevron SVGs sharing <code>currentColor</code>.</li>
+          <li>
+            <code>&lt;Logo /&gt;</code> — SCoT mark (<code>dark:invert</code>
+            for contexts that need it).
+          </li>
+          <li>
+            <code>&lt;SubmitButton /&gt;</code> —
+            <code>useFormStatus</code> pending state ("Saving…"), disables to
+            prevent double-submit (fixed the duplicate-colony bug).
+          </li>
+          <li>
+            <code>components/icons.tsx</code> — Home / Paw / Chevron SVGs
+            sharing <code>currentColor</code>.
+          </li>
         </ul>
       </section>
 
       <section>
         <h2>Accessibility &amp; behaviour notes</h2>
         <ul class="muted">
-          <li>≥44px interactive targets; visible focus ring uses the accent colour.</li>
-          <li>Accent on cream and foreground on cream both clear WCAG AA for text.</li>
+          <li>
+            ≥44px interactive targets; visible focus ring uses the accent
+            colour.
+          </li>
+          <li>
+            Accent on cream and foreground on cream both clear WCAG AA for text.
+          </li>
           <li>State never conveyed by colour alone — pairs with text/icon.</li>
-          <li>Primitives are class strings, not heavyweight components — zero runtime cost, easy to compose.</li>
+          <li>
+            Primitives are class strings, not heavyweight components — zero
+            runtime cost, easy to compose.
+          </li>
         </ul>
       </section>
     </div>

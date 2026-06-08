@@ -68,7 +68,11 @@ test("dayRangeInTz bounds a non-Portugal day (Pacific/Auckland, UTC+12)", () => 
 test("minutesAfterWindow is exactly 720 at the 12h missed threshold", () => {
   // Window closes 09:00 Lisbon (= 08:00 UTC in summer); 20:00 UTC is +12h.
   assert.equal(
-    minutesAfterWindow("09:00", "Europe/Lisbon", new Date("2026-06-05T20:00:00Z")),
+    minutesAfterWindow(
+      "09:00",
+      "Europe/Lisbon",
+      new Date("2026-06-05T20:00:00Z"),
+    ),
     720,
   );
 });
@@ -76,7 +80,11 @@ test("minutesAfterWindow is exactly 720 at the 12h missed threshold", () => {
 test("minutesAfterWindow is negative before the window closes", () => {
   // 07:00 UTC = 08:00 Lisbon, one hour before the 09:00 close.
   assert.equal(
-    minutesAfterWindow("09:00", "Europe/Lisbon", new Date("2026-06-05T07:00:00Z")),
+    minutesAfterWindow(
+      "09:00",
+      "Europe/Lisbon",
+      new Date("2026-06-05T07:00:00Z"),
+    ),
     -60,
   );
 });
@@ -84,7 +92,11 @@ test("minutesAfterWindow is negative before the window closes", () => {
 test("minutesAfterWindow works for a non-Portugal org (Auckland)", () => {
   // 09:00 Auckland (UTC+12) = 21:00 UTC prev day; 09:00 UTC next is +12h.
   assert.equal(
-    minutesAfterWindow("09:00", "Pacific/Auckland", new Date("2026-06-05T09:00:00Z")),
+    minutesAfterWindow(
+      "09:00",
+      "Pacific/Auckland",
+      new Date("2026-06-05T09:00:00Z"),
+    ),
     720,
   );
 });

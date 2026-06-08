@@ -8,7 +8,15 @@ import { CopyButton } from "@/components/copy-button";
 import { ConfirmButton } from "@/components/confirm-button";
 import { RoleSelectForm } from "@/components/role-select-form";
 import { type AppRole } from "@/lib/member-role";
-import { btnGhost, btnGhostDanger, btnPrimary, card, fieldLabel, input, pill } from "@/lib/ui";
+import {
+  btnGhost,
+  btnGhostDanger,
+  btnPrimary,
+  card,
+  fieldLabel,
+  input,
+  pill,
+} from "@/lib/ui";
 import {
   inviteVolunteer,
   resendInvite,
@@ -41,7 +49,13 @@ export default async function MembersPage({
   if (!org) redirect("/app");
   if (org.role !== "admin") redirect("/app"); // admin-only screen
 
-  const { error, invited, sent, updated, role: updatedRole } = await searchParams;
+  const {
+    error,
+    invited,
+    sent,
+    updated,
+    role: updatedRole,
+  } = await searchParams;
 
   // The viewer's id — used to mark their own row (no self role change).
   const supabase = await createClient();
@@ -115,7 +129,10 @@ export default async function MembersPage({
       ) : null}
 
       {/* Invite form */}
-      <form action={inviteVolunteer} className={`${card} flex flex-col gap-3 p-4`}>
+      <form
+        action={inviteVolunteer}
+        className={`${card} flex flex-col gap-3 p-4`}
+      >
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
           Invite a volunteer
         </h2>
@@ -138,7 +155,10 @@ export default async function MembersPage({
             </select>
           </label>
         </div>
-        <SubmitButton pendingText="Inviting…" className={`${btnPrimary} self-start`}>
+        <SubmitButton
+          pendingText="Inviting…"
+          className={`${btnPrimary} self-start`}
+        >
           Send invite
         </SubmitButton>
       </form>
@@ -168,12 +188,8 @@ export default async function MembersPage({
                     {emails.get(m.user_id)}
                   </p>
                   <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs">
-                    {editable ? null : (
-                      <span className={pill}>{m.role}</span>
-                    )}
-                    {isSelf ? (
-                      <span className={pill}>You</span>
-                    ) : null}
+                    {editable ? null : <span className={pill}>{m.role}</span>}
+                    {isSelf ? <span className={pill}>You</span> : null}
                     <span className="text-muted">
                       {inactive ? "deactivated" : "active"}
                     </span>
@@ -246,9 +262,7 @@ export default async function MembersPage({
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <CopyButton
-                    value={`${origin}/accept?token=${inv.token}`}
-                  />
+                  <CopyButton value={`${origin}/accept?token=${inv.token}`} />
                   <form action={resendInvite}>
                     <input type="hidden" name="email" value={inv.email} />
                     <SubmitButton

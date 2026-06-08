@@ -150,10 +150,7 @@ export default async function CatDetail({
               column (no migration), so we surface the time it was reported and
               set the right expectation by role. */}
           {unconfirmed ? (
-            <p
-              role="note"
-              className={`${card} px-3 py-2 text-sm text-muted`}
-            >
+            <p role="note" className={`${card} px-3 py-2 text-sm text-muted`}>
               {when ? `Reported ${when}. ` : ""}
               {canReview
                 ? "Confirm to add it to the colony, or reject if it’s a duplicate or mistake."
@@ -169,7 +166,9 @@ export default async function CatDetail({
           </div>
           {cat.notes ? (
             <div className={`${card} p-3`}>
-              <p className="text-xs uppercase tracking-wide text-muted">Notes</p>
+              <p className="text-xs uppercase tracking-wide text-muted">
+                Notes
+              </p>
               <p className="whitespace-pre-wrap text-sm">{cat.notes}</p>
             </div>
           ) : null}

@@ -57,7 +57,10 @@ test("canReviewCat is false for an already-active cat", () => {
 
 test("canReviewCat is false for a soft-deleted unconfirmed cat", () => {
   assert.equal(
-    canReviewCat({ status: UNCONFIRMED_STATUS, deleted_at: "2026-06-08T00:00:00Z" }),
+    canReviewCat({
+      status: UNCONFIRMED_STATUS,
+      deleted_at: "2026-06-08T00:00:00Z",
+    }),
     false,
   );
 });
@@ -90,6 +93,8 @@ test("compareCatsForList falls back to temp_id and is case-insensitive", () => {
     { status: "active", name: null, temp_id: "zebra-striped" },
     { status: "active", name: "alpha" },
   ];
-  const sorted = [...cats].sort(compareCatsForList).map((c) => c.name ?? c.temp_id);
+  const sorted = [...cats]
+    .sort(compareCatsForList)
+    .map((c) => c.name ?? c.temp_id);
   assert.deepEqual(sorted, ["alpha", "zebra-striped"]);
 });

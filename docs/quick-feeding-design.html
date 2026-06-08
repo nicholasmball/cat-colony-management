@@ -9,50 +9,225 @@
       rel="stylesheet"
     />
     <style>
-      :root { --bg:#f7f4f2; --fg:#191919; --muted:#5f5f5f; --surface:#fff; --border:#e6e2db; --accent:#170df2; }
-      body { margin:0; padding:2rem; background:var(--bg); color:var(--fg); font-family:Raleway, system-ui, sans-serif; line-height:1.55; }
-      .wrap { max-width:880px; margin:0 auto; }
-      h1,h2,h3 { font-family:"Cormorant Garamond", Georgia, serif; }
-      h1 { font-size:2.2rem; margin-bottom:0.2rem; }
-      .muted { color:var(--muted); }
-      .phone { max-width:300px; border:1px solid var(--border); border-radius:18px; background:var(--surface); padding:1rem; margin-top:1rem; }
-      .big { display:block; width:100%; border:none; border-radius:12px; background:var(--accent); color:#fff; font-weight:700; font-size:1rem; padding:0.9rem; margin-bottom:0.7rem; }
-      .chips { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.4rem; margin-bottom:0.8rem; }
-      .chip { border:1px solid var(--border); border-radius:9px; padding:0.5rem 0.2rem; text-align:center; font-size:0.75rem; font-weight:600; }
-      .cat { border:1px solid var(--border); border-radius:10px; padding:0.5rem; margin-bottom:0.4rem; }
-      .cat .name { font-size:0.82rem; font-weight:600; margin-bottom:0.3rem; }
-      .seg { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.3rem; }
-      .seg span { border:1px solid var(--border); border-radius:7px; padding:0.35rem 0.1rem; text-align:center; font-size:0.68rem; }
-      .seg .on-seen { background:#059669; color:#fff; border-color:#059669; }
-      .save { position:sticky; bottom:0; }
-      ul { margin:0.3rem 0 0 1rem; padding:0; }
-      code { background:#efeae0; border-radius:4px; padding:0.05rem 0.3rem; font-size:0.85em; }
+      :root {
+        --bg: #f7f4f2;
+        --fg: #191919;
+        --muted: #5f5f5f;
+        --surface: #fff;
+        --border: #e6e2db;
+        --accent: #170df2;
+      }
+      body {
+        margin: 0;
+        padding: 2rem;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: Raleway, system-ui, sans-serif;
+        line-height: 1.55;
+      }
+      .wrap {
+        max-width: 880px;
+        margin: 0 auto;
+      }
+      h1,
+      h2,
+      h3 {
+        font-family: "Cormorant Garamond", Georgia, serif;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin-bottom: 0.2rem;
+      }
+      .muted {
+        color: var(--muted);
+      }
+      .phone {
+        max-width: 300px;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: var(--surface);
+        padding: 1rem;
+        margin-top: 1rem;
+      }
+      .big {
+        display: block;
+        width: 100%;
+        border: none;
+        border-radius: 12px;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        font-size: 1rem;
+        padding: 0.9rem;
+        margin-bottom: 0.7rem;
+      }
+      .chips {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0.4rem;
+        margin-bottom: 0.8rem;
+      }
+      .chip {
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        padding: 0.5rem 0.2rem;
+        text-align: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .cat {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.5rem;
+        margin-bottom: 0.4rem;
+      }
+      .cat .name {
+        font-size: 0.82rem;
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+      }
+      .seg {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0.3rem;
+      }
+      .seg span {
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        padding: 0.35rem 0.1rem;
+        text-align: center;
+        font-size: 0.68rem;
+      }
+      .seg .on-seen {
+        background: #059669;
+        color: #fff;
+        border-color: #059669;
+      }
+      .save {
+        position: sticky;
+        bottom: 0;
+      }
+      ul {
+        margin: 0.3rem 0 0 1rem;
+        padding: 0;
+      }
+      code {
+        background: #efeae0;
+        border-radius: 4px;
+        padding: 0.05rem 0.3rem;
+        font-size: 0.85em;
+      }
       /* desktop mock */
-      .desktop { border:1px solid var(--border); border-radius:14px; background:var(--surface); overflow:hidden; display:flex; min-height:340px; margin-top:1rem; max-width:760px; }
-      .desktop .side { width:150px; border-right:1px solid var(--border); padding:0.8rem; font-size:0.8rem; display:flex; flex-direction:column; gap:0.35rem; }
-      .desktop .side .logo { font-family:"Cormorant Garamond", serif; font-size:1.05rem; margin-bottom:0.4rem; }
-      .desktop .side .nav { padding:0.2rem 0.4rem; border-radius:6px; }
-      .desktop .side .nav.active { background:rgba(23,13,242,0.1); color:var(--accent); font-weight:600; }
-      .desktop .side .foot { margin-top:auto; border-top:1px solid var(--border); padding-top:0.5rem; color:var(--muted); font-size:0.72rem; }
-      .desktop .main { flex:1; padding:1.1rem 1.3rem; }
-      .desktop .form { max-width:420px; }
-      .desktop .big { display:block; width:100%; border:none; border-radius:12px; background:var(--accent); color:#fff; font-weight:700; font-size:0.95rem; padding:0.8rem; margin-bottom:0.6rem; }
-      .desktop .chips { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.4rem; margin-bottom:0.7rem; }
-      .desktop .chip { border:1px solid var(--border); border-radius:9px; padding:0.45rem 0.2rem; text-align:center; font-size:0.72rem; font-weight:600; }
-      .desktop .catrow { display:flex; align-items:center; justify-content:space-between; border:1px solid var(--border); border-radius:10px; padding:0.45rem 0.6rem; margin-bottom:0.35rem; font-size:0.78rem; }
-      .desktop .seg2 { display:flex; gap:0.25rem; }
-      .desktop .seg2 span { border:1px solid var(--border); border-radius:6px; padding:0.25rem 0.45rem; font-size:0.66rem; }
-      .desktop .seg2 .on { background:#059669; color:#fff; border-color:#059669; }
+      .desktop {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--surface);
+        overflow: hidden;
+        display: flex;
+        min-height: 340px;
+        margin-top: 1rem;
+        max-width: 760px;
+      }
+      .desktop .side {
+        width: 150px;
+        border-right: 1px solid var(--border);
+        padding: 0.8rem;
+        font-size: 0.8rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+      .desktop .side .logo {
+        font-family: "Cormorant Garamond", serif;
+        font-size: 1.05rem;
+        margin-bottom: 0.4rem;
+      }
+      .desktop .side .nav {
+        padding: 0.2rem 0.4rem;
+        border-radius: 6px;
+      }
+      .desktop .side .nav.active {
+        background: rgba(23, 13, 242, 0.1);
+        color: var(--accent);
+        font-weight: 600;
+      }
+      .desktop .side .foot {
+        margin-top: auto;
+        border-top: 1px solid var(--border);
+        padding-top: 0.5rem;
+        color: var(--muted);
+        font-size: 0.72rem;
+      }
+      .desktop .main {
+        flex: 1;
+        padding: 1.1rem 1.3rem;
+      }
+      .desktop .form {
+        max-width: 420px;
+      }
+      .desktop .big {
+        display: block;
+        width: 100%;
+        border: none;
+        border-radius: 12px;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.95rem;
+        padding: 0.8rem;
+        margin-bottom: 0.6rem;
+      }
+      .desktop .chips {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0.4rem;
+        margin-bottom: 0.7rem;
+      }
+      .desktop .chip {
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        padding: 0.45rem 0.2rem;
+        text-align: center;
+        font-size: 0.72rem;
+        font-weight: 600;
+      }
+      .desktop .catrow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.45rem 0.6rem;
+        margin-bottom: 0.35rem;
+        font-size: 0.78rem;
+      }
+      .desktop .seg2 {
+        display: flex;
+        gap: 0.25rem;
+      }
+      .desktop .seg2 span {
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.25rem 0.45rem;
+        font-size: 0.66rem;
+      }
+      .desktop .seg2 .on {
+        background: #059669;
+        color: #fff;
+        border-color: #059669;
+      }
     </style>
   </head>
   <body>
     <div class="wrap">
       <h1>Quick feeding update — the 30-second flow</h1>
       <p class="muted">
-        Building on the Requirements. The UX north-star: a feeder records a visit
-        in ~30 seconds, one-handed, in the field — then it syncs. One append-only
-        <code>feeding_event</code> for the colony + one <code>cat_sighting</code>
-        per cat marked. (Backfill record — built &amp; live, commit <code>9b5ef05</code>.)
+        Building on the Requirements. The UX north-star: a feeder records a
+        visit in ~30 seconds, one-handed, in the field — then it syncs. One
+        append-only
+        <code>feeding_event</code> for the colony + one
+        <code>cat_sighting</code> per cat marked. (Backfill record — built &amp;
+        live, commit <code>9b5ef05</code>.)
       </p>
 
       <div class="phone">
@@ -62,26 +237,53 @@
           <div class="chip">Food issue</div>
           <div class="chip">Danger</div>
         </div>
-        <div class="muted" style="font-size:0.7rem; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:0.4rem;">Cats</div>
+        <div
+          class="muted"
+          style="
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 0.4rem;
+          "
+        >
+          Cats
+        </div>
         <div class="cat">
           <div class="name">Ginger</div>
-          <div class="seg"><span class="on-seen">Seen</span><span>Not seen</span><span>Concern</span></div>
+          <div class="seg">
+            <span class="on-seen">Seen</span><span>Not seen</span
+            ><span>Concern</span>
+          </div>
         </div>
         <div class="cat">
           <div class="name">Smudge</div>
-          <div class="seg"><span>Seen</span><span>Not seen</span><span>Concern</span></div>
+          <div class="seg">
+            <span>Seen</span><span>Not seen</span><span>Concern</span>
+          </div>
         </div>
-        <input style="width:100%; box-sizing:border-box; border:1px solid var(--border); border-radius:8px; padding:0.4rem; font-size:0.75rem; margin:0.4rem 0;" placeholder="Notes (optional)" />
+        <input
+          style="
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.4rem;
+            font-size: 0.75rem;
+            margin: 0.4rem 0;
+          "
+          placeholder="Notes (optional)"
+        />
         <button class="big save">Save update</button>
       </div>
 
       <h2>Desktop (&ge;768px)</h2>
       <p class="muted">
-        Same form inside the app shell: left sidebar (Colonies active) + the feed
-        form in the main area, <strong>left-aligned with a readable max-width</strong>
-        — not stretched across the whole screen (a wide row of toggles is worse to
-        scan and to hit). Identical fields and behaviour to mobile; the sticky Save
-        sits at the foot of the form column.
+        Same form inside the app shell: left sidebar (Colonies active) + the
+        feed form in the main area,
+        <strong>left-aligned with a readable max-width</strong>
+        — not stretched across the whole screen (a wide row of toggles is worse
+        to scan and to hit). Identical fields and behaviour to mobile; the
+        sticky Save sits at the foot of the form column.
       </p>
       <div class="desktop">
         <div class="side">
@@ -91,8 +293,10 @@
           <div class="foot">nick@…<br />Sign out</div>
         </div>
         <div class="main">
-          <div class="muted" style="font-size:0.75rem;">Quinta colony ›</div>
-          <h3 style="margin:0.1rem 0 0.7rem; font-size:1.4rem;">Feeding update</h3>
+          <div class="muted" style="font-size: 0.75rem">Quinta colony ›</div>
+          <h3 style="margin: 0.1rem 0 0.7rem; font-size: 1.4rem">
+            Feeding update
+          </h3>
           <div class="form">
             <button class="big">✓ Fed</button>
             <div class="chips">
@@ -100,9 +304,32 @@
               <div class="chip">Food issue</div>
               <div class="chip">Danger</div>
             </div>
-            <div class="catrow"><span>Ginger</span><span class="seg2"><span class="on">Seen</span><span>Not seen</span><span>Concern</span></span></div>
-            <div class="catrow"><span>Smudge</span><span class="seg2"><span>Seen</span><span>Not seen</span><span>Concern</span></span></div>
-            <input style="width:100%; box-sizing:border-box; border:1px solid var(--border); border-radius:8px; padding:0.45rem; font-size:0.75rem; margin:0.4rem 0;" placeholder="Notes (optional)" />
+            <div class="catrow">
+              <span>Ginger</span
+              ><span class="seg2"
+                ><span class="on">Seen</span><span>Not seen</span
+                ><span>Concern</span></span
+              >
+            </div>
+            <div class="catrow">
+              <span>Smudge</span
+              ><span class="seg2"
+                ><span>Seen</span><span>Not seen</span
+                ><span>Concern</span></span
+              >
+            </div>
+            <input
+              style="
+                width: 100%;
+                box-sizing: border-box;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 0.45rem;
+                font-size: 0.75rem;
+                margin: 0.4rem 0;
+              "
+              placeholder="Notes (optional)"
+            />
             <button class="big">Save update</button>
           </div>
         </div>
@@ -110,12 +337,27 @@
 
       <h2>Flow &amp; behaviour</h2>
       <ul class="muted">
-        <li>Reached from colony detail → <strong>Record feeding update</strong>.</li>
-        <li><strong>Fed</strong> defaults on (the common case); big toggle, thumb-reachable.</li>
-        <li>Colony flags (Problem / Food issue / Danger) are optional one-tap chips.</li>
-        <li>Each cat: Seen / Not-seen / Concern — tap-to-toggle, nothing required.</li>
-        <li>Sticky <strong>Save</strong> (no double-submit); writes 1 feeding_event + N cat_sightings (append-only, offline-idempotent).</li>
-        <li>Success banner back on the colony; events never block on missing data.</li>
+        <li>
+          Reached from colony detail → <strong>Record feeding update</strong>.
+        </li>
+        <li>
+          <strong>Fed</strong> defaults on (the common case); big toggle,
+          thumb-reachable.
+        </li>
+        <li>
+          Colony flags (Problem / Food issue / Danger) are optional one-tap
+          chips.
+        </li>
+        <li>
+          Each cat: Seen / Not-seen / Concern — tap-to-toggle, nothing required.
+        </li>
+        <li>
+          Sticky <strong>Save</strong> (no double-submit); writes 1
+          feeding_event + N cat_sightings (append-only, offline-idempotent).
+        </li>
+        <li>
+          Success banner back on the colony; events never block on missing data.
+        </li>
         <li>Any member (incl. Feeder) can record — that's the field job.</li>
       </ul>
       <p class="muted">

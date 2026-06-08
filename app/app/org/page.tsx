@@ -73,7 +73,10 @@ export default async function OrgSettings({
       ) : null}
       {saved ? <p className={okClass}>✓ Saved.</p> : null}
 
-      <form action={updateOrganisation} className={`${card} flex flex-col gap-4 p-4`}>
+      <form
+        action={updateOrganisation}
+        className={`${card} flex flex-col gap-4 p-4`}
+      >
         <label className={fieldLabel}>
           <span>Name</span>
           <input
@@ -107,7 +110,10 @@ export default async function OrgSettings({
             missed-feed alerts. Currently {localNow} there.
           </span>
         </label>
-        <SubmitButton pendingText="Saving…" className={`${btnPrimary} self-start`}>
+        <SubmitButton
+          pendingText="Saving…"
+          className={`${btnPrimary} self-start`}
+        >
           Save changes
         </SubmitButton>
       </form>
