@@ -79,6 +79,10 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  // Mirrors the incident photo=failed contract: when an upload fails the form
+  // still submits (non-blocking), carrying photo_failed="1" so the action can
+  // append &photo=failed and the colony page shows the soft warning.
+  const [photoFailed, setPhotoFailed] = useState(false);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     // Client-side first (no round-trip); the action re-validates server-side.
@@ -102,6 +106,7 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
       return;
     }
     setPhotoError(null);
+    setPhotoFailed(false);
     setPhotoBusy(true);
     try {
       const blob = await resizeToJpeg(file);
@@ -131,8 +136,11 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
       if (!put.ok) throw new Error("Upload failed. Please try again.");
       setPhotoKey(key);
       setPhotoPreview(URL.createObjectURL(blob));
+      setPhotoFailed(false);
     } catch (err) {
       setPhotoError(err instanceof Error ? err.message : "Upload failed.");
+      // Non-blocking: let the report submit and surface the soft photo warning.
+      setPhotoFailed(true);
     } finally {
       setPhotoBusy(false);
     }
@@ -142,6 +150,7 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
     setPhotoKey("");
     setPhotoPreview(null);
     setPhotoError(null);
+    setPhotoFailed(false);
   }
 
   return (
@@ -155,6 +164,7 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
       <input type="hidden" name="sex" value={sex === "unknown" ? "" : sex} />
       <input type="hidden" name="neutered" value={neutered} />
       <input type="hidden" name="photo_key" value={photoKey} />
+      <input type="hidden" name="photo_failed" value={photoFailed ? "1" : ""} />
 
       <p className="text-sm text-muted">
         Spotted a cat that isn’t on the list? Give it a name or a quick
