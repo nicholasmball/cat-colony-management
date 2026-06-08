@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cat report attribution — UX design</title>
+<style>
+  :root {
+    /* Tokens mirrored from the running app (lib/ui.ts + theme) so the mockups
+       read true. Light theme; the app supports dark but light is enough here. */
+    --bg: #faf8f5;
+    --surface: #ffffff;
+    --foreground: #1c1a17;
+    --muted: #6b6358;        /* text-muted — used for the attribution line */
+    --border: #e6e0d8;
+    --accent: #b4541f;
+    --emerald-50: #ecfdf5;
+    --emerald-200: #a7f3d0;
+    --emerald-900: #064e3b;
+    --amber-50: #fffbeb;
+    --amber-800: #92400e;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--foreground);
+    line-height: 1.5; padding: 24px;
+  }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  h2 { font-size: 1.15rem; margin: 32px 0 8px; border-top: 1px solid var(--border); padding-top: 24px; }
+  h3 { font-size: 0.95rem; margin: 18px 0 8px; }
+  p.lede { color: var(--muted); max-width: 70ch; margin: 0 0 8px; }
+  .meta { color: var(--muted); font-size: 0.85rem; }
+  code { background: #f0ebe4; padding: 1px 5px; border-radius: 4px; font-size: 0.85em; }
+
+  /* 375px phone frame */
+  .phones { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+  .phone {
+    width: 375px; max-width: 100%;
+    border: 1px solid var(--border); border-radius: 20px; overflow: hidden;
+    background: var(--bg); box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  .phone-cap { width: 375px; max-width: 100%; }
+  .phone-label {
+    font-size: 0.78rem; font-weight: 600; color: var(--muted);
+    margin: 0 0 6px; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .screen { padding: 20px 18px; display: flex; flex-direction: column; gap: 12px; }
+  .back { color: var(--accent); font-size: 0.85rem; text-decoration: none; }
+
+  /* Components reused from the app */
+  .card { border: 1px solid var(--border); background: var(--surface); border-radius: 12px; }
+  .title { font-size: 1.7rem; margin: 0; font-weight: 600; }
+  .chip {
+    display: inline-block; border-radius: 999px; padding: 2px 10px;
+    font-size: 0.72rem; font-weight: 500; margin-top: 4px;
+  }
+  .chip.unconfirmed { background: var(--amber-50); color: var(--amber-800); }
+  .chip.active { background: var(--emerald-50); color: var(--emerald-900); }
+
+  /* THE attribution line — text-xs text-muted, matching incident detail L217-220 */
+  .attrib {
+    font-size: 0.75rem; color: var(--muted); margin: 0;
+    /* truncation behaviour for long emails at 375px */
+    overflow-wrap: anywhere;
+  }
+  .attrib .who { /* email is the display value; plain text, no link, no colour */ }
+
+  .note {
+    border-radius: 12px; border: 1px solid var(--border); background: var(--surface);
+    padding: 8px 12px; font-size: 0.85rem; color: var(--muted);
+  }
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .fact { border: 1px solid var(--border); background: var(--surface); border-radius: 12px; padding: 10px 12px; }
+  .fact .k { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 0; }
+  .fact .v { font-size: 0.85rem; margin: 2px 0 0; }
+  .photo { aspect-ratio: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; display: grid; place-items: center; color: var(--muted); }
+  .cta { display: flex; gap: 8px; }
+  .btn { flex: 1; min-height: 48px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-weight: 500; font-size: 0.9rem; border: 1px solid var(--border); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn.danger { color: #b91c1c; border-color: #fecaca; background: #fff; }
+  .resolved {
+    border: 1px solid var(--emerald-200); background: var(--emerald-50);
+    color: var(--emerald-900); border-radius: 12px; padding: 10px 12px; font-size: 0.85rem;
+  }
+  .annot {
+    font-size: 0.78rem; color: var(--muted); background: #f0ebe4;
+    border-left: 3px solid var(--accent); padding: 6px 10px; border-radius: 0 6px 6px 0;
+    margin: 6px 0 0; max-width: 70ch;
+  }
+  ul.notes { margin: 6px 0; padding-left: 1.1rem; }
+  ul.notes li { margin: 4px 0; max-width: 72ch; }
+  .before-after { display: flex; flex-wrap: wrap; gap: 20px; }
+  .col { flex: 1; min-width: 320px; }
+</style>
+</head>
+<body>
+
+<h1>Attribute cat reports — show who reported / confirmed a cat</h1>
+<p class="lede">Small additive change to the existing cat detail page
+(<code>app/app/colonies/[id]/cats/[catId]/page.tsx</code>). Add a
+<strong>“Reported by {email} · {when}”</strong> line — and, when confirmed,
+<strong>“Confirmed by {email}”</strong> — reusing the incident-detail pattern verbatim.</p>
+<p class="meta">Display value is <strong>email</strong> (the app has no usernames; it shows email everywhere — see incident detail L167-172). Degrades to just the time when the reporter is null.</p>
+
+<h2>Current vs proposed (attribution area)</h2>
+<div class="before-after">
+  <div class="col">
+    <h3>Current</h3>
+    <p class="meta">Today the only context for a reported cat is a time inside the
+    role-split review note (<code>page.tsx</code> L155-162):
+    “Reported 5 Jun 14:30. Waiting for a caretaker to review.” No <em>who</em>.</p>
+    <div class="phone-cap">
+      <div class="screen card" style="border-radius:16px;">
+        <h2 class="title" style="margin:0;font-size:1.5rem;">Tabby by the wall</h2>
+        <span class="chip unconfirmed">★ New · unconfirmed</span>
+        <div class="note" role="note">Reported 5 Jun 14:30. Waiting for a caretaker to review.</div>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <h3>Proposed</h3>
+    <p class="meta">Add one <code>text-xs text-muted</code> line directly under the
+    status chip — identical treatment to the incident header line
+    (<code>incidents/[incidentId]/page.tsx</code> L217-220). The existing review
+    note and Confirm/Reject CTA copy are <strong>untouched</strong>.</p>
+    <div class="phone-cap">
+      <div class="screen card" style="border-radius:16px;">
+        <h2 class="title" style="margin:0;font-size:1.5rem;">Tabby by the wall</h2>
+        <span class="chip unconfirmed">★ New · unconfirmed</span>
+        <p class="attrib"><span class="who">Reported by maria@example.org</span> · 5 Jun 14:30</p>
+        <div class="note" role="note">Reported 5 Jun 14:30. Waiting for a caretaker to review.</div>
+      </div>
+    </div>
+  </div>
+</div>
+<p class="annot">Placement: the attribution line sits between the <strong>status chip</strong>
+and the existing <strong>review note</strong> — exactly where the incident page puts its
+“Reported by …” line (under the title, above the body). The review note still owns the
+role-split wording (“Waiting for a caretaker” vs “Confirm to add it…”); attribution is
+the new neutral fact line, so the two don’t compete.</p>
+
+<h2>States at 375px</h2>
+<div class="phones">
+
+  <!-- State 1 -->
+  <div>
+    <p class="phone-label">1 · Unconfirmed, reporter known</p>
+    <div class="phone"><div class="screen">
+      <a class="back" href="#">← Beach colony</a>
+      <div class="photo" style="height:120px;">🐾</div>
+      <h2 class="title">Tabby by the wall</h2>
+      <span class="chip unconfirmed">★ New · unconfirmed</span>
+      <p class="attrib"><span class="who">Reported by maria@example.org</span> · 5 Jun 14:30</p>
+      <div class="note" role="note">Reported 5 Jun 14:30. Waiting for a caretaker to review.</div>
+    </div></div>
+  </div>
+
+  <!-- State 2 -->
+  <div>
+    <p class="phone-label">2 · Reporter null (legacy / deleted account)</p>
+    <div class="phone"><div class="screen">
+      <a class="back" href="#">← Beach colony</a>
+      <div class="photo" style="height:120px;">🐾</div>
+      <h2 class="title">Tabby by the wall</h2>
+      <span class="chip unconfirmed">★ New · unconfirmed</span>
+      <p class="attrib">Reported 5 Jun 14:30</p>
+      <div class="note" role="note">Reported 5 Jun 14:30. Waiting for a caretaker to review.</div>
+    </div></div>
+    <p class="annot">No name, no “unknown”, no broken “Reported by  ·”. Just the time —
+    same null-guard as incident detail (<code>reported_by ? &lt;&gt;Reported by … · &lt;/&gt; : null</code>).</p>
+  </div>
+
+  <!-- State 3 -->
+  <div>
+    <p class="phone-label">3 · Confirmed cat (reported + confirmed)</p>
+    <div class="phone"><div class="screen">
+      <a class="back" href="#">← Beach colony</a>
+      <div class="photo" style="height:120px;">🐾</div>
+      <h2 class="title">Tabby by the wall</h2>
+      <span class="chip active">Active</span>
+      <p class="attrib"><span class="who">Reported by maria@example.org</span> · 5 Jun 14:30</p>
+      <p class="attrib"><span class="who">Confirmed by caretaker@example.org</span> · 6 Jun 09:10</p>
+      <div class="facts">
+        <div class="fact"><p class="k">Colour</p><p class="v">Tabby</p></div>
+        <div class="fact"><p class="k">Sex</p><p class="v">Female · neutered</p></div>
+      </div>
+    </div></div>
+    <p class="annot"><strong>Variant — droppable.</strong> The “Confirmed by” line shows only if a
+    <code>confirmed_by</code> value is in scope. If that column isn’t carried on the cat record,
+    drop this second line entirely; State 3 collapses to just the “Reported by” line + facts.
+    Mirrors the incident resolution line “✓ Resolved by {email} · {when}” (L246-252).</p>
+  </div>
+
+  <!-- State 4 -->
+  <div>
+    <p class="phone-label">4 · Long email truncation at 375px</p>
+    <div class="phone"><div class="screen">
+      <a class="back" href="#">← Beach colony</a>
+      <h2 class="title">Tabby by the wall</h2>
+      <span class="chip unconfirmed">★ New · unconfirmed</span>
+      <p class="attrib" title="maria.fernandes.volunteer.tavira@streetcatsoftavira.org">
+        <span class="who">Reported by maria.fernandes.volunteer.tavira@streetcatsoftavira.org</span> · 5 Jun 14:30
+      </p>
+      <div class="note" role="note">Reported 5 Jun 14:30. Waiting for a caretaker to review.</div>
+    </div></div>
+    <p class="annot">Long address wraps (<code>overflow-wrap: anywhere</code>) rather than
+    overflowing the 375px column or pushing the timestamp off-screen; full value stays
+    available via the <code>title</code> attribute. The timestamp never gets orphaned because
+    “· {when}” stays in the same paragraph flow. (Single-line ellipsis was rejected — it
+    hides the most identifying part of an email and a 30-second field check shouldn’t need a hover.)</p>
+  </div>
+
+</div>
+
+<h2>Component & token reuse</h2>
+<ul class="notes">
+  <li><strong>Line treatment:</strong> <code>&lt;p class="text-xs text-muted"&gt;</code> — copied
+  from the incident header attribution (<code>incidents/[incidentId]/page.tsx</code> L217-220).
+  Same size, same muted token, same <code>· </code> separator between name and time.</li>
+  <li><strong>Email resolution:</strong> reuse the existing service-client lookup pattern
+  (L126-165) — one <code>getUserById</code> per distinct id, no N+1; fall back to <code>null</code>
+  → time-only line when the auth user is gone. Format with the same
+  <code>Intl.DateTimeFormat</code> (org timezone, <code>day/month/2-digit hour:minute</code>) used on the incident page.</li>
+  <li><strong>Confirmed-by line:</strong> tone-matches the incident resolution summary
+  “✓ Resolved by … · …” (L246-252), rendered as the same plain muted line for visual calm.</li>
+  <li><strong>Untouched:</strong> the status chip (<code>statusTone</code> / <code>formatStatus</code>
+  from <code>lib/cat-display.ts</code>), the review note copy, and the Confirm/Reject CTA block
+  (L183-207) all stay exactly as shipped. This change only inserts text lines.</li>
+  <li><strong>Parity:</strong> feeders see the same attribution line as caretakers/admins —
+  matching incident-detail behaviour where the reporter line is role-independent. Only the
+  Confirm/Reject controls remain manager-gated.</li>
+</ul>
+
+<h2>Accessibility</h2>
+<ul class="notes">
+  <li>Plain text, no colour-only meaning — the line reads identically in light/dark and to screen readers.</li>
+  <li>Muted timestamp uses the same <code>--muted</code> token already shipped AA-contrast on <code>--surface</code>; nothing new to audit.</li>
+  <li>Email is a real string, never a placeholder; the <code>title</code> attribute on long values is a supplement, not the only access path (the value also wraps and stays visible).</li>
+</ul>
+
+<p class="annot"><strong>Email vs username (from Requirements):</strong> we display email because that is
+the shipped behaviour everywhere in the app today (incidents, comments, assignees). Introducing a
+human-friendly username is a separate product decision and out of scope for this additive line.</p>
+
+</body>
+</html>

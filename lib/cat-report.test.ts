@@ -9,6 +9,7 @@ import {
   canRejectCat,
   catSortPriority,
   compareCatsForList,
+  attributionEmail,
 } from "./cat-report.ts";
 
 // ── parseNeutered ──
@@ -97,4 +98,22 @@ test("compareCatsForList falls back to temp_id and is case-insensitive", () => {
     .sort(compareCatsForList)
     .map((c) => c.name ?? c.temp_id);
   assert.deepEqual(sorted, ["alpha", "zebra-striped"]);
+});
+
+// ── attributionEmail ──
+test("attributionEmail returns the email when the id resolves", () => {
+  const emails = new Map([["u1", "maria@example.org"]]);
+  assert.equal(attributionEmail("u1", emails), "maria@example.org");
+});
+
+test("attributionEmail returns null for a null/undefined id (legacy row)", () => {
+  const emails = new Map([["u1", "maria@example.org"]]);
+  assert.equal(attributionEmail(null, emails), null);
+  assert.equal(attributionEmail(undefined, emails), null);
+});
+
+test("attributionEmail returns null when the account no longer resolves", () => {
+  // Deleted/departed volunteer: id present but not in the email map — never
+  // "unknown", so the page degrades to a clean time-only line.
+  assert.equal(attributionEmail("gone", new Map()), null);
 });

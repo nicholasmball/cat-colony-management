@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
 import { photoSrc } from "@/lib/photo";
 import { catLabel, formatStatus, statusTone } from "@/lib/cat-display";
-import { UNCONFIRMED_STATUS, canReviewCat } from "@/lib/cat-report";
+import {
+  UNCONFIRMED_STATUS,
+  canReviewCat,
+  attributionEmail,
+} from "@/lib/cat-report";
 import { PawIcon } from "@/components/icons";
 import { ConfirmButton } from "@/components/confirm-button";
 import { SubmitButton } from "@/components/submit-button";
@@ -60,7 +65,7 @@ export default async function CatDetail({
   const { data: cat } = await supabase
     .from("cats")
     .select(
-      "id, name, temp_id, colour, markings, sex, neutered, approx_age, status, notes, photo_url, created_at",
+      "id, name, temp_id, colour, markings, sex, neutered, approx_age, status, notes, photo_url, created_at, reported_by, confirmed_by, confirmed_at",
     )
     .eq("id", catId)
     .is("deleted_at", null)
@@ -85,6 +90,45 @@ export default async function CatDetail({
   const canReview = canManage && canReviewCat(cat);
   const when = reportedWhen(cat.created_at as string | null);
   const label = catLabel(cat);
+
+  // Resolve the reporter / confirmer emails server-side. One service-client
+  // lookup per DISTINCT id (≤2 here) — no N+1. Mirrors the incident detail
+  // pattern (incidents/[incidentId]/page.tsx). The cat page has no service
+  // client otherwise; it's added solely for this attribution lookup.
+  const reportedBy = cat.reported_by as string | null;
+  const confirmedBy = cat.confirmed_by as string | null;
+  const emails = new Map<string, string>();
+  const userIds = new Set<string>(
+    [reportedBy, confirmedBy].filter((v): v is string => !!v),
+  );
+  if (userIds.size > 0) {
+    const svc = createServiceClient();
+    await Promise.all(
+      [...userIds].map(async (uid) => {
+        const { data } = await svc.auth.admin.getUserById(uid);
+        // Only record a real email — a missing/deleted account leaves the id
+        // unmapped so attributionEmail() degrades to a clean time-only line.
+        if (data.user?.email) emails.set(uid, data.user.email);
+      }),
+    );
+  }
+  const reporterEmail = attributionEmail(reportedBy, emails);
+  const confirmerEmail = attributionEmail(confirmedBy, emails);
+
+  // Same Intl.DateTimeFormat (org timezone) used on the incident page. Falls
+  // back to UTC if there's no active org so a render never throws.
+  const dateTimeFmt = new Intl.DateTimeFormat(undefined, {
+    timeZone: org?.timezone ?? "UTC",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  // ONE timestamp for the report event: reuse the cat's created_at (the same
+  // source reportedWhen() uses) so we never show two different times for the
+  // same event. Formatted via the org-timezone formatter for the attribution
+  // line; the existing review note keeps using `when`.
+  const reportedAt = cat.created_at as string | null;
   const sex =
     cat.sex && cat.neutered != null
       ? `${cat.sex} · ${cat.neutered ? "neutered" : "not neutered"}`
@@ -148,6 +192,34 @@ export default async function CatDetail({
               </Link>
             ) : null}
           </div>
+
+          {/* Attribution lines — who reported / confirmed this cat. Plain muted
+              text, all roles see it (no role gate). overflow-wrap:anywhere +
+              title handle long emails at 375px without orphaning the timestamp.
+              Time-only null degrade: when there's no reporter email we show
+              "Reported {when}" with NO name and never the literal "unknown"
+              (this intentionally differs from the incident page's "unknown"
+              fallback — keep it clean). One consistent report timestamp:
+              reportedAt is the cat's created_at, the same source `when` uses. */}
+          {reportedAt ? (
+            <p className="text-xs text-muted [overflow-wrap:anywhere]">
+              {reporterEmail ? (
+                <>
+                  Reported by <span title={reporterEmail}>{reporterEmail}</span>{" "}
+                  ·{" "}
+                </>
+              ) : (
+                <>Reported </>
+              )}
+              {dateTimeFmt.format(new Date(reportedAt))}
+            </p>
+          ) : null}
+          {confirmerEmail && cat.confirmed_at ? (
+            <p className="text-xs text-muted [overflow-wrap:anywhere]">
+              Confirmed by <span title={confirmerEmail}>{confirmerEmail}</span>{" "}
+              · {dateTimeFmt.format(new Date(cat.confirmed_at as string))}
+            </p>
+          ) : null}
 
           {/* Review context line for a reported cat. We don't store a reporter
               column (no migration), so we surface the time it was reported and
