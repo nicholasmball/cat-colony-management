@@ -28,6 +28,42 @@ export function isValidIncidentType(value: unknown): value is IncidentType {
   );
 }
 
+// Human-readable label per incident type. Same wording as the report form's
+// tiles (components/incident-form.tsx TYPE_LABEL) so the type reads identically
+// on the form, the triage list and the detail page. Kept here (pure) so list/
+// detail server components don't have to import the client form.
+const TYPE_LABEL: Record<IncidentType, string> = {
+  poisoning: "Poisoning",
+  sick_injured: "Sick / injured",
+  dog_danger: "Dog danger",
+  threat_person: "Threat from person",
+  new_cat: "New cat",
+  missing_concern: "Missing concern",
+  dead_cat: "Dead cat",
+  access_problem: "Feeding / access",
+  other: "Other",
+};
+
+// Humanise a (trusted, DB-sourced) incident type. Falls back to the raw value
+// rather than throwing, so an enum added in a future migration still renders.
+export function incidentTypeLabel(type: string): string {
+  return TYPE_LABEL[type as IncidentType] ?? type;
+}
+
+// Human-readable label per UI lifecycle status. The DB enum also has 'closed'
+// (0002_domain.sql:19-20); it's collapsed into the terminal "Resolved" so it
+// reads sensibly if a legacy/closed row ever surfaces.
+const STATUS_LABEL: Record<string, string> = {
+  open: "Open",
+  in_progress: "In progress",
+  resolved: "Resolved",
+  closed: "Resolved",
+};
+
+export function incidentStatusLabel(status: string): string {
+  return STATUS_LABEL[status] ?? status;
+}
+
 // One per-org urgency level (a row of public.incident_urgency_levels).
 export type UrgencyLevel = {
   id: string;

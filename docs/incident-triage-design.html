@@ -1,0 +1,961 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Incident triage, resolution & list — UX design</title>
+<link
+  href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Raleway:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  :root{
+    --bg:#f7f4f2; --fg:#191919; --muted:#6b6b6b; --accent:#170df2;
+    --surface:#fff; --border:#e7e2dd; --radius:14px;
+    --emerald:#059669;  /* emerald-600 — resolved / done */
+    --amber:#f59e0b;    /* amber-500 — in progress */
+    --red:#dc2626;      /* red-600 — Urgent on-state */
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:"Raleway",system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.55}
+  .wrap{max-width:980px;margin:0 auto;padding:40px 24px 80px}
+  h1,h2,h3{font-family:"Cormorant Garamond",Georgia,serif;font-weight:600;line-height:1.15}
+  h1{font-size:2.6rem;margin:0 0 .2em}
+  h2{font-size:1.7rem;margin:2.2em 0 .5em;border-bottom:1px solid var(--border);padding-bottom:.2em}
+  h3{font-size:1.2rem;margin:1.4em 0 .4em}
+  .lede{color:var(--muted);font-size:1.05rem;max-width:66ch}
+  code{background:#efe9e4;padding:.1em .4em;border-radius:5px;font-size:.86em}
+  kbd{background:#fff;border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:0 .35em;font-size:.82em}
+
+  /* phone + desktop frames (house style) */
+  .phones{display:flex;gap:28px;flex-wrap:wrap;margin:18px 0;align-items:flex-start}
+  .phone{width:347px;border:1px solid var(--border);border-radius:24px;background:var(--surface);
+    padding:14px;box-shadow:0 6px 24px rgba(0,0,0,.06)}
+  .phone .cap{font-size:.78rem;color:var(--muted);text-align:center;margin-bottom:8px;font-weight:600}
+  .screen{background:var(--bg);border-radius:16px;padding:14px;min-height:420px;width:319px}
+  .crumb{color:var(--accent);font-size:.82rem;margin-bottom:8px}
+  .title{font-family:"Cormorant Garamond",serif;font-size:1.6rem;margin:.1em 0 .35em}
+  .sub{font-size:.76rem;color:var(--muted);margin:-.2em 0 12px}
+
+  .seclbl{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:14px 2px 7px}
+  .opt{color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0}
+
+  /* ── filter bar — compact chips + segmented Active/Done ── */
+  .filterbar{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+  .seg2{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#efe9e4;border-radius:11px;padding:3px}
+  .segbtn{min-height:38px;border:none;border-radius:9px;background:transparent;
+    font-size:.84rem;font-weight:600;color:var(--muted);display:flex;align-items:center;
+    justify-content:center;gap:6px;cursor:pointer}
+  .segbtn.on{background:#fff;color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{min-height:34px;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);
+    border-radius:999px;background:#fff;padding:0 12px;font-size:.78rem;font-weight:600;color:var(--fg);cursor:pointer}
+  .chip.on{border-color:var(--accent);background:#e9e6ff;color:var(--accent)}
+  .chip.on-urg{border-color:var(--red);background:#fde7e7;color:#a12525}
+  .chip .x{font-weight:800;opacity:.7;margin-left:1px}
+  .chip select{border:none;background:transparent;font:inherit;color:inherit;font-weight:600}
+  .resultcount{font-size:.72rem;color:var(--muted);margin:2px 2px 8px;font-weight:600}
+
+  /* ── incident list rows ── */
+  .irow{background:var(--surface);border:1px solid var(--border);border-radius:13px;
+    display:flex;gap:11px;padding:11px 12px;margin-bottom:8px;cursor:pointer;min-height:60px;
+    align-items:flex-start;text-decoration:none;color:var(--fg)}
+  .irow.urgent{border-color:#f3bcbc;box-shadow:inset 3px 0 0 var(--red)}
+  .irow .tic{height:38px;width:38px;flex:0 0 auto;border-radius:10px;border:1px solid var(--border);
+    background:#fbf9f7;display:grid;place-items:center;color:var(--muted);font-size:1.05rem}
+  .irow.urgent .tic{background:#fde7e7;border-color:#f3bcbc;color:#a12525}
+  .irow .body{flex:1;min-width:0}
+  .irow .line1{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .irow .typ{font-size:.88rem;font-weight:700}
+  .irow .meta{font-size:.74rem;color:var(--muted);margin-top:3px;display:flex;flex-wrap:wrap;gap:4px 7px;align-items:center}
+  .irow .thumb{height:38px;width:38px;flex:0 0 auto;border-radius:8px;border:1px solid var(--border);
+    background:#dfeee6 center/cover no-repeat;overflow:hidden}
+  .irow .chev{align-self:center;color:var(--muted);font-weight:700}
+
+  /* status + urgency pills — icon + word, never colour alone (WCAG 1.4.1) */
+  .pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;
+    padding:2px 9px;font-size:.7rem;font-weight:700;line-height:1.3;white-space:nowrap}
+  .pill.open{background:#eceef3;color:#3b4252}
+  .pill.prog{background:#fff3dc;color:#8a5b00}
+  .pill.done{background:#dff3e8;color:#0f6b3f}
+  .pill.urg{background:#fde7e7;color:#a12525}
+  .pill .g{font-size:.78rem;line-height:1}
+
+  /* empty / loading */
+  .empty{text-align:center;padding:34px 16px;color:var(--muted)}
+  .empty .ic{font-size:2rem;line-height:1;margin-bottom:8px}
+  .empty h4{font-family:"Cormorant Garamond",serif;font-size:1.35rem;color:var(--fg);margin:.1em 0 .3em}
+  .empty p{font-size:.84rem;margin:.2em auto;max-width:30ch}
+  .linkbtn{display:inline-flex;align-items:center;min-height:40px;border:1px solid var(--border);
+    border-radius:10px;background:#fff;padding:0 14px;font-size:.82rem;font-weight:600;color:var(--accent);margin-top:12px;cursor:pointer}
+  .skel{background:var(--surface);border:1px solid var(--border);border-radius:13px;display:flex;gap:11px;
+    padding:11px 12px;margin-bottom:8px;min-height:60px;align-items:center}
+  .skel .sq{height:38px;width:38px;border-radius:10px;background:#ece7e2;flex:0 0 auto}
+  .skel .ln{height:11px;border-radius:6px;background:#ece7e2}
+  .skel .ln.w1{width:60%}.skel .ln.w2{width:85%;margin-top:8px;height:9px}
+
+  /* detail header */
+  .dethead{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:13px 14px;margin-bottom:12px}
+  .dethead.urgent{border-color:#f3bcbc}
+  .dethead .top{display:flex;align-items:flex-start;gap:9px}
+  .dethead .tic{height:42px;width:42px;flex:0 0 auto;border-radius:11px;border:1px solid var(--border);
+    background:#fbf9f7;display:grid;place-items:center;color:var(--muted);font-size:1.2rem}
+  .dethead.urgent .tic{background:#fde7e7;border-color:#f3bcbc;color:#a12525}
+  .dethead .ttl{font-size:1.02rem;font-weight:700}
+  .dethead .pills{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+  .dethead .links{font-size:.78rem;margin-top:9px;color:var(--muted)}
+  .dethead .links a{color:var(--accent);font-weight:600;text-decoration:none}
+  .dethead .who{font-size:.74rem;color:var(--muted);margin-top:6px}
+  .detphoto{width:100%;height:118px;border-radius:11px;border:1px solid var(--border);margin-top:10px;
+    background:#dfeee6 center/cover no-repeat;display:grid;place-items:center;color:var(--emerald);font-size:1.3rem}
+
+  /* manager action panel */
+  .actions{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:13px 14px;margin-bottom:12px}
+  .actions .lbl{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px}
+  .assignrow{display:flex;align-items:center;justify-content:space-between;gap:8px;
+    background:#fbf9f7;border:1px solid var(--border);border-radius:10px;padding:8px 11px;margin-bottom:10px}
+  .assignrow .nm{font-size:.82rem;font-weight:600}
+  .assignrow .nm small{display:block;color:var(--muted);font-weight:500;font-size:.7rem}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    border-radius:10px;font-size:.84rem;font-weight:600;padding:0 14px;cursor:pointer;border:1px solid var(--border);background:#fff;color:var(--fg)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.ghost{background:#fff}
+  .btn.danger{border-color:#f3bcbc;color:#a12525;background:#fff}
+  .btn.full{width:100%}
+  .btn.sm{min-height:38px;font-size:.78rem;padding:0 11px}
+
+  /* resolve flow */
+  .resolvebox{border:1px solid #cde6d8;background:#f3fbf6;border-radius:11px;padding:11px 12px;margin-top:10px}
+  .resolvebox .lbl{font-size:.74rem;font-weight:700;color:#0f6b3f;margin-bottom:6px;display:block}
+  .ta{width:100%;background:#fff;border:1px solid var(--border);border-radius:9px;padding:9px 11px;
+    font-size:.82rem;color:var(--muted);min-height:54px}
+  .ta.invalid{border-color:var(--red);outline:2px solid var(--red);outline-offset:1px}
+  .reqstar{color:var(--red);font-weight:800}
+  .errinline{background:#fde7e7;border:1px solid #f3bcbc;color:#a12525;border-radius:9px;
+    padding:8px 11px;font-size:.78rem;margin:8px 0;font-weight:600}
+
+  /* resolved summary */
+  .resolved-summary{background:#f3fbf6;border:1px solid #cde6d8;border-radius:11px;padding:11px 13px;margin-bottom:12px}
+  .resolved-summary .h{font-size:.76rem;font-weight:700;color:#0f6b3f;display:flex;align-items:center;gap:6px}
+  .resolved-summary .who{font-size:.72rem;color:var(--muted);margin-top:4px}
+  .resolved-summary .note{font-size:.84rem;margin-top:7px}
+
+  /* comment thread */
+  .thread{display:flex;flex-direction:column;gap:9px;margin-top:6px}
+  .cmt{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:9px 11px}
+  .cmt .head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .cmt .au{font-size:.8rem;font-weight:700}
+  .cmt .au .rolepill{font-size:.62rem;font-weight:700;background:#efe9e4;color:var(--muted);
+    border-radius:999px;padding:1px 6px;margin-left:5px;text-transform:uppercase;letter-spacing:.03em}
+  .cmt .tm{font-size:.7rem;color:var(--muted)}
+  .cmt .tx{font-size:.84rem;margin-top:4px}
+  .cmt.sys{background:#fbf9f7;border-style:dashed}
+  .cmt.sys .tx{color:var(--muted);font-style:italic}
+  .addnote{margin-top:11px}
+  .addnote .lbl{font-size:.74rem;font-weight:700;margin-bottom:5px;display:block}
+  .scenthint{font-size:.72rem;color:var(--muted);margin-top:6px;display:flex;gap:5px;align-items:flex-start}
+  .scenthint .i{color:var(--accent);font-weight:800}
+
+  /* per-colony section row */
+  .colsec .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+  .colsec .head h5{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0}
+  .seeall{font-size:.76rem;color:var(--accent);font-weight:600;text-decoration:none}
+
+  /* desktop frame */
+  .desk{border:1px solid var(--border);border-radius:14px;background:var(--surface);
+    box-shadow:0 6px 24px rgba(0,0,0,.06);overflow:hidden;margin:18px 0}
+  .desk .bar{display:flex;align-items:center;gap:7px;padding:9px 12px;background:#efe9e4;border-bottom:1px solid var(--border)}
+  .desk .bar i{width:11px;height:11px;border-radius:50%;background:#cfc7bf;display:inline-block}
+  .desk .bar .url{margin-left:10px;font-size:.74rem;color:var(--muted);background:#fff;border-radius:6px;padding:3px 10px}
+  .desk .app{display:flex;min-height:460px}
+  .desk .side{width:200px;flex:0 0 auto;border-right:1px solid var(--border);padding:16px 12px;background:#fbf9f7}
+  .desk .side .brand{font-family:"Cormorant Garamond",serif;font-size:1.2rem;margin-bottom:14px}
+  .desk .side a{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font-size:.84rem;color:var(--fg);margin-bottom:3px;text-decoration:none}
+  .desk .side a.on{background:#e9e6ff;color:var(--accent);font-weight:600}
+  .desk .side a .badge{margin-left:auto;background:var(--red);color:#fff;font-size:.66rem;font-weight:700;border-radius:999px;padding:0 6px;min-width:18px;text-align:center}
+  .desk .main{flex:1;padding:22px 28px}
+  .desk .list{max-width:640px}
+
+  .note{background:#fff;border:1px solid var(--border);border-left:3px solid var(--accent);
+    border-radius:8px;padding:12px 14px;margin:14px 0;font-size:.92rem}
+  .note.warn{border-left-color:var(--amber)}
+  .note.danger{border-left-color:var(--red)}
+  .note.good{border-left-color:var(--emerald)}
+
+  ul.ac{padding-left:0;list-style:none}
+  ul.ac li{padding:6px 0 6px 26px;position:relative}
+  ul.ac li::before{content:"✓";position:absolute;left:0;color:var(--accent);font-weight:700}
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:.92rem}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{font-size:.74rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .swatch{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:middle;margin-right:5px}
+  .twocol{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start;margin:18px 0}
+  .twocol .col{flex:1;min-width:330px}
+  .vs{text-align:center;font-weight:700;color:var(--muted);font-size:.8rem;margin:6px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Incident triage, resolution &amp; list</h1>
+  <p class="lede">Step 2 (UX) of the <strong>"Incident triage, resolution &amp; list"</strong> task — the
+  <strong>read + action + close</strong> half of incidents (the <em>create</em> form already shipped, see
+  <code>docs/incident-report-design.html</code>). <strong>Step 1 (Requirements)</strong> confirmed: the data model and
+  the <em>managers update incidents</em> RLS already exist (no triage migration); the only new migration is an
+  append-only <code>incident_comments</code> table (comments are in scope). Lifecycle is
+  <strong>open → in&nbsp;progress → resolved</strong> (+ reopen). The enum also carries <code>closed</code>, but Step 1
+  recommends — and this design adopts (a <strong>design-gate call</strong>) — <strong>collapsing resolved + closed into
+  one terminal "Resolved"</strong> in the UI. <strong>Resolving requires a resolution note.</strong></p>
+
+  <div class="note"><strong>Permissions, stated once.</strong> <code>admin</code> / <code>caretaker</code> are
+  <strong>managers</strong> — they triage, assign, transition status and resolve. A <code>feeder</code> is
+  <strong>read + comment only</strong> and <em>never</em> sees status controls. The triage list and the sidebar
+  "Incidents" item are <strong>manager-only</strong>; feeders reach a detail page only via a link (e.g. their own
+  report's confirmation or the colony page) and there can only ever read and add a note. We render the difference by
+  <strong>omission</strong>, never by disabled buttons — §6 shows the two variants side by side.</p>
+
+  <div class="note good"><strong>House style reused, no new primitive.</strong> Status &amp; urgency pills are the exact
+  <code>StatusGlyph</code> "icon + word, never colour alone" convention from <code>app/app/today/page.tsx</code>
+  (fed/pending/missed → open/in&nbsp;progress/resolved). List rows mirror the Today / colony-detail tappable
+  <code>card</code> rows; the Active/Done toggle is the segmented control from
+  <code>components/role-select-form.tsx</code>; the resolve confirm reuses the styled
+  <code>components/confirm-button.tsx</code> dialog; type glyphs come from the just-added
+  <code>IncidentTypeIcon</code> / <code>WarningIcon</code> in <code>components/icons.tsx</code>. Tokens from
+  <code>lib/ui.ts</code> (<code>card</code> · <code>pill</code> · <code>btnPrimary</code> · <code>btnGhost</code> ·
+  <code>btnGhostDanger</code> · <code>input</code>). Emoji are stand-ins for those SVGs so the mockup reads without
+  assets.</p>
+
+  <!-- ===================================================================== -->
+  <h2>1. Manager triage list — <code>/app/incidents</code> (admin/caretaker only)</h2>
+  <p class="lede">A compact, thumb-reachable filter bar over a single sorted list. <strong>Sort:</strong> urgent + open
+  first, then by time (newest). <strong>Filters (MVP set):</strong> an <strong>Active / Done</strong> segmented toggle
+  (default <em>Active</em> = open + in&nbsp;progress), plus three chip toggles — <strong>Urgent only</strong>,
+  <strong>by Colony</strong> (select inside a chip), <strong>Assigned to me</strong>. Each row is a full-width tap target
+  → detail. Urgent rows are visually floated with a red left rail + red type tile (Gestalt/Fitts), never colour alone —
+  every row pairs its status with an icon + word.</p>
+
+  <div class="phones">
+    <div class="phone">
+      <div class="cap">Default — Active, urgent first (manager)</div>
+      <div class="screen">
+        <div class="crumb">Street Cats</div>
+        <div class="title">Incidents</div>
+        <div class="sub">Open problems across your colonies</div>
+
+        <div class="filterbar">
+          <div class="seg2" role="radiogroup" aria-label="Show">
+            <button class="segbtn on" role="radio" aria-checked="true">Active</button>
+            <button class="segbtn" role="radio" aria-checked="false">Done</button>
+          </div>
+          <div class="chips">
+            <button class="chip" aria-pressed="false"><span aria-hidden="true">⚠</span> Urgent only</button>
+            <button class="chip" aria-pressed="false"><span aria-hidden="true">📍</span>
+              <select aria-label="Filter by colony"><option>All colonies</option></select>
+            </button>
+            <button class="chip" aria-pressed="false">Assigned to me</button>
+          </div>
+        </div>
+        <div class="resultcount" role="status">5 active incidents</div>
+
+        <a class="irow urgent">
+          <span class="tic" aria-hidden="true">☠</span>
+          <span class="body">
+            <span class="line1">
+              <span class="typ">Poisoning</span>
+              <span class="pill urg"><span class="g" aria-hidden="true">⚠</span>Urgent</span>
+              <span class="pill open"><span class="g" aria-hidden="true">●</span>Open</span>
+            </span>
+            <span class="meta">Horta das Figueiras · <strong>Ginger</strong> · by maria · 12 min ago · Unassigned</span>
+          </span>
+          <span class="thumb" style="background-image:none;background:#fde7e7" aria-hidden="true"></span>
+          <span class="chev" aria-hidden="true">›</span>
+        </a>
+
+        <a class="irow urgent">
+          <span class="tic" aria-hidden="true">🐕</span>
+          <span class="body">
+            <span class="line1">
+              <span class="typ">Dog danger</span>
+              <span class="pill urg"><span class="g" aria-hidden="true">⚠</span>Urgent</span>
+              <span class="pill prog"><span class="g" aria-hidden="true">◐</span>In progress</span>
+            </span>
+            <span class="meta">Quinta do Lago · by joão · 1 h ago · <strong>You</strong></span>
+          </span>
+          <span class="chev" aria-hidden="true">›</span>
+        </a>
+
+        <a class="irow">
+          <span class="tic" aria-hidden="true">🍽</span>
+          <span class="body">
+            <span class="line1">
+              <span class="typ">Feeding / access</span>
+              <span class="pill open"><span class="g" aria-hidden="true">●</span>Open</span>
+            </span>
+            <span class="meta">Olhão Marina · by ana · 3 h ago · Unassigned</span>
+          </span>
+          <span class="chev" aria-hidden="true">›</span>
+        </a>
+
+        <a class="irow">
+          <span class="tic" aria-hidden="true">❓</span>
+          <span class="body">
+            <span class="line1">
+              <span class="typ">Missing concern</span>
+              <span class="pill prog"><span class="g" aria-hidden="true">◐</span>In progress</span>
+            </span>
+            <span class="meta">Horta das Figueiras · <strong>Smudge</strong> · by maria · yesterday · carlos</span>
+          </span>
+          <span class="chev" aria-hidden="true">›</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="cap">Filtered — Urgent only, nothing matches</div>
+      <div class="screen">
+        <div class="crumb">Street Cats</div>
+        <div class="title">Incidents</div>
+        <div class="filterbar">
+          <div class="seg2" role="radiogroup" aria-label="Show">
+            <button class="segbtn on" role="radio" aria-checked="true">Active</button>
+            <button class="segbtn" role="radio" aria-checked="false">Done</button>
+          </div>
+          <div class="chips">
+            <button class="chip on-urg" aria-pressed="true"><span aria-hidden="true">⚠</span> Urgent only <span class="x" aria-hidden="true">✕</span></button>
+            <button class="chip" aria-pressed="false"><span aria-hidden="true">📍</span>
+              <select aria-label="Filter by colony"><option>All colonies</option></select></button>
+            <button class="chip" aria-pressed="false">Assigned to me</button>
+          </div>
+        </div>
+        <div class="empty">
+          <div class="ic" aria-hidden="true">🔍</div>
+          <h4>No urgent active incidents</h4>
+          <p>Nothing matches these filters right now.</p>
+          <button class="linkbtn">Clear filters</button>
+        </div>
+        <div class="note good" style="font-size:.74rem;margin-top:4px"><strong>Empty (filtered) ≠ empty (none).</strong>
+        When filters hide everything we say so and offer <em>Clear filters</em> — distinct from the "all clear" state
+        opposite.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phones">
+    <div class="phone">
+      <div class="cap">Empty — no incidents at all (good news)</div>
+      <div class="screen">
+        <div class="crumb">Street Cats</div>
+        <div class="title">Incidents</div>
+        <div class="sub">Open problems across your colonies</div>
+        <div class="filterbar">
+          <div class="seg2" role="radiogroup" aria-label="Show">
+            <button class="segbtn on" role="radio" aria-checked="true">Active</button>
+            <button class="segbtn" role="radio" aria-checked="false">Done</button>
+          </div>
+        </div>
+        <div class="empty">
+          <div class="ic" aria-hidden="true">✓</div>
+          <h4>All clear</h4>
+          <p>No open incidents across your colonies. New reports from feeders will land here.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="cap">Loading — skeleton matches the row layout</div>
+      <div class="screen">
+        <div class="crumb">Street Cats</div>
+        <div class="title">Incidents</div>
+        <div class="sub">Open problems across your colonies</div>
+        <div class="filterbar">
+          <div class="seg2" aria-hidden="true"><span class="segbtn on">Active</span><span class="segbtn">Done</span></div>
+        </div>
+        <div class="skel" aria-hidden="true"><span class="sq"></span><span style="flex:1"><span class="ln w1" style="display:block"></span><span class="ln w2" style="display:block"></span></span></div>
+        <div class="skel" aria-hidden="true"><span class="sq"></span><span style="flex:1"><span class="ln w1" style="display:block"></span><span class="ln w2" style="display:block"></span></span></div>
+        <div class="skel" aria-hidden="true"><span class="sq"></span><span style="flex:1"><span class="ln w1" style="display:block"></span><span class="ln w2" style="display:block"></span></span></div>
+        <p class="scenthint" style="margin-top:10px"><span class="i" aria-hidden="true">i</span> <span>Skeleton mirrors the
+        tile + two-line row so the layout doesn't jump on load — same trick as the Today list.</span></p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Desktop — same list inside the app shell</h3>
+  <div class="desk">
+    <div class="bar"><i></i><i></i><i></i><span class="url">app.streetcatsoftavira.org/app/incidents</span></div>
+    <div class="app">
+      <div class="side">
+        <div class="brand">Street Cats 🐾</div>
+        <a><span aria-hidden="true">🗓</span> Today</a>
+        <a><span aria-hidden="true">📍</span> Colonies</a>
+        <a class="on"><span aria-hidden="true">⚠</span> Incidents <span class="badge">2</span></a>
+        <a><span aria-hidden="true">👥</span> Members</a>
+        <a><span aria-hidden="true">🏠</span> Organisation</a>
+      </div>
+      <div class="main">
+        <div class="list">
+          <div class="title" style="font-size:1.9rem">Incidents</div>
+          <div class="sub">Open problems across your colonies</div>
+          <div class="filterbar" style="flex-direction:row;align-items:center;gap:10px;flex-wrap:wrap">
+            <div class="seg2" style="width:200px"><button class="segbtn on" role="radio" aria-checked="true">Active</button><button class="segbtn" role="radio" aria-checked="false">Done</button></div>
+            <button class="chip" aria-pressed="false"><span aria-hidden="true">⚠</span> Urgent only</button>
+            <button class="chip" aria-pressed="false"><span aria-hidden="true">📍</span> <select aria-label="Filter by colony"><option>All colonies</option></select></button>
+            <button class="chip" aria-pressed="false">Assigned to me</button>
+          </div>
+          <div class="resultcount" role="status">5 active incidents · urgent first</div>
+          <a class="irow urgent"><span class="tic" aria-hidden="true">☠</span><span class="body"><span class="line1"><span class="typ">Poisoning</span><span class="pill urg"><span class="g" aria-hidden="true">⚠</span>Urgent</span><span class="pill open"><span class="g" aria-hidden="true">●</span>Open</span></span><span class="meta">Horta das Figueiras · <strong>Ginger</strong> · by maria · 12 min ago · Unassigned</span></span><span class="thumb" style="background:#fde7e7"></span><span class="chev" aria-hidden="true">›</span></a>
+          <a class="irow urgent"><span class="tic" aria-hidden="true">🐕</span><span class="body"><span class="line1"><span class="typ">Dog danger</span><span class="pill urg"><span class="g" aria-hidden="true">⚠</span>Urgent</span><span class="pill prog"><span class="g" aria-hidden="true">◐</span>In progress</span></span><span class="meta">Quinta do Lago · by joão · 1 h ago · <strong>You</strong></span></span><span class="chev" aria-hidden="true">›</span></a>
+          <a class="irow"><span class="tic" aria-hidden="true">🍽</span><span class="body"><span class="line1"><span class="typ">Feeding / access</span><span class="pill open"><span class="g" aria-hidden="true">●</span>Open</span></span><span class="meta">Olhão Marina · by ana · 3 h ago · Unassigned</span></span><span class="chev" aria-hidden="true">›</span></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <h2>2. Incident detail — <code>/app/incidents/[incidentId]</code></h2>
+  <p class="lede"><strong>Route call:</strong> a flat <code>/app/incidents/[incidentId]</code> (not nested under the
+  colony) — one canonical URL works for the manager list, the feeder's report confirmation, and the per-colony section
+  alike, and avoids a colony-scoped path a feeder may not otherwise browse. The page is <strong>shared by all
+  roles</strong>; the header + photo + comment thread are identical, and only the <strong>manager action panel</strong>
+  differs by role (present for managers, absent for feeders). Below: the three lifecycle states (open, in&nbsp;progress,
+  resolved), all in the <em>manager</em> variant. §6 then sets the manager and feeder variants side by side.</p>
+
+  <div class="phones">
+    <div class="phone">
+      <div class="cap">Open — manager, unassigned</div>
+      <div class="screen">
+        <div class="crumb">← Incidents</div>
+        <div class="dethead urgent">
+          <div class="top">
+            <span class="tic" aria-hidden="true">☠</span>
+            <div style="flex:1">
+              <div class="ttl">Poisoning</div>
+              <div class="pills">
+                <span class="pill urg"><span class="g" aria-hidden="true">⚠</span>Urgent</span>
+                <span class="pill open"><span class="g" aria-hidden="true">●</span>Open</span>
+              </div>
+            </div>
+          </div>
+          <div class="links"><a>Horta das Figueiras</a> · cat <a>Ginger</a></div>
+          <div class="who">Reported by maria · 12 min ago</div>
+          <div class="detphoto" aria-label="Incident photo">📷</div>
+        </div>
+
+        <div class="actions">
+          <div class="lbl">Manage incident</div>
+          <div class="assignrow">
+            <span class="nm">Unassigned<small>No one is on this yet</small></span>
+            <button class="btn ghost sm">Assign to me</button>
+          </div>
+          <div class="btnrow">
+            <button class="btn primary">▷ Start</button>
+            <button class="btn ghost">Mark resolved…</button>
+          </div>
+        </div>
+
+        <div class="seclbl">Notes (1)</div>
+        <div class="thread">
+          <div class="cmt">
+            <div class="head"><span class="au">maria <span class="rolepill">feeder</span></span><span class="tm">12 min ago</span></div>
+            <div class="tx">Foaming, found near the bins. Called the vet.</div>
+          </div>
+        </div>
+        <div class="addnote">
+          <label class="lbl" for="c1">Add a note</label>
+          <div class="ta" id="c1">&nbsp;</div>
+          <div style="margin-top:7px"><button class="btn ghost sm">Post note</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="cap">In progress — manager, assigned to a colleague</div>
+      <div class="screen">
+        <div class="crumb">← Incidents</div>
+        <div class="dethead">
+          <div class="top">
+            <span class="tic" aria-hidden="true">❓</span>
+            <div style="flex:1">
+              <div class="ttl">Missing concern</div>
+              <div class="pills">
+                <span class="pill prog"><span class="g" aria-hidden="true">◐</span>In progress</span>
+              </div>
+            </div>
+          </div>
+          <div class="links"><a>Horta das Figueiras</a> · cat <a>Smudge</a></div>
+          <div class="who">Reported by maria · yesterday 18:40</div>
+        </div>
+
+        <div class="actions">
+          <div class="lbl">Manage incident</div>
+          <div class="assignrow">
+            <span class="nm">carlos<small>Assigned caretaker</small></span>
+            <button class="btn ghost sm">Reassign ▾</button>
+          </div>
+          <div class="btnrow">
+            <button class="btn primary">Mark resolved…</button>
+            <button class="btn ghost">Unassign</button>
+          </div>
+        </div>
+
+        <div class="seclbl">Notes (2)</div>
+        <div class="thread">
+          <div class="cmt"><div class="head"><span class="au">maria <span class="rolepill">feeder</span></span><span class="tm">yesterday</span></div><div class="tx">Haven't seen Smudge for 4 days at the morning feed.</div></div>
+          <div class="cmt"><div class="head"><span class="au">carlos <span class="rolepill">caretaker</span></span><span class="tm">8 h ago</span></div><div class="tx">I'll do an evening check this week before we flag him missing.</div></div>
+        </div>
+        <div class="addnote">
+          <label class="lbl" for="c2">Add a note</label>
+          <div class="ta" id="c2">&nbsp;</div>
+          <div style="margin-top:7px"><button class="btn ghost sm">Post note</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phones">
+    <div class="phone">
+      <div class="cap">Resolved — terminal, with resolution note + reopen</div>
+      <div class="screen">
+        <div class="crumb">← Incidents</div>
+        <div class="dethead">
+          <div class="top">
+            <span class="tic" aria-hidden="true">🩹</span>
+            <div style="flex:1">
+              <div class="ttl">Sick / injured</div>
+              <div class="pills"><span class="pill done"><span class="g" aria-hidden="true">✓</span>Resolved</span></div>
+            </div>
+          </div>
+          <div class="links"><a>Quinta do Lago</a> · cat <a>Tom</a></div>
+          <div class="who">Reported by joão · 3 days ago</div>
+        </div>
+
+        <div class="resolved-summary">
+          <div class="h"><span aria-hidden="true">✓</span> Resolved by carlos · 2 days ago</div>
+          <div class="note">Took him to the vet, treated for an abscess and returned to the colony. Eating well.</div>
+        </div>
+
+        <div class="actions">
+          <div class="lbl">Manage incident</div>
+          <div class="btnrow">
+            <button class="btn ghost">↺ Reopen</button>
+          </div>
+          <p class="scenthint"><span class="i" aria-hidden="true">i</span> <span>Reopen sends it back to
+          <em>In&nbsp;progress</em> if something recurs. The resolution note stays in the history.</span></p>
+        </div>
+
+        <div class="seclbl">Notes (2)</div>
+        <div class="thread">
+          <div class="cmt"><div class="head"><span class="au">joão <span class="rolepill">feeder</span></span><span class="tm">3 days ago</span></div><div class="tx">Limping badly on the back right leg.</div></div>
+          <div class="cmt sys"><div class="head"><span class="au">carlos <span class="rolepill">caretaker</span></span><span class="tm">2 days ago</span></div><div class="tx">Marked resolved — Took him to the vet, treated for an abscess…</div></div>
+        </div>
+        <div class="addnote">
+          <label class="lbl" for="c3">Add a note</label>
+          <div class="ta" id="c3">&nbsp;</div>
+          <div style="margin-top:7px"><button class="btn ghost sm">Post note</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="cap">Why a terminal "Resolved" (no separate "Closed")</div>
+      <div class="screen" style="min-height:auto">
+        <div class="note good" style="margin-top:0"><strong>Design-gate: resolved + closed → one "Resolved".</strong>
+        The enum keeps <code>closed</code> for the data layer, but two near-identical terminal states would force a
+        volunteer to learn a distinction SCoT never asked for (Hick's Law / recognition). The UI exposes <strong>one
+        done state</strong> ("Resolved"), reachable only with a note, and <strong>Reopen</strong> to undo. If SCoT later
+        wants an archival "Closed", it's an additive lifecycle step, not a rewrite.</div>
+        <div class="note" style="margin-bottom:0"><strong>Status pills mirror Today.</strong> Open = neutral grey ●,
+        In&nbsp;progress = amber ◐, Resolved = emerald ✓ — the exact tone family + icon-and-word rule as
+        fed/pending/missed (<code>StatusGlyph</code>). Urgency is a <em>separate</em> red ⚠ badge so an urgent item is
+        unmistakable independent of its status.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <h2>3. Resolve-with-note flow + validation</h2>
+  <p class="lede">Resolving is consequential, so it's <strong>deliberate but not hostile</strong>: tapping
+  <em>Mark resolved…</em> expands an <strong>inline note box</strong> in place (no full-screen modal). The note is
+  <strong>required</strong> — Step 1's rule. Submitting empty shows an inline <code>role="alert"</code> error, marks the
+  textarea <code>aria-invalid</code>, and keeps focus in the field; nothing is lost. This is the same "deliberate
+  confirm" intent as <code>components/confirm-button.tsx</code>, expressed inline so the manager can see what they're
+  resolving.</p>
+
+  <div class="phones">
+    <div class="phone">
+      <div class="cap">Resolve — inline note box expanded</div>
+      <div class="screen">
+        <div class="crumb">← Incidents</div>
+        <div class="dethead">
+          <div class="top"><span class="tic" aria-hidden="true">🍽</span><div style="flex:1"><div class="ttl">Feeding / access</div><div class="pills"><span class="pill prog"><span class="g" aria-hidden="true">◐</span>In progress</span></div></div></div>
+          <div class="links"><a>Olhão Marina</a></div>
+          <div class="who">Reported by ana · 3 h ago</div>
+        </div>
+        <div class="actions">
+          <div class="lbl">Manage incident</div>
+          <div class="resolvebox">
+            <label class="lbl" for="rn1">Resolution note <span class="reqstar">*</span></label>
+            <div class="ta" id="rn1" style="color:var(--fg)">Gate was padlocked by the new owner — spoke to them, they'll leave it open at feed times.</div>
+            <div class="btnrow" style="margin-top:9px">
+              <button class="btn primary"><span aria-hidden="true">✓</span> Resolve incident</button>
+              <button class="btn ghost">Cancel</button>
+            </div>
+          </div>
+          <p class="scenthint"><span class="i" aria-hidden="true">i</span> <span>A note is required so the colony's
+          history records <em>how</em> it was solved — useful for the next feeder.</span></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="cap">Validation — empty note on resolve</div>
+      <div class="screen">
+        <div class="crumb">← Incidents</div>
+        <div class="dethead">
+          <div class="top"><span class="tic" aria-hidden="true">🍽</span><div style="flex:1"><div class="ttl">Feeding / access</div><div class="pills"><span class="pill prog"><span class="g" aria-hidden="true">◐</span>In progress</span></div></div></div>
+          <div class="links"><a>Olhão Marina</a></div>
+          <div class="who">Reported by ana · 3 h ago</div>
+        </div>
+        <div class="actions">
+          <div class="lbl">Manage incident</div>
+          <div class="resolvebox">
+            <label class="lbl" for="rn2">Resolution note <span class="reqstar">*</span></label>
+            <div class="errinline" role="alert">Add a short note on how this was resolved before closing it.</div>
+            <div class="ta invalid" id="rn2" aria-invalid="true">&nbsp;</div>
+            <div class="btnrow" style="margin-top:9px">
+              <button class="btn primary"><span aria-hidden="true">✓</span> Resolve incident</button>
+              <button class="btn ghost">Cancel</button>
+            </div>
+          </div>
+        </div>
+        <div class="note danger" style="font-size:.76rem"><strong>Block only the resolve.</strong> Empty note →
+        <code>role="alert"</code> announces, textarea gets <code>aria-invalid</code> + red ring, focus stays in the
+        field. The incident is untouched and the manager can still <em>Cancel</em> out. This is the one place in the
+        whole feature where a field is genuinely required.</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="lede"><strong>Other action states.</strong> <em>Start</em> and <em>Reopen</em> are single-tap status
+  transitions (no note) and use the optimistic submit pattern. Resolve, while submitting, shows the button as
+  <code>aria-busy</code> "Resolving…" and disabled — exactly the <code>SubmitButton</code> pending behaviour. Posting a
+  comment shows the Post button as "Posting…" and disabled; on success the note appends to the thread and the textarea
+  clears.</p>
+
+  <!-- ===================================================================== -->
+  <h2>4. Comment thread — every role can add a note</h2>
+  <p class="lede">Chronological notes (author + role + relative time), oldest first, with an <strong>Add a note</strong>
+  textarea + Post button <strong>available to all roles including feeders</strong> — the one append-only
+  <code>incident_comments</code> table. Status changes ("Marked resolved — …", "Reopened") are folded into the thread as
+  dashed <em>system</em> entries so the whole timeline reads in one place. Empty thread shows a gentle prompt, never a
+  blank void.</p>
+
+  <div class="phones">
+    <div class="phone">
+      <div class="cap">Empty thread + submitting</div>
+      <div class="screen">
+        <div class="seclbl" style="margin-top:0">Notes (0)</div>
+        <div class="cmt sys" style="text-align:center"><div class="tx" style="font-style:normal">No notes yet. Add the
+        first update below.</div></div>
+        <div class="addnote">
+          <label class="lbl" for="c4">Add a note</label>
+          <div class="ta" id="c4" style="color:var(--fg)">Vet is on the way, ETA 20 min.</div>
+          <div style="margin-top:7px"><button class="btn ghost sm" aria-busy="true" disabled style="opacity:.7">Posting…</button></div>
+        </div>
+        <div class="note" style="font-size:.76rem">Append-only: notes can't be edited or deleted (audit-friendly, and
+        simplest to build). The textarea reuses the <code>input</code> token; Post reuses <code>SubmitButton</code>.</div>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="cap">Active thread — mixed authors + a system entry</div>
+      <div class="screen">
+        <div class="seclbl" style="margin-top:0">Notes (3)</div>
+        <div class="thread">
+          <div class="cmt"><div class="head"><span class="au">joão <span class="rolepill">feeder</span></span><span class="tm">3 days ago</span></div><div class="tx">Limping badly on the back right leg, won't put weight on it.</div></div>
+          <div class="cmt"><div class="head"><span class="au">carlos <span class="rolepill">caretaker</span></span><span class="tm">3 days ago</span></div><div class="tx">On it — taking him to the vet this afternoon.</div></div>
+          <div class="cmt sys"><div class="head"><span class="au">carlos <span class="rolepill">caretaker</span></span><span class="tm">2 days ago</span></div><div class="tx">Marked resolved — abscess treated, returned to colony.</div></div>
+        </div>
+        <div class="addnote">
+          <label class="lbl" for="c5">Add a note</label>
+          <div class="ta" id="c5">&nbsp;</div>
+          <div style="margin-top:7px"><button class="btn ghost sm">Post note</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <h2>5. The permission difference — manager vs feeder, side by side</h2>
+  <p class="lede">The <strong>same incident, same URL</strong>, rendered for the two roles. The feeder variant simply
+  <strong>omits the entire "Manage incident" panel</strong> — no assignee control, no Start/Resolve/Reopen, and crucially
+  <strong>no disabled close button</strong>. Information scent makes the feeder's lane obvious: their action <em>is</em>
+  the note box, made prominent with a one-line hint. A manager additionally sees the action panel above the thread.</p>
+
+  <div class="twocol">
+    <div class="col">
+      <div class="phone" style="margin:0 auto">
+        <div class="cap">Manager (admin / caretaker) — full controls</div>
+        <div class="screen">
+          <div class="crumb">← Incidents</div>
+          <div class="dethead urgent">
+            <div class="top"><span class="tic" aria-hidden="true">🐕</span><div style="flex:1"><div class="ttl">Dog danger</div><div class="pills"><span class="pill urg"><span class="g" aria-hidden="true">⚠</span>Urgent</span><span class="pill open"><span class="g" aria-hidden="true">●</span>Open</span></div></div></div>
+            <div class="links"><a>Quinta do Lago</a></div>
+            <div class="who">Reported by joão · 1 h ago</div>
+          </div>
+          <div class="actions" style="outline:2px dashed var(--accent);outline-offset:2px">
+            <div class="lbl">Manage incident</div>
+            <div class="assignrow"><span class="nm">Unassigned<small>No one is on this yet</small></span><button class="btn ghost sm">Assign to me</button></div>
+            <div class="btnrow"><button class="btn primary">▷ Start</button><button class="btn ghost">Mark resolved…</button></div>
+          </div>
+          <div class="seclbl">Notes (1)</div>
+          <div class="thread"><div class="cmt"><div class="head"><span class="au">joão <span class="rolepill">feeder</span></span><span class="tm">1 h ago</span></div><div class="tx">Off-leash dog harassing the cats by the car park.</div></div></div>
+          <div class="addnote"><label class="lbl" for="c6">Add a note</label><div class="ta" id="c6">&nbsp;</div><div style="margin-top:7px"><button class="btn ghost sm">Post note</button></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="phone" style="margin:0 auto">
+        <div class="cap">Feeder — read + comment only (no Manage panel)</div>
+        <div class="screen">
+          <div class="crumb">← Quinta do Lago</div>
+          <div class="dethead urgent">
+            <div class="top"><span class="tic" aria-hidden="true">🐕</span><div style="flex:1"><div class="ttl">Dog danger</div><div class="pills"><span class="pill urg"><span class="g" aria-hidden="true">⚠</span>Urgent</span><span class="pill open"><span class="g" aria-hidden="true">●</span>Open</span></div></div></div>
+            <div class="links"><a>Quinta do Lago</a></div>
+            <div class="who">Reported by joão (you) · 1 h ago</div>
+          </div>
+          <!-- NO .actions panel here — omitted entirely for feeders -->
+          <div class="seclbl">Notes (1)</div>
+          <div class="thread"><div class="cmt"><div class="head"><span class="au">joão <span class="rolepill">feeder</span></span><span class="tm">1 h ago</span></div><div class="tx">Off-leash dog harassing the cats by the car park.</div></div></div>
+          <div class="addnote" style="outline:2px dashed var(--accent);outline-offset:2px;border-radius:11px;padding:8px">
+            <label class="lbl" for="c7">Add a note</label>
+            <div class="ta" id="c7" style="color:var(--fg)">Owner came back and leashed it. Watching the spot.</div>
+            <div style="margin-top:7px"><button class="btn primary sm">Post note</button></div>
+            <p class="scenthint"><span class="i" aria-hidden="true">i</span> <span>A caretaker will review and close this.
+            You can keep adding notes here.</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="vs">↑ same incident · same <code>/app/incidents/[id]</code> · role decides the Manage panel ↑</div>
+
+  <div class="note danger"><strong>Rendered by omission, never disablement.</strong> The feeder never sees a greyed-out
+  "Resolve" they can't press (that's a dead end / information-scent lie). The whole <code>.actions</code> block is
+  conditional on <code>org.role === "admin" || "caretaker"</code> (the same gate as the colony "Add cat" / "Edit"
+  buttons). For the feeder, the Post-note button is promoted to the primary accent style so their one real action reads
+  as the call to action. This matches the server-side RLS — <em>managers update incidents</em> already exists; comments
+  are insert-allowed for any member of the org.</div>
+
+  <!-- ===================================================================== -->
+  <h2>6. Per-colony "Incidents (n)" section</h2>
+  <p class="lede">A small section on the colony detail page (<code>app/app/colonies/[id]/page.tsx</code>), peer to the
+  existing <em>Cats</em> and <em>Feeding schedule</em> sections — same uppercase heading + count, same tappable rows. It
+  lists that colony's <strong>open / in-progress</strong> incidents (terminal ones drop off to keep it actionable) and
+  links each to the shared detail page. Shown to all roles; managers get a <em>See all</em> link into the filtered
+  triage list. Empty state matches the section convention.</p>
+
+  <div class="phones">
+    <div class="phone">
+      <div class="cap">Colony detail — Incidents section (has items)</div>
+      <div class="screen">
+        <div class="crumb">← Colonies</div>
+        <div class="title">Horta das Figueiras</div>
+        <div class="sub">Feeds 08:00–10:00</div>
+        <div class="colsec">
+          <div class="head"><h5>Incidents (2)</h5><a class="seeall">See all ›</a></div>
+          <a class="irow urgent" style="margin-bottom:7px"><span class="tic" aria-hidden="true">☠</span><span class="body"><span class="line1"><span class="typ">Poisoning</span><span class="pill urg"><span class="g" aria-hidden="true">⚠</span>Urgent</span><span class="pill open"><span class="g" aria-hidden="true">●</span>Open</span></span><span class="meta">Ginger · 12 min ago</span></span><span class="chev" aria-hidden="true">›</span></a>
+          <a class="irow"><span class="tic" aria-hidden="true">❓</span><span class="body"><span class="line1"><span class="typ">Missing concern</span><span class="pill prog"><span class="g" aria-hidden="true">◐</span>In progress</span></span><span class="meta">Smudge · yesterday</span></span><span class="chev" aria-hidden="true">›</span></a>
+        </div>
+        <div class="seclbl">Cats (6)</div>
+        <div class="note" style="font-size:.74rem;margin:6px 0 0">Sits above Cats / Schedule — a problem on the colony
+        you're standing in is the most urgent thing to surface.</div>
+      </div>
+    </div>
+    <div class="phone">
+      <div class="cap">Colony detail — no open incidents</div>
+      <div class="screen">
+        <div class="crumb">← Colonies</div>
+        <div class="title">Olhão Marina</div>
+        <div class="sub">Feeds 18:00–19:00</div>
+        <div class="colsec">
+          <div class="head"><h5>Incidents (0)</h5></div>
+          <div class="empty" style="padding:18px 12px;border:1px solid var(--border);border-radius:12px;background:#fff">
+            <div class="ic" aria-hidden="true">✓</div>
+            <p style="margin:0">No open incidents for this colony.</p>
+          </div>
+        </div>
+        <div class="seclbl">Cats (4)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <h2>7. Navigation — manager-only "Incidents" item</h2>
+  <p class="lede">"Incidents" joins the sidebar (desktop) / tab bar (mobile) <strong>for managers only</strong> — gated
+  the same way the Members item already is. Feeders don't get the entry; they only ever land on a detail page via a link.
+  A small count badge shows active incidents so a caretaker sees there's something to triage without opening the page.</p>
+
+  <div class="phones">
+    <div class="phone">
+      <div class="cap">Manager nav (mobile tab bar)</div>
+      <div class="screen" style="display:flex;flex-direction:column;justify-content:flex-end;min-height:340px">
+        <div style="display:flex;gap:4px;border-top:1px solid var(--border);padding-top:10px;background:#fff;border-radius:0 0 12px 12px">
+          <span style="flex:1;text-align:center;font-size:.66rem;color:var(--muted)">🗓<br>Today</span>
+          <span style="flex:1;text-align:center;font-size:.66rem;color:var(--muted)">📍<br>Colonies</span>
+          <span style="flex:1;text-align:center;font-size:.66rem;color:var(--accent);font-weight:700;position:relative">⚠<span style="position:absolute;top:-3px;margin-left:2px;background:var(--red);color:#fff;font-size:.55rem;border-radius:999px;padding:0 4px">2</span><br>Incidents</span>
+          <span style="flex:1;text-align:center;font-size:.66rem;color:var(--muted)">👥<br>Members</span>
+        </div>
+        <div class="note" style="margin-top:auto;font-size:.74rem">Same role gate as Members
+        (<code>app/app/members/page.tsx</code> redirects non-admins; here non-managers simply don't get the nav item or
+        the route).</div>
+      </div>
+    </div>
+    <div class="phone">
+      <div class="cap">Feeder nav — no Incidents item</div>
+      <div class="screen" style="display:flex;flex-direction:column;justify-content:flex-end;min-height:340px">
+        <div style="display:flex;gap:4px;border-top:1px solid var(--border);padding-top:10px;background:#fff;border-radius:0 0 12px 12px">
+          <span style="flex:1;text-align:center;font-size:.66rem;color:var(--accent);font-weight:700">🗓<br>Today</span>
+          <span style="flex:1;text-align:center;font-size:.66rem;color:var(--muted)">📍<br>Colonies</span>
+          <span style="flex:1;text-align:center;font-size:.66rem;color:var(--muted)">🏠<br>Org</span>
+        </div>
+        <div class="note good" style="margin-top:auto;font-size:.74rem">A feeder still <em>reports</em> incidents (from a
+        colony) and <em>comments</em> on the detail page — they just don't get a triage inbox, which would be empty of
+        actions for them.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <h2>8. Accessibility notes (§)</h2>
+  <ul class="ac">
+    <li><strong>§ Status &amp; urgency never colour-alone (WCAG 1.4.1).</strong> Every status pill carries a glyph + the
+    word — Open ●, In&nbsp;progress ◐, Resolved ✓ — and urgency carries a ⚠ + "Urgent", reusing the
+    <code>StatusGlyph</code> pattern from <code>app/app/today/page.tsx</code>. Urgent rows also get a left rail + tinted
+    type tile, so prominence survives greyscale and colour-blindness.</li>
+    <li><strong>§ Labelled filter controls.</strong> Active/Done is a <code>role="radiogroup"</code> labelled "Show";
+    each chip is a real <code>&lt;button aria-pressed&gt;</code> with a visible label; the colony filter is a labelled
+    <code>&lt;select&gt;</code>. The result count is a <code>role="status"</code> so filter changes announce.</li>
+    <li><strong>§ Resolve error announces.</strong> The empty-note error is <code>role="alert"</code> (assertive); the
+    textarea gets <code>aria-invalid</code> + a red ring (not colour alone — it also shows the message and keeps focus).</li>
+    <li><strong>§ ≥44px targets.</strong> List rows ≥60px, segmented buttons ≥38px within a ≥44px group, chips ≥34px in a
+    spaced row, every action button ≥44px, Post note ≥38px. Destructive-ish actions (Resolve) sit behind an explicit
+    note step, harder to trigger than the constructive Start — per Fitts.</li>
+    <li><strong>§ Visible focus + keyboard order.</strong> Linear <kbd>Tab</kbd>: filter group → chips → each list row
+    (one tab stop per row, the whole card is the link) → on detail: assignee → status buttons → resolve note → thread →
+    Add-a-note → Post. The same <code>focus:ring-accent/25</code> ring the design system already applies.</li>
+    <li><strong>§ Permission by omission, not disablement.</strong> Feeders get no disabled status controls to puzzle
+    over — the Manage panel is absent and their Post-note button is the promoted primary action. No dead ends.</li>
+    <li><strong>§ Relative time in org tz.</strong> "12 min ago", "yesterday" rendered against the org timezone
+    (<code>org.timezone</code>, like the Today page), with the absolute timestamp available on the detail header for
+    precision.</li>
+  </ul>
+
+  <!-- ===================================================================== -->
+  <h2>9. Elements → Acceptance Criteria mapping</h2>
+  <table>
+    <tr><th>UI element</th><th>State / token</th><th>Role</th><th>Step-1 acceptance criterion</th><th>Shown in</th></tr>
+    <tr>
+      <td><span class="swatch" style="background:#3b4252"></span><strong>Triage list</strong> (sorted rows + count)</td>
+      <td><code>card</code> rows; urgent+open first, then by time; <code>role="status"</code> count</td>
+      <td>manager</td>
+      <td>Managers see all org incidents in one prioritised list; urgent surfaced first</td>
+      <td>§1</td>
+    </tr>
+    <tr>
+      <td><strong>Filter bar</strong> (Active/Done · Urgent · Colony · Assigned to me)</td>
+      <td>segmented radiogroup + <code>aria-pressed</code> chips; default Active = open+in_progress</td>
+      <td>manager</td>
+      <td>MVP filter set; default hides resolved; clear "clear filters" on empty-filtered</td>
+      <td>§1</td>
+    </tr>
+    <tr>
+      <td><span class="swatch" style="background:#0f6b3f"></span><strong>Status pill</strong> (Open / In&nbsp;progress / Resolved)</td>
+      <td>icon + word, Today's tone family; <strong>resolved + closed collapsed to one "Resolved"</strong></td>
+      <td>all</td>
+      <td>Lifecycle open→in_progress→resolved(+reopen); single terminal state in UI (design-gate)</td>
+      <td>§1, §2</td>
+    </tr>
+    <tr>
+      <td><span class="swatch" style="background:var(--red)"></span><strong>Urgency badge</strong></td>
+      <td>red ⚠ + "Urgent", separate from status; never colour-alone</td>
+      <td>all</td>
+      <td>Urgent items visually prominent; urgency independent of workflow status</td>
+      <td>§1, §2</td>
+    </tr>
+    <tr>
+      <td><strong>Detail header</strong> (type · urgency · status · colony/cat links · reporter · time · photo)</td>
+      <td><code>card</code>; <code>IncidentTypeIcon</code>; presigned photo via attachments</td>
+      <td>all</td>
+      <td>Full read view shared by all roles; photo shown full; colony/cat navigable</td>
+      <td>§2, §5</td>
+    </tr>
+    <tr>
+      <td><span class="swatch" style="background:var(--accent)"></span><strong>Manage panel</strong> (assignee + Start/Resolve/Reopen/Unassign)</td>
+      <td><code>btnPrimary</code>/<code>btnGhost</code>; <strong>rendered only for admin/caretaker</strong></td>
+      <td>manager</td>
+      <td>Managers triage/assign/transition; uses existing "managers update incidents" RLS — no migration</td>
+      <td>§2, §5</td>
+    </tr>
+    <tr>
+      <td><strong>Resolve-with-note</strong> (inline box, required note)</td>
+      <td>inline expand; <code>role="alert"</code> + <code>aria-invalid</code> on empty; deliberate not modal</td>
+      <td>manager</td>
+      <td>Resolving requires a resolution note; consequential but not hostile; note stored + shown</td>
+      <td>§2, §3</td>
+    </tr>
+    <tr>
+      <td><strong>Resolved summary</strong> (who + when + note)</td>
+      <td>emerald summary card; Reopen available</td>
+      <td>all (Reopen: manager)</td>
+      <td>Once resolved, show resolver + time + note; reopen returns to in_progress</td>
+      <td>§2</td>
+    </tr>
+    <tr>
+      <td><strong>Comment thread</strong> + Add-a-note</td>
+      <td>append-only <code>incident_comments</code> (the one new migration); chronological; <code>input</code>+<code>SubmitButton</code></td>
+      <td>all (incl. feeder)</td>
+      <td>Any role comments; feeder's action is the note box; status changes folded in as system entries</td>
+      <td>§2, §4, §5</td>
+    </tr>
+    <tr>
+      <td><strong>Feeder variant</strong> (no Manage panel, promoted Post)</td>
+      <td>Manage block omitted entirely — never a disabled close button</td>
+      <td>feeder</td>
+      <td>Feeder reads + comments, has NO resolve/close power; made clear by scent, not disablement</td>
+      <td>§5</td>
+    </tr>
+    <tr>
+      <td><strong>Per-colony "Incidents (n)"</strong> section</td>
+      <td>peer to Cats/Schedule; open+in_progress only; links to detail</td>
+      <td>all</td>
+      <td>Colony page surfaces its own open incidents, like Cats/Schedules sections</td>
+      <td>§6</td>
+    </tr>
+    <tr>
+      <td><strong>Nav item</strong> "Incidents" (+count badge)</td>
+      <td>sidebar/tab; manager-only gate like Members</td>
+      <td>manager</td>
+      <td>Managers get a triage entry point; feeders don't</td>
+      <td>§7</td>
+    </tr>
+    <tr>
+      <td><strong>Empty / loading</strong> states</td>
+      <td>"All clear" vs "clear filters"; skeleton matching row layout</td>
+      <td>manager</td>
+      <td>Distinct no-incidents (good news) vs no-match; loading skeleton</td>
+      <td>§1</td>
+    </tr>
+  </table>
+
+  <div class="note"><strong>New primitive needed?</strong> None. List rows = the Today / colony tappable
+  <code>card</code> row. Status &amp; urgency pills = the <code>StatusGlyph</code> icon+word convention. Active/Done =
+  the <code>role-select-form.tsx</code> segmented control; chips = small <code>btnGhost</code> toggles. Resolve confirm =
+  the inline expression of <code>confirm-button.tsx</code>'s deliberate-confirm intent; assignee uses a plain labelled
+  <code>&lt;select&gt;</code>. Comment thread = a stacked list of <code>card</code>s + an <code>input</code> textarea +
+  <code>SubmitButton</code>. Type glyphs = <code>IncidentTypeIcon</code>; urgency glyph = <code>WarningIcon</code>;
+  status glyphs reuse <code>StatusGlyph</code>. The <strong>only</strong> new build artefact is the append-only
+  <code>incident_comments</code> table from Step 1 — no new UI primitive.</div>
+</div>
+</body>
+</html>

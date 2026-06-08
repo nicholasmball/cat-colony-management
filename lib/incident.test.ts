@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   defaultUrgencyLevel,
   isValidIncidentType,
+  incidentTypeLabel,
+  incidentStatusLabel,
   INCIDENT_TYPES,
   type UrgencyLevel,
 } from "./incident.ts";
@@ -19,7 +21,12 @@ const lvl = (over: Partial<UrgencyLevel>): UrgencyLevel => ({
 // ── defaultUrgencyLevel ──────────────────────────────────────────────────────
 
 test("defaultUrgencyLevel: picks the not-urgent level when both exist", () => {
-  const urgent = lvl({ id: "u", key: "urgent", sort_order: 0, alerts_immediately: true });
+  const urgent = lvl({
+    id: "u",
+    key: "urgent",
+    sort_order: 0,
+    alerts_immediately: true,
+  });
   const notUrgent = lvl({ id: "n", key: "not_urgent", sort_order: 1 });
   // Urgent sorts first, but the not-alerting level is the default.
   assert.equal(defaultUrgencyLevel([urgent, notUrgent])?.id, "n");
@@ -37,8 +44,18 @@ test("defaultUrgencyLevel: a single level is returned even if it alerts", () => 
 });
 
 test("defaultUrgencyLevel: with no calm level, falls back to lowest sort", () => {
-  const high = lvl({ id: "h", key: "urgent", sort_order: 5, alerts_immediately: true });
-  const low = lvl({ id: "l", key: "critical", sort_order: 1, alerts_immediately: true });
+  const high = lvl({
+    id: "h",
+    key: "urgent",
+    sort_order: 5,
+    alerts_immediately: true,
+  });
+  const low = lvl({
+    id: "l",
+    key: "critical",
+    sort_order: 1,
+    alerts_immediately: true,
+  });
   assert.equal(defaultUrgencyLevel([high, low])?.id, "l");
 });
 
@@ -62,4 +79,27 @@ test("isValidIncidentType: rejects unknown / wrong-shape values", () => {
   assert.equal(isValidIncidentType(undefined), false);
   assert.equal(isValidIncidentType(null), false);
   assert.equal(isValidIncidentType(7), false);
+});
+
+// ── label maps ───────────────────────────────────────────────────────────────
+
+test("incidentTypeLabel: every enum member has a human label", () => {
+  for (const t of INCIDENT_TYPES) {
+    assert.notEqual(incidentTypeLabel(t), t);
+    assert.ok(incidentTypeLabel(t).length > 0);
+  }
+  assert.equal(incidentTypeLabel("poisoning"), "Poisoning");
+});
+
+test("incidentTypeLabel: unknown type falls back to the raw value", () => {
+  assert.equal(incidentTypeLabel("future_type"), "future_type");
+});
+
+test("incidentStatusLabel: UI states + closed collapse correctly", () => {
+  assert.equal(incidentStatusLabel("open"), "Open");
+  assert.equal(incidentStatusLabel("in_progress"), "In progress");
+  assert.equal(incidentStatusLabel("resolved"), "Resolved");
+  // 'closed' collapses to the terminal "Resolved" (one done state in the UI).
+  assert.equal(incidentStatusLabel("closed"), "Resolved");
+  assert.equal(incidentStatusLabel("weird"), "weird");
 });
