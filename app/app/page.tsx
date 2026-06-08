@@ -195,7 +195,17 @@ export default async function AppHome({
     );
   }
 
-  // ── Has organisation(s): fully set up → normal home ───────────────────────
+  // ── Has organisation(s): fully set up ─────────────────────────────────────
+  // Managers land on their oversight dashboard (approved). This sits AFTER the
+  // first-run/empty-org handling and AFTER the feeder→Today redirect above, so
+  // it never hijacks onboarding or feeders — only a fully-set-up manager. /app
+  // stays reachable as this landing router (the org switcher below still
+  // renders for anyone who navigates here directly via the nav-less route).
+  if (active && canManage) {
+    redirect("/app/dashboard");
+  }
+
+  // ── Fully set up, non-manager fallthrough → org switcher / quick links ─────
   return (
     <div className="flex max-w-3xl flex-col gap-7 px-6 py-6 md:px-10">
       {error ? (

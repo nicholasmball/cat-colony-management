@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { ComponentType, SVGProps } from "react";
 import {
   HomeIcon,
+  GridIcon,
   PawIcon,
   UsersIcon,
   CogIcon,
@@ -17,6 +18,7 @@ import { navItemsFor } from "@/lib/nav-items";
 // Icon here. The which-items decision lives in navItemsFor.
 const iconByHref: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
   "/app": HomeIcon,
+  "/app/dashboard": GridIcon,
   "/app/today": CalendarIcon,
   "/app/colonies": PawIcon,
   "/app/incidents": WarningIcon,
