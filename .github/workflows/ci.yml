@@ -13,7 +13,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # Node 24 (LTS) ships npm 11 — matches the npm that generated
+          # package-lock.json and the Node version Vercel builds on. Node 22
+          # (npm 10) resolved @swc/helpers differently and rejected the lock.
+          node-version: 24
           cache: npm
 
       - name: Install
