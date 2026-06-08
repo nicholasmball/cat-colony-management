@@ -6,7 +6,11 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
 import { isFailedWrite, writeErrorMessage } from "@/lib/mutation-result";
-import { UNCONFIRMED_STATUS, hasReportIdentifier } from "@/lib/cat-report";
+import {
+  UNCONFIRMED_STATUS,
+  hasReportIdentifier,
+  parseNeutered,
+} from "@/lib/cat-report";
 
 // A manager (admin/caretaker) of the active org may confirm/reject a reported
 // cat. Mirrors the schedules/incidents actions' requireManagerOrg — the UI also
@@ -44,9 +48,7 @@ export async function reportCat(formData: FormData) {
   const colour = String(formData.get("colour") ?? "").trim() || null;
   const sex = String(formData.get("sex") ?? "").trim() || null;
   // Tri-state so "unknown" stays null — records accept incomplete data.
-  const neuteredRaw = String(formData.get("neutered") ?? "");
-  const neutered =
-    neuteredRaw === "yes" ? true : neuteredRaw === "no" ? false : null;
+  const neutered = parseNeutered(formData.get("neutered")?.toString());
   const notes = String(formData.get("notes") ?? "").trim() || null;
 
   // Non-blocking photo: the key was presigned + PUT by the browser (entityType
@@ -55,6 +57,22 @@ export async function reportCat(formData: FormData) {
   const photoKey = String(formData.get("photo_key") ?? "").trim() || null;
 
   const supabase = await createClient();
+
+  // Cross-org write integrity: the route-param colony_id is attacker-controlled,
+  // and RLS ("insert cats") only checks org membership + status — there is no DB
+  // constraint tying cats.colony_id to cats.organisation_id. So we re-validate
+  // here that the colony exists AND belongs to the caller's active org before
+  // inserting, mirroring the presign cat_report branch. Without this, an Org A
+  // member could pass an Org B colony_id and create an orphaned row.
+  const { data: colony } = await supabase
+    .from("colonies")
+    .select("id")
+    .eq("id", colonyId)
+    .eq("organisation_id", org.organisation_id)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (!colony) fail("Colony not found.");
+
   const { error } = await supabase.from("cats").insert({
     organisation_id: org.organisation_id,
     colony_id: colonyId,
