@@ -12,9 +12,19 @@ export function catLabel(cat: {
   return cat.name?.trim() || cat.temp_id?.trim() || "Unnamed cat";
 }
 
-// "not_seen" -> "not seen". Display-only; the stored value is unchanged.
+// Friendly, human-facing labels for statuses whose raw enum reads badly. The
+// stored value is unchanged — this is display-only. "new_unconfirmed" would
+// otherwise render as "new unconfirmed"; we show "New · unconfirmed" so the
+// chip reads as a clear review state (used in the cats list + cat detail).
+const STATUS_LABEL: Record<string, string> = {
+  new_unconfirmed: "New · unconfirmed",
+};
+
+// "not_seen" -> "not seen". Uses a friendly label where one exists, else falls
+// back to de-underscoring the raw enum. Display-only; the stored value is
+// unchanged.
 export function formatStatus(status: string): string {
-  return status.replace(/_/g, " ").trim();
+  return STATUS_LABEL[status] ?? status.replace(/_/g, " ").trim();
 }
 
 // Map a status to a colour tone. Covers both the cat's base status (active /
