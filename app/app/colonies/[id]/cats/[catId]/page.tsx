@@ -10,11 +10,30 @@ import {
   canReviewCat,
   attributionEmail,
 } from "@/lib/cat-report";
-import { PawIcon } from "@/components/icons";
+import {
+  concernCandidate,
+  concernReasonText,
+  type ConcernSighting,
+  type ConcernReview,
+} from "@/lib/cat-concern";
+import { PawIcon, WarningIcon } from "@/components/icons";
 import { ConfirmButton } from "@/components/confirm-button";
 import { SubmitButton } from "@/components/submit-button";
 import { confirmCat, rejectCat } from "../report/actions";
-import { btnGhost, btnGhostDanger, btnPrimary, card } from "@/lib/ui";
+import {
+  ignoreConcern,
+  monitorConcern,
+  markCatMissing,
+  markCatFound,
+} from "../concern-actions";
+import {
+  btnGhost,
+  btnGhostDanger,
+  btnPrimary,
+  card,
+  fieldLabel,
+  input,
+} from "@/lib/ui";
 
 // Relative-ish, locale-independent "when" for the report line. Keeps it simple:
 // the date + time the report was created (records have no separate reporter
@@ -55,10 +74,16 @@ export default async function CatDetail({
   searchParams,
 }: {
   params: Promise<{ id: string; catId: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    ignored?: string;
+    monitoring?: string;
+    missing?: string;
+    found?: string;
+  }>;
 }) {
   const { id, catId } = await params;
-  const { error } = await searchParams;
+  const { error, ignored, monitoring, missing, found } = await searchParams;
   const org = await getActiveOrg();
   const supabase = await createClient();
 
@@ -90,6 +115,61 @@ export default async function CatDetail({
   const canReview = canManage && canReviewCat(cat);
   const when = reportedWhen(cat.created_at as string | null);
   const label = catLabel(cat);
+
+  // ── Concern review block ───────────────────────────────────────────────────
+  // Bounded fetch (this one cat's recent sightings + reviews + the org's
+  // thresholds), then the pure concernCandidate() helper. The block shows for an
+  // active flagged cat OR a missing cat (to offer the approved Mark-found
+  // reversal). Feeders see the context line but no actions. Never auto-anything.
+  const status = cat.status as string;
+  let concernFlag: ReturnType<typeof concernCandidate> = null;
+  let monitoringSince: string | null = null;
+  if (org && (status === "active" || status === "missing")) {
+    const [{ data: sightingData }, { data: reviewData }, { data: settings }] =
+      await Promise.all([
+        supabase
+          .from("cat_sightings")
+          .select("status, observed_at")
+          .eq("cat_id", catId)
+          .order("observed_at", { ascending: false })
+          .limit(100),
+        supabase
+          .from("cat_concern_reviews")
+          .select("outcome, created_at")
+          .eq("cat_id", catId)
+          .order("created_at", { ascending: false })
+          .limit(100),
+        supabase
+          .from("alert_settings")
+          .select("not_seen_days, repeated_not_seen")
+          .eq("organisation_id", org.organisation_id)
+          .maybeSingle(),
+      ]);
+    const sightings = (sightingData ?? []).map((s) => ({
+      status: s.status as ConcernSighting["status"],
+      observed_at: s.observed_at as string,
+    }));
+    const reviews = (reviewData ?? []).map((r) => ({
+      outcome: r.outcome as ConcernReview["outcome"],
+      created_at: r.created_at as string,
+    }));
+    concernFlag = concernCandidate({
+      status,
+      sightings,
+      reviews,
+      thresholds: {
+        not_seen_days: (settings?.not_seen_days as number | null) ?? null,
+        repeated_not_seen:
+          (settings?.repeated_not_seen as number | null) ?? null,
+      },
+      now: new Date(),
+    });
+    if (concernFlag?.monitoring && reviews[0]?.outcome === "monitoring") {
+      monitoringSince = reviews[0].created_at;
+    }
+  }
+  const isMissing = status === "missing";
+  const isActiveFlagged = status === "active" && concernFlag !== null;
 
   // Resolve the reporter / confirmer emails server-side. One service-client
   // lookup per DISTINCT id (≤2 here) — no N+1. Mirrors the incident detail
@@ -152,6 +232,20 @@ export default async function CatDetail({
           className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/60 dark:text-red-300"
         >
           {error}
+        </p>
+      ) : null}
+
+      {ignored || monitoring || missing || found ? (
+        <p
+          role="status"
+          className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
+        >
+          {ignored ? "✓ Marked as reviewed — no action needed for now." : null}
+          {monitoring ? "✓ Now monitoring this cat." : null}
+          {missing
+            ? "✓ Marked missing. You can mark it found if it returns."
+            : null}
+          {found ? "✓ Marked found and back to active." : null}
         </p>
       ) : null}
 
@@ -273,6 +367,105 @@ export default async function CatDetail({
                   className={`${btnGhostDanger} w-full min-h-12`}
                 >
                   Reject…
+                </ConfirmButton>
+              </form>
+            </div>
+          ) : null}
+
+          {/* Concern review block. Caretaker/admin act here; feeders see the
+              same context line (the reason / monitoring / missing state) with no
+              actions. The server actions re-check role + status guards, so this
+              UI gate is convenience, never the trust boundary. */}
+          {isActiveFlagged ? (
+            <div
+              className={`${card} flex flex-col gap-3 border-l-4 border-l-amber-400 p-4`}
+            >
+              <p className="flex items-center gap-2 text-sm font-medium">
+                <WarningIcon
+                  className="h-5 w-5 shrink-0 text-amber-500"
+                  aria-hidden
+                />
+                {concernReasonText(concernFlag!)}
+                {concernFlag!.monitoring ? (
+                  <span className="text-xs font-normal text-muted">
+                    · monitoring
+                    {monitoringSince
+                      ? ` since ${dateTimeFmt.format(new Date(monitoringSince))}`
+                      : ""}
+                  </span>
+                ) : null}
+              </p>
+              {canManage ? (
+                <>
+                  {/* Monitor + Ignore share one form so the optional note posts
+                      with whichever the caretaker picks (formAction selects the
+                      server action). Mark-missing is a separate destructive form
+                      with a confirm dialog and no note. */}
+                  <form className="flex flex-col gap-3">
+                    <input type="hidden" name="colony_id" value={id} />
+                    <input type="hidden" name="cat_id" value={catId} />
+                    <label className={`${fieldLabel} text-xs`}>
+                      Note (optional)
+                      <textarea
+                        name="note"
+                        rows={2}
+                        className={`${input} py-2`}
+                        placeholder="Add a short note for the team"
+                      />
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="submit"
+                        formAction={monitorConcern}
+                        className={`${btnPrimary} min-h-11 px-4`}
+                      >
+                        Monitor
+                      </button>
+                      <button
+                        type="submit"
+                        formAction={ignoreConcern}
+                        className={`${btnGhost} min-h-11 px-4`}
+                      >
+                        Ignore
+                      </button>
+                    </div>
+                  </form>
+                  <form action={markCatMissing}>
+                    <input type="hidden" name="colony_id" value={id} />
+                    <input type="hidden" name="cat_id" value={catId} />
+                    <ConfirmButton
+                      confirm="Mark this cat as missing? It moves out of the active list. This is reversible — you can mark it found if it returns."
+                      confirmLabel="Mark missing"
+                      className={`${btnGhostDanger} min-h-11 px-4`}
+                    >
+                      Mark missing…
+                    </ConfirmButton>
+                  </form>
+                </>
+              ) : (
+                <p className="text-xs text-muted">
+                  A caretaker will review this cat.
+                </p>
+              )}
+            </div>
+          ) : null}
+
+          {/* Missing cat → offer the approved Mark-found reversal. */}
+          {isMissing && canManage ? (
+            <div className={`${card} flex flex-col gap-3 p-4`}>
+              <p className="text-sm text-muted">
+                This cat is marked missing. If it’s been seen again, mark it
+                found to return it to the active list.
+              </p>
+              <form action={markCatFound}>
+                <input type="hidden" name="colony_id" value={id} />
+                <input type="hidden" name="cat_id" value={catId} />
+                <ConfirmButton
+                  confirm="Mark this cat as found? It returns to the active list."
+                  confirmLabel="Mark found"
+                  className={`${btnPrimary} min-h-11 px-4`}
+                >
+                  Mark found → Active
                 </ConfirmButton>
               </form>
             </div>

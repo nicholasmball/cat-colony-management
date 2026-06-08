@@ -5,6 +5,12 @@ import { getActiveOrg } from "@/lib/active-org";
 import { photoSrc } from "@/lib/photo";
 import { catLabel, formatStatus, statusTone } from "@/lib/cat-display";
 import { UNCONFIRMED_STATUS, compareCatsForList } from "@/lib/cat-report";
+import {
+  concernCandidate,
+  concernReasonText,
+  type ConcernSighting,
+  type ConcernReview,
+} from "@/lib/cat-concern";
 import { scheduleWhen } from "@/lib/schedule";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
@@ -110,6 +116,85 @@ export default async function ColonyDetail({
   );
 
   const canManage = org?.role === "admin" || org?.role === "caretaker";
+
+  // ── Cats of concern (human-review queue) ───────────────────────────────────
+  // Detect candidates WITHOUT N+1: one bounded sightings query for ALL of this
+  // colony's cats, one alert_settings read, one concern-reviews read — then the
+  // pure concernCandidate() helper runs per cat in memory. We bound the sightings
+  // query so a long-lived colony can't pull an unbounded history; the helper only
+  // needs each cat's recent run, and rows arrive newest-first.
+  const catIds = cats.map((c) => c.id);
+  const sightingsByCat = new Map<string, ConcernSighting[]>();
+  const reviewsByCat = new Map<string, ConcernReview[]>();
+  let notSeenDays: number | null = null;
+  let repeatedNotSeen: number | null = null;
+  if (catIds.length > 0 && org) {
+    const [{ data: sightingData }, { data: reviewData }, { data: settings }] =
+      await Promise.all([
+        supabase
+          .from("cat_sightings")
+          .select("cat_id, status, observed_at")
+          .in("cat_id", catIds)
+          .order("observed_at", { ascending: false })
+          .limit(500),
+        supabase
+          .from("cat_concern_reviews")
+          .select("cat_id, outcome, created_at")
+          .in("cat_id", catIds)
+          .order("created_at", { ascending: false })
+          .limit(500),
+        supabase
+          .from("alert_settings")
+          .select("not_seen_days, repeated_not_seen")
+          .eq("organisation_id", org.organisation_id)
+          .maybeSingle(),
+      ]);
+    for (const s of sightingData ?? []) {
+      const list = sightingsByCat.get(s.cat_id as string) ?? [];
+      list.push({
+        status: s.status as ConcernSighting["status"],
+        observed_at: s.observed_at as string,
+      });
+      sightingsByCat.set(s.cat_id as string, list);
+    }
+    for (const r of reviewData ?? []) {
+      const list = reviewsByCat.get(r.cat_id as string) ?? [];
+      list.push({
+        outcome: r.outcome as ConcernReview["outcome"],
+        created_at: r.created_at as string,
+      });
+      reviewsByCat.set(r.cat_id as string, list);
+    }
+    notSeenDays = (settings?.not_seen_days as number | null) ?? null;
+    repeatedNotSeen = (settings?.repeated_not_seen as number | null) ?? null;
+  }
+  const now = new Date();
+  const concernCats = cats
+    .map((c) => ({
+      cat: c,
+      flag: concernCandidate({
+        status: c.status,
+        sightings: sightingsByCat.get(c.id) ?? [],
+        reviews: reviewsByCat.get(c.id) ?? [],
+        thresholds: {
+          not_seen_days: notSeenDays,
+          repeated_not_seen: repeatedNotSeen,
+        },
+        now,
+      }),
+    }))
+    .filter(
+      (
+        x,
+      ): x is {
+        cat: Cat;
+        flag: NonNullable<ReturnType<typeof concernCandidate>>;
+      } => x.flag !== null,
+    );
+  // Active (not-yet-reviewed) candidates first; Monitoring is a distinct group.
+  const activeConcern = concernCats.filter((x) => !x.flag.monitoring);
+  const monitoringConcern = concernCats.filter((x) => x.flag.monitoring);
+
   const start = hhmm(colony.feeding_window_start);
   const end = hhmm(colony.feeding_window_end);
 
@@ -280,6 +365,89 @@ export default async function ColonyDetail({
         <PawIcon className="h-5 w-5" aria-hidden />
         Report a new cat
       </Link>
+
+      {/* Cats of concern — human-review queue. Caretakers see actionable rows
+          (link to the cat's review block); feeders see the same context (the
+          chip) but no actions, anywhere. Reason is icon + words, never colour
+          alone. Empty state reassures rather than alarms. */}
+      <section className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Cats of concern
+          </h2>
+          {activeConcern.length > 0 ? (
+            <span
+              className={`rounded-full px-2 py-0.5 text-xs font-semibold ${toneClass.warn}`}
+            >
+              {activeConcern.length}
+            </span>
+          ) : null}
+        </div>
+
+        {concernCats.length === 0 ? (
+          <p className={`${card} p-4 text-sm text-muted`}>
+            No cats need review.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {activeConcern.length > 0 ? (
+              <ul className="flex flex-col gap-2">
+                {activeConcern.map(({ cat: c, flag }) => (
+                  <li key={c.id}>
+                    <Link
+                      href={`/app/colonies/${id}/cats/${c.id}`}
+                      className={`${card} flex min-h-[56px] items-center gap-3 border-l-4 border-l-amber-400 px-4 py-3 transition hover:bg-foreground/5`}
+                    >
+                      <WarningIcon
+                        className="h-5 w-5 shrink-0 text-amber-500"
+                        aria-hidden
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">{catLabel(c)}</p>
+                        <p className="text-xs text-muted">
+                          {concernReasonText(flag)}
+                        </p>
+                      </div>
+                      <ChevronIcon className="h-4 w-4 shrink-0 text-muted" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+
+            {monitoringConcern.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                <h3 className="text-xs font-medium text-muted">
+                  Monitoring ({monitoringConcern.length})
+                </h3>
+                <ul className="flex flex-col gap-2">
+                  {monitoringConcern.map(({ cat: c, flag }) => (
+                    <li key={c.id}>
+                      <Link
+                        href={`/app/colonies/${id}/cats/${c.id}`}
+                        className={`${card} flex min-h-[56px] items-center gap-3 px-4 py-3 transition hover:bg-foreground/5`}
+                      >
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${toneClass.neutral}`}
+                        >
+                          Monitoring
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-medium">{catLabel(c)}</p>
+                          <p className="text-xs text-muted">
+                            {concernReasonText(flag)}
+                          </p>
+                        </div>
+                        <ChevronIcon className="h-4 w-4 shrink-0 text-muted" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        )}
+      </section>
 
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3">

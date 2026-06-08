@@ -1,0 +1,1490 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      UX Design — Missing-cat process (human review) · SCoT Colony Management
+    </title>
+    <style>
+      :root {
+        /* Mirror the app's token palette (light mode) */
+        --bg: #ffffff;
+        --surface: #f7f7f6;
+        --foreground: #1c1b1a;
+        --muted: #6b6a67;
+        --border: #e4e3e0;
+        --accent: #15803d;
+        --accent-fg: #ffffff;
+        --red: #dc2626;
+        --red-50: #fef2f2;
+        --red-700: #b91c1c;
+        --amber-50: #fffbeb;
+        --amber-500: #f59e0b;
+        --amber-800: #92400e;
+        --emerald-50: #ecfdf5;
+        --emerald-600: #059669;
+        --emerald-800: #065f46;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #eceae6;
+        color: var(--foreground);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
+        line-height: 1.5;
+        padding: 0 0 80px;
+      }
+      .page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px 24px;
+      }
+      header.doc {
+        border-bottom: 2px solid var(--foreground);
+        padding-bottom: 20px;
+        margin-bottom: 8px;
+      }
+      h1.doc {
+        font-size: 30px;
+        margin: 0 0 6px;
+        letter-spacing: -0.02em;
+      }
+      h2 {
+        font-size: 22px;
+        margin: 48px 0 8px;
+        letter-spacing: -0.01em;
+        border-top: 1px solid var(--border);
+        padding-top: 28px;
+      }
+      h3 {
+        font-size: 16px;
+        margin: 28px 0 10px;
+      }
+      p.lead {
+        color: var(--muted);
+        max-width: 70ch;
+        margin: 4px 0;
+      }
+      .meta {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      code {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        padding: 1px 5px;
+        font-size: 13px;
+      }
+      .note {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--accent);
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin: 14px 0;
+        font-size: 14px;
+      }
+      .note.warn {
+        border-left-color: var(--amber-500);
+      }
+      ul.tight {
+        margin: 8px 0;
+        padding-left: 20px;
+      }
+      ul.tight li {
+        margin: 4px 0;
+        font-size: 14px;
+      }
+
+      /* ---- Phone frame at 375px ---- */
+      .frames {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 28px;
+        align-items: flex-start;
+        margin-top: 16px;
+      }
+      .frame-wrap {
+        width: 375px;
+      }
+      .frame-cap {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+      .frame-cap .state {
+        color: var(--muted);
+        font-weight: 400;
+      }
+      .phone {
+        width: 375px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        overflow: hidden;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.1);
+      }
+      .statusbar {
+        height: 26px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 14px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .screen {
+        padding: 18px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .crumb {
+        color: var(--accent);
+        font-size: 13px;
+      }
+      .title {
+        font-size: 26px;
+        margin: 0;
+        letter-spacing: -0.01em;
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 13px;
+        margin: 2px 0 0;
+      }
+      .eyebrow {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      /* tokens replicated from lib/ui.ts */
+      .btn {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 9px;
+        padding: 0 16px;
+        font-weight: 600;
+        font-size: 15px;
+        border: 1px solid transparent;
+        cursor: default;
+        text-decoration: none;
+        gap: 6px;
+      }
+      .btnPrimary {
+        background: var(--accent);
+        color: var(--accent-fg);
+      }
+      .btnGhost {
+        border-color: var(--border);
+        color: var(--foreground);
+        background: var(--bg);
+      }
+      .btnGhostDanger {
+        border-color: #fecaca;
+        color: var(--red-700);
+        background: var(--bg);
+      }
+      .btnDanger {
+        background: var(--red);
+        color: #fff;
+      }
+      .full {
+        width: 100%;
+      }
+      .card {
+        border: 1px solid var(--border);
+        background: var(--surface);
+        border-radius: 12px;
+      }
+      .input {
+        min-height: 44px;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        border-radius: 9px;
+        padding: 10px 12px;
+        font-size: 15px;
+        width: 100%;
+        color: var(--foreground);
+      }
+      .input.placeholder {
+        color: var(--muted);
+      }
+      textarea.input {
+        min-height: 62px;
+        resize: none;
+      }
+      .lbl {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .opt {
+        font-weight: 400;
+        color: var(--muted);
+      }
+
+      /* count badge on a section heading */
+      .countbadge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        background: var(--amber-500);
+        color: #3a2a00;
+      }
+      .countbadge.neutral {
+        background: #e0e0dd;
+        color: var(--foreground);
+      }
+
+      /* list rows */
+      .row {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        border-radius: 12px;
+        padding: 11px 14px;
+        min-height: 60px;
+      }
+      .avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 1px solid var(--border);
+        background: var(--bg);
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        flex: 0 0 auto;
+        overflow: hidden;
+      }
+      .avatar.photo {
+        background: linear-gradient(135deg, #c9b79c, #8a7355);
+      }
+      .rowmain {
+        min-width: 0;
+        flex: 1;
+      }
+      .rowtitle {
+        font-weight: 600;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .rowsub {
+        font-size: 12px;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 3px;
+        flex-wrap: wrap;
+      }
+      .chev {
+        color: var(--muted);
+        flex: 0 0 auto;
+      }
+
+      /* status chips (tone classes — from statusTone/toneClass) */
+      .chip {
+        border-radius: 999px;
+        padding: 2px 9px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: capitalize;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .chip.good {
+        background: var(--emerald-50);
+        color: var(--emerald-800);
+      }
+      .chip.neutral {
+        background: #eef2ff;
+        color: #3730a3;
+      }
+      .chip.warn {
+        background: var(--amber-50);
+        color: var(--amber-800);
+      }
+      .chip.bad {
+        background: var(--red-50);
+        color: var(--red-700);
+      }
+
+      /* reason chip — icon + text, never colour-alone */
+      .reason {
+        border-radius: 999px;
+        padding: 2px 9px;
+        font-size: 11px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: var(--amber-50);
+        color: var(--amber-800);
+        border: 1px solid #fde68a;
+      }
+      .reason.bad {
+        background: var(--red-50);
+        color: var(--red-700);
+        border-color: #fecaca;
+      }
+      .reason .ic {
+        font-size: 11px;
+      }
+
+      /* banners */
+      .banner {
+        border-radius: 9px;
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+      .banner.ok {
+        background: var(--emerald-50);
+        color: var(--emerald-800);
+      }
+      .banner.warn {
+        background: var(--amber-50);
+        color: var(--amber-800);
+      }
+      .banner.note {
+        background: var(--surface);
+        color: var(--muted);
+      }
+
+      /* annotation callouts */
+      .anno {
+        font-size: 12px;
+        color: var(--accent);
+        border-left: 2px solid var(--accent);
+        padding-left: 8px;
+        margin: 2px 0;
+      }
+
+      /* sub-group divider inside a section */
+      .subhead {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin-top: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      /* flow diagram */
+      .flow {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        margin: 14px 0;
+      }
+      .fbox {
+        border: 1px solid var(--border);
+        background: var(--bg);
+        border-radius: 10px;
+        padding: 10px 13px;
+        font-size: 13px;
+        font-weight: 500;
+        max-width: 200px;
+      }
+      .fbox.trigger {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: #fff;
+      }
+      .fbox.surface {
+        border-color: var(--amber-500);
+        background: var(--amber-50);
+        color: var(--amber-800);
+      }
+      .fbox.ok {
+        border-color: var(--emerald-600);
+        background: var(--emerald-50);
+        color: var(--emerald-800);
+      }
+      .fbox.bad {
+        border-color: #fecaca;
+        background: var(--red-50);
+        color: var(--red-700);
+      }
+      .fbox.decision {
+        border-style: dashed;
+      }
+      .arrow {
+        color: var(--muted);
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .flowlbl {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      /* tables */
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 12px 0;
+        font-size: 14px;
+      }
+      th,
+      td {
+        border: 1px solid var(--border);
+        padding: 8px 10px;
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        background: var(--surface);
+        font-weight: 600;
+      }
+      td code {
+        font-size: 12px;
+      }
+
+      .legend {
+        display: flex;
+        gap: 18px;
+        flex-wrap: wrap;
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 8px;
+      }
+      .swatch {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+        vertical-align: middle;
+        margin-right: 5px;
+      }
+      .tiny {
+        font-size: 11px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="doc">
+        <h1 class="doc">Missing-cat process (human review) — UX Design</h1>
+        <p class="meta">
+          SCoT Colony Management App · Step 2 of 6 (UX Design) · Mobile-first
+          PWA · all frames rendered at 375px
+        </p>
+        <p class="lead">
+          Thresholds <strong>surface</strong> a cat as "of concern"; a human
+          decides what it means. A caretaker reviews each candidate and chooses
+          <strong>Ignore</strong>, <strong>Monitor</strong>, or
+          <strong>Mark missing</strong> — the app never marks a cat missing by
+          itself. Built directly on the just-shipped new-cat review pattern: a
+          per-colony "needs review" section with a count badge, concern-first
+          ordering, and a review action block on the cat detail page. No new
+          visual language.
+        </p>
+        <div class="note">
+          <strong>Scope:</strong> this card is
+          <em>in-place surfacing + the caretaker decision only</em>.
+          Alert-engine fan-out (push / SMS / in-app notification when a cat
+          crosses a threshold) is deferred to its own card — nothing here sends
+          a message.
+        </div>
+      </header>
+
+      <h2>1 · Context &amp; principles</h2>
+      <p class="lead">
+        Upstream signal (no change needed): feeders mark cats
+        <code>seen</code> / <code>not_seen</code> / <code>concern</code> in
+        <code>feed-form.tsx</code> on each visit. The threshold engine reads
+        that history and flags candidates using the per-org defaults from the
+        Requirements: <strong>cat not-seen = 7 days</strong>,
+        <strong>repeated not-seen = 3 consecutive visits</strong>, plus an
+        explicit feeder <strong>"concern"</strong> flag. Surfacing a candidate
+        is derived, not stored — exactly like unconfirmed-first ordering today.
+      </p>
+      <ul class="tight">
+        <li>
+          <strong>Never auto-mark (the north star of this card):</strong> a
+          threshold only <em>raises a cat for review</em>. The cat stays
+          <code>active</code> until a caretaker explicitly taps
+          <strong>Mark missing</strong>. Every copy string reflects this — see
+          §3.5.
+        </li>
+        <li>
+          <strong>Reuse the new-cat review pattern (Jakob's Law):</strong> a
+          per-colony "needs review" section + a count badge + concern-first sort
+          + a review action block on the cat detail page. Caretakers already
+          know this loop from confirming reported cats.
+        </li>
+        <li>
+          <strong>Gestalt grouping:</strong> "Cats of concern" is its own
+          section, visually separate from the existing "New · unconfirmed"
+          review section and from the plain Cats list. Within it, a "Monitoring"
+          sub-group is split from fresh concerns so the caretaker sees
+          new-since-last-visit work distinctly from cats they already chose to
+          watch.
+        </li>
+        <li>
+          <strong>Information scent:</strong> each candidate carries a specific
+          reason chip ("Not seen 9 days", "3 missed visits", "Flagged: concern")
+          — never a generic "needs attention".
+        </li>
+        <li>
+          <strong>Hick's Law + Fitts:</strong> the review block offers three
+          clearly-labelled choices; the two constructive ones (Ignore, Monitor)
+          are reachable side-by-side, the destructive
+          <strong>Mark missing</strong> is set apart and routed through the
+          <code>ConfirmButton</code> dialog (harder to hit by accident).
+        </li>
+      </ul>
+
+      <h2>2 · How a cat is surfaced (and never auto-marked)</h2>
+      <p class="lead">
+        The status pill is honest at every step. A surfaced cat keeps its real
+        <code>active</code> status and gains a <em>review reason</em>; only a
+        caretaker's tap changes the status to <code>missing</code>.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Signal (from feed history)</th>
+            <th>What the app does</th>
+            <th>Cat's stored status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Not seen ≥ 7 days (org default)</td>
+            <td>Surfaces in "Cats of concern" with chip "Not seen N days"</td>
+            <td><code>active</code> (unchanged)</td>
+          </tr>
+          <tr>
+            <td>Not seen on 3 consecutive visits</td>
+            <td>Surfaces with chip "3 missed visits"</td>
+            <td><code>active</code> (unchanged)</td>
+          </tr>
+          <tr>
+            <td>Feeder tapped "Concern" on a visit</td>
+            <td>Surfaces with chip "Flagged: concern"</td>
+            <td>
+              <code>active</code> (the sighting is <code>concern</code>; the cat
+              record stays active)
+            </td>
+          </tr>
+          <tr>
+            <td>Caretaker taps <strong>Monitor</strong></td>
+            <td>Moves to the "Monitoring" sub-group, keeps watching</td>
+            <td><code>active</code> (unchanged)</td>
+          </tr>
+          <tr>
+            <td>Caretaker taps <strong>Ignore</strong></td>
+            <td>
+              Clears from review (false alarm / cat is around); reason resets
+            </td>
+            <td><code>active</code> (unchanged)</td>
+          </tr>
+          <tr>
+            <td>Caretaker taps <strong>Mark missing</strong> + confirms</td>
+            <td>The one place status changes — by a human, on purpose</td>
+            <td><code>missing</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>3 · User flow</h2>
+      <div class="flow">
+        <div class="fbox trigger">
+          Feeder visit<br /><span class="flowlbl" style="color: #d7f5e1"
+            >marks cat "Not seen" or "Concern"</span
+          >
+        </div>
+        <span class="arrow">→</span>
+        <div class="fbox decision">Threshold crossed?</div>
+        <span class="arrow">→</span>
+        <div class="fbox surface">
+          Surfaced in "Cats of concern"<br /><span class="flowlbl"
+            >reason chip · still <code>active</code></span
+          >
+        </div>
+        <span class="arrow">→</span>
+        <div class="fbox">
+          Caretaker opens cat detail<br /><span class="flowlbl"
+            >context: why + last seen</span
+          >
+        </div>
+        <span class="arrow">→</span>
+        <div class="fbox decision">Ignore · Monitor · Mark missing?</div>
+      </div>
+      <div class="flow" style="margin-left: 0">
+        <span class="flowlbl" style="margin-left: 6px">outcomes&nbsp;↘</span>
+        <div class="fbox ok">
+          <strong>Ignore</strong> → clears from review, cat stays active
+        </div>
+        <div class="fbox" style="border-color: var(--amber-500)">
+          <strong>Monitor</strong> → moves to Monitoring sub-group, keeps
+          watching
+        </div>
+        <div class="fbox bad">
+          <strong>Mark missing</strong> → confirm dialog → status
+          <code>missing</code>
+        </div>
+      </div>
+      <p class="lead tiny">
+        A feeder walking the same path sees the concern context (so they know
+        why the cat is highlighted and can keep an eye out) but
+        <strong>no</strong> review actions — the decision is caretaker/admin
+        only, mirroring how Confirm/Reject and Edit are already gated.
+      </p>
+
+      <h2>4 · Wireframes</h2>
+
+      <!-- ============ COLONY PAGE — sections coexisting ============ -->
+      <h3>
+        4.1 · Colony page — "Cats of concern" alongside the existing sections
+      </h3>
+      <div class="frames">
+        <!-- Caretaker view with concerns + monitoring -->
+        <div class="frame-wrap">
+          <div class="frame-cap">
+            Colony page — <span class="state">Caretaker / Admin</span>
+          </div>
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span>SCoT</span></div>
+            <div class="screen">
+              <span class="crumb">← Colonies</span>
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: flex-start;
+                "
+              >
+                <div>
+                  <h1 class="title">Praça do Mar</h1>
+                  <p class="sub">Feeds 08:00–09:00</p>
+                </div>
+                <a
+                  class="btn btnGhost"
+                  style="min-height: 40px; font-size: 14px"
+                  >Edit</a
+                >
+              </div>
+              <a class="btn btnPrimary full" style="min-height: 56px"
+                >Record feeding update</a
+              >
+
+              <!-- NEW SECTION: Cats of concern -->
+              <div class="anno">
+                NEW section — sits below the primary actions and ABOVE the New ·
+                unconfirmed section. Own heading + amber count badge; distinct
+                from the "needs review" (new cats) section so the two review
+                queues never blur (Gestalt).
+              </div>
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-top: 2px;
+                "
+              >
+                <span class="eyebrow"
+                  >Cats of concern <span class="countbadge">2</span></span
+                >
+              </div>
+
+              <div class="row" style="border-left: 3px solid var(--amber-500)">
+                <span class="avatar photo"></span>
+                <div class="rowmain">
+                  <div class="rowtitle">Ginger</div>
+                  <div class="rowsub">
+                    ginger ·
+                    <span class="reason"
+                      ><span class="ic" aria-hidden="true">◷</span> Not seen 9
+                      days</span
+                    >
+                  </div>
+                </div>
+                <span class="chev">›</span>
+              </div>
+              <div class="row" style="border-left: 3px solid var(--red)">
+                <span class="avatar">🐾</span>
+                <div class="rowmain">
+                  <div class="rowtitle">Tabby by the bins</div>
+                  <div class="rowsub">
+                    <span class="reason bad"
+                      ><span class="ic" aria-hidden="true">⚑</span> Flagged:
+                      concern</span
+                    >
+                  </div>
+                </div>
+                <span class="chev">›</span>
+              </div>
+
+              <!-- Monitoring sub-group -->
+              <div class="subhead">
+                <span aria-hidden="true">👁</span> Monitoring (1)
+              </div>
+              <div class="anno">
+                Cats a caretaker chose to keep watching — split out so fresh
+                concerns above don't get lost among already-triaged ones. Muted
+                avatar ring, "since" date, no left accent bar.
+              </div>
+              <div class="row">
+                <span class="avatar photo"></span>
+                <div class="rowmain">
+                  <div class="rowtitle">Luna</div>
+                  <div class="rowsub">
+                    grey ·
+                    <span class="reason"
+                      ><span class="ic" aria-hidden="true">👁</span> Monitoring
+                      since 2 Jun</span
+                    >
+                  </div>
+                </div>
+                <span class="chev">›</span>
+              </div>
+
+              <!-- Existing new-cat review section (for contrast) -->
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-top: 4px;
+                "
+              >
+                <span class="eyebrow"
+                  >New · needs review
+                  <span class="countbadge neutral">1</span></span
+                >
+              </div>
+              <div class="row" style="border-left: 3px solid var(--accent)">
+                <span class="avatar">🐾</span>
+                <div class="rowmain">
+                  <div class="rowtitle">
+                    Smudge <span class="chip neutral">★ New · unconfirmed</span>
+                  </div>
+                  <div class="rowsub">
+                    black &amp; white · reported by maria
+                  </div>
+                </div>
+                <span class="chev">›</span>
+              </div>
+
+              <!-- Cats list -->
+              <span class="eyebrow" style="margin-top: 4px">Cats (5)</span>
+              <div class="row">
+                <span class="avatar">🐾</span>
+                <div class="rowmain">
+                  <div class="rowtitle">Pip</div>
+                  <div class="rowsub">
+                    tabby <span class="chip good">active</span>
+                  </div>
+                </div>
+                <span class="chev">›</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feeder view -->
+        <div class="frame-wrap">
+          <div class="frame-cap">
+            Colony page —
+            <span class="state">Feeder (context, no actions)</span>
+          </div>
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span>SCoT</span></div>
+            <div class="screen">
+              <span class="crumb">← Colonies</span>
+              <div>
+                <h1 class="title">Praça do Mar</h1>
+                <p class="sub">Feeds 08:00–09:00</p>
+              </div>
+              <a class="btn btnPrimary full" style="min-height: 56px"
+                >Record feeding update</a
+              >
+              <div class="anno">
+                A feeder sees the same "Cats of concern" section so they know
+                which cats to watch for on the next visit — but tapping a row
+                shows read-only context, no Ignore/Monitor/Mark-missing.
+              </div>
+              <span class="eyebrow"
+                >Cats of concern <span class="countbadge">2</span></span
+              >
+              <div class="row" style="border-left: 3px solid var(--amber-500)">
+                <span class="avatar photo"></span>
+                <div class="rowmain">
+                  <div class="rowtitle">Ginger</div>
+                  <div class="rowsub">
+                    ginger ·
+                    <span class="reason"
+                      ><span class="ic" aria-hidden="true">◷</span> Not seen 9
+                      days</span
+                    >
+                  </div>
+                </div>
+                <span class="chev">›</span>
+              </div>
+              <div class="row" style="border-left: 3px solid var(--red)">
+                <span class="avatar">🐾</span>
+                <div class="rowmain">
+                  <div class="rowtitle">Tabby by the bins</div>
+                  <div class="rowsub">
+                    <span class="reason bad"
+                      ><span class="ic" aria-hidden="true">⚑</span> Flagged:
+                      concern</span
+                    >
+                  </div>
+                </div>
+                <span class="chev">›</span>
+              </div>
+              <p class="banner note" role="note" style="margin-top: 2px">
+                Keep an eye out for these on your next visit. A caretaker
+                decides what happens next.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="lead tiny">
+        Three review/list zones coexist without clutter via Gestalt grouping:
+        <strong>Cats of concern</strong> (amber/red reason chips, with a split
+        <em>Monitoring</em> sub-group), <strong>New · needs review</strong>
+        (the existing accent-bordered unconfirmed rows), then the full
+        <strong>Cats</strong> list. Each has its own eyebrow heading and its own
+        count badge; colour is never the only differentiator — every chip pairs
+        an icon + words.
+      </p>
+
+      <!-- ============ EMPTY STATE ============ -->
+      <h3>4.2 · "Cats of concern" — empty state</h3>
+      <div class="frames">
+        <div class="frame-wrap">
+          <div class="frame-cap">
+            Colony page — <span class="state">no cats need review</span>
+          </div>
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span>SCoT</span></div>
+            <div class="screen">
+              <span class="crumb">← Colonies</span>
+              <div>
+                <h1 class="title">Praça do Mar</h1>
+                <p class="sub">Feeds 08:00–09:00</p>
+              </div>
+              <a class="btn btnPrimary full" style="min-height: 56px"
+                >Record feeding update</a
+              >
+              <span class="eyebrow"
+                >Cats of concern <span class="countbadge neutral">0</span></span
+              >
+              <div
+                class="card"
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  gap: 8px;
+                  padding: 28px 24px;
+                  text-align: center;
+                "
+              >
+                <span
+                  aria-hidden="true"
+                  style="
+                    display: grid;
+                    place-items: center;
+                    width: 56px;
+                    height: 56px;
+                    border-radius: 50%;
+                    background: rgba(21, 128, 61, 0.1);
+                    color: var(--accent);
+                    font-size: 24px;
+                  "
+                  >✓</span
+                >
+                <p style="font-weight: 600; margin: 0">No cats need review</p>
+                <p
+                  class="tiny"
+                  style="color: var(--muted); max-width: 24ch; margin: 0"
+                >
+                  Every cat has been seen recently. Cats not seen for 7+ days or
+                  flagged by a feeder will show up here.
+                </p>
+              </div>
+              <p class="anno">
+                Reuses <code>EmptyState</code> (icon + title + muted body, no
+                CTA — there's no action to offer). The body restates the
+                threshold so the section explains itself when it's empty.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ CAT DETAIL — REVIEW BLOCK STATES ============ -->
+      <h3>
+        4.3 · Cat detail — review block (active-but-flagged) &amp; Monitoring
+      </h3>
+      <div class="frames">
+        <!-- Flagged: all 3 actions -->
+        <div class="frame-wrap">
+          <div class="frame-cap">
+            Cat detail —
+            <span class="state"
+              >Caretaker · active but flagged (all 3 actions)</span
+            >
+          </div>
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span>SCoT</span></div>
+            <div class="screen">
+              <span class="crumb">← Praça do Mar</span>
+              <div
+                style="
+                  aspect-ratio: 1;
+                  border-radius: 16px;
+                  background: linear-gradient(135deg, #c9b79c, #8a7355);
+                  width: 100%;
+                "
+              ></div>
+              <div>
+                <h1 class="title">Ginger</h1>
+                <span class="chip good" style="margin-top: 4px">active</span>
+              </div>
+              <p
+                class="banner"
+                role="note"
+                style="background: var(--amber-50); color: var(--amber-800)"
+              >
+                <strong>⚑ Of concern.</strong> Not seen for 9 days (last seen 30
+                May). Surfaced for review — the app hasn't changed this cat's
+                status.
+              </p>
+              <div class="anno">
+                Context line states WHY + last-seen date, and explicitly
+                reassures that the app didn't mark anything. Amber soft-warning
+                tone (the <code>concern</code> = warn tone from
+                <code>statusTone</code>), with the ⚑ glyph so it's not colour
+                alone.
+              </div>
+
+              <label class="lbl"
+                ><span>Note <span class="opt">(optional)</span></span>
+                <textarea class="input placeholder" readonly>
+Add context — e.g. "neighbour saw her Tuesday"</textarea
+                >
+              </label>
+
+              <div class="anno">
+                Hick's Law: 3 choices. Fitts — the two constructive actions sit
+                together and reachable; Mark missing is set apart below and goes
+                through the destructive dialog.
+              </div>
+              <div style="display: flex; gap: 10px">
+                <a class="btn btnGhost" style="flex: 1; min-height: 48px"
+                  >Ignore</a
+                >
+                <a class="btn btnPrimary" style="flex: 1; min-height: 48px"
+                  >👁 Monitor</a
+                >
+              </div>
+              <a
+                class="btn btnGhostDanger full"
+                style="min-height: 48px; margin-top: 2px"
+                >Mark missing…</a
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Already monitoring -->
+        <div class="frame-wrap">
+          <div class="frame-cap">
+            Cat detail —
+            <span class="state">Caretaker · already monitoring</span>
+          </div>
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span>SCoT</span></div>
+            <div class="screen">
+              <span class="crumb">← Praça do Mar</span>
+              <div
+                style="
+                  aspect-ratio: 1;
+                  border-radius: 16px;
+                  background: linear-gradient(135deg, #c9b79c, #8a7355);
+                  width: 100%;
+                "
+              ></div>
+              <div>
+                <h1 class="title">Luna</h1>
+                <span class="chip good" style="margin-top: 4px">active</span>
+                <span class="reason" style="margin-left: 6px"
+                  ><span class="ic" aria-hidden="true">👁</span> Monitoring
+                  since 2 Jun</span
+                >
+              </div>
+              <p
+                class="banner"
+                role="note"
+                style="background: var(--amber-50); color: var(--amber-800)"
+              >
+                <strong>👁 Monitoring.</strong> Flagged "not seen 5 days" on 2
+                Jun; you chose to keep watching. Still not seen since.
+              </p>
+              <div class="anno">
+                "Monitoring since…" indicator on the title AND restated in the
+                context line. Monitor is no longer offered (it's already
+                monitoring) — only Ignore (resolve / cat is back) and Mark
+                missing remain. Never a disabled button: the third choice is
+                simply absent.
+              </div>
+              <label class="lbl"
+                ><span>Note <span class="opt">(optional)</span></span>
+                <textarea class="input placeholder" readonly>
+Update on the monitoring period…</textarea
+                >
+              </label>
+              <div style="display: flex; gap: 10px">
+                <a class="btn btnGhost" style="flex: 1; min-height: 48px"
+                  >Ignore</a
+                >
+                <a class="btn btnGhostDanger" style="flex: 1; min-height: 48px"
+                  >Mark missing…</a
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3>4.4 · Cat detail — already missing &amp; feeder read-only</h3>
+      <div class="frames">
+        <!-- Already missing -->
+        <div class="frame-wrap">
+          <div class="frame-cap">
+            Cat detail —
+            <span class="state">already missing (no review actions)</span>
+          </div>
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span>SCoT</span></div>
+            <div class="screen">
+              <span class="crumb">← Praça do Mar</span>
+              <div
+                style="
+                  aspect-ratio: 1;
+                  border-radius: 16px;
+                  background: linear-gradient(135deg, #c9b79c, #8a7355);
+                  width: 100%;
+                "
+              ></div>
+              <div>
+                <h1 class="title">Ginger</h1>
+                <span class="chip bad" style="margin-top: 4px">missing</span>
+              </div>
+              <p
+                class="banner"
+                role="note"
+                style="background: var(--surface); color: var(--muted)"
+              >
+                Marked missing by <strong>ana</strong> · 6 Jun. Last seen 30
+                May.
+              </p>
+              <div class="anno">
+                Status chip is the <code>missing</code> = bad tone (red).
+                <strong>No review actions</strong> — the decision has been made.
+                Attribution line reuses the existing "by X · date" pattern from
+                the cat-attribution design.
+              </div>
+              <div class="note warn" style="margin: 6px 0 0">
+                <strong>Out of scope (noted):</strong> a "mark found / active"
+                affordance to reverse a missing status is NOT part of this card.
+                If SCoT wants undo, it's a follow-up — flagged here so it isn't
+                forgotten.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feeder read-only on a flagged cat -->
+        <div class="frame-wrap">
+          <div class="frame-cap">
+            Cat detail —
+            <span class="state">Feeder · read-only (context, no actions)</span>
+          </div>
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span>SCoT</span></div>
+            <div class="screen">
+              <span class="crumb">← Praça do Mar</span>
+              <div
+                style="
+                  aspect-ratio: 1;
+                  border-radius: 16px;
+                  background: linear-gradient(135deg, #c9b79c, #8a7355);
+                  width: 100%;
+                "
+              ></div>
+              <div>
+                <h1 class="title">Ginger</h1>
+                <span class="chip good" style="margin-top: 4px">active</span>
+              </div>
+              <p
+                class="banner"
+                role="note"
+                style="background: var(--amber-50); color: var(--amber-800)"
+              >
+                <strong>⚑ Of concern.</strong> Not seen for 9 days (last seen 30
+                May). A caretaker will review it.
+              </p>
+              <div class="anno">
+                Same context line, same reassurance — but no Note field and no
+                Ignore/Monitor/Mark-missing. "A caretaker will review it" sets
+                the expectation (mirrors "Waiting for a caretaker to review" on
+                the unconfirmed-cat read-only view). Same role gate as Edit /
+                Confirm / Reject.
+              </div>
+              <div
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px"
+              >
+                <div class="card" style="padding: 10px">
+                  <p
+                    class="tiny"
+                    style="color: var(--muted); text-transform: uppercase"
+                  >
+                    Colour
+                  </p>
+                  <p style="margin: 2px 0 0; font-size: 14px">ginger</p>
+                </div>
+                <div class="card" style="padding: 10px">
+                  <p
+                    class="tiny"
+                    style="color: var(--muted); text-transform: uppercase"
+                  >
+                    Last seen
+                  </p>
+                  <p style="margin: 2px 0 0; font-size: 14px">30 May</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3>4.5 · Mark-missing — destructive confirm dialog (reused verbatim)</h3>
+      <div class="frames">
+        <div class="frame-wrap">
+          <div class="frame-cap">
+            Cat detail — <span class="state">Mark missing confirm dialog</span>
+          </div>
+          <div class="phone">
+            <div class="statusbar"><span>9:41</span><span>SCoT</span></div>
+            <div
+              class="screen"
+              style="position: relative; filter: saturate(0.9)"
+            >
+              <span class="crumb">← Praça do Mar</span>
+              <div
+                style="
+                  aspect-ratio: 1;
+                  border-radius: 16px;
+                  background: linear-gradient(135deg, #c9b79c, #8a7355);
+                  width: 100%;
+                  opacity: 0.5;
+                "
+              ></div>
+              <h1 class="title" style="opacity: 0.5">Ginger</h1>
+              <!-- dialog overlay -->
+              <div
+                style="
+                  position: absolute;
+                  inset: 0;
+                  background: rgba(0, 0, 0, 0.4);
+                  display: grid;
+                  place-items: center;
+                  padding: 16px;
+                "
+              >
+                <div
+                  class="card"
+                  style="
+                    background: var(--bg);
+                    width: 100%;
+                    max-width: 300px;
+                    padding: 18px;
+                    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+                  "
+                >
+                  <p style="font-size: 14px; margin: 0">
+                    Mark Ginger as missing? This changes the cat's status — only
+                    do this once you're confident it's no longer around. You can
+                    change it back later.
+                  </p>
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: flex-end;
+                      gap: 8px;
+                      margin-top: 18px;
+                    "
+                  >
+                    <span
+                      class="btn btnGhost"
+                      style="min-height: 38px; font-size: 14px; padding: 0 12px"
+                      >Cancel</span
+                    >
+                    <span
+                      class="btn btnDanger"
+                      style="min-height: 38px; font-size: 14px; padding: 0 12px"
+                      >Mark missing</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="anno" style="margin-top: 8px">
+            Reuses <code>ConfirmButton</code> (components/confirm-button.tsx)
+            verbatim — <code>role="alertdialog"</code>, focus moves to the safe
+            Cancel, Esc / backdrop cancels, focus trap across the two buttons.
+            The one sanctioned modal: a short destructive confirmation, not
+            inline content.
+          </p>
+        </div>
+      </div>
+
+      <h2>5 · Interaction &amp; accessibility notes</h2>
+      <ul class="tight">
+        <li>
+          <strong
+            >Reason chips — icon + text, never colour-alone (WCAG
+            1.4.1):</strong
+          >
+          "◷ Not seen 9 days" (amber, warn tone), "⚑ Flagged: concern" (red, bad
+          tone — feeder explicitly raised it), "👁 Monitoring since…" all carry
+          a glyph and words. Tone follows <code>statusTone</code> (<code
+            >concern</code
+          >
+          → warn, <code>not_seen</code> → bad), but the words/icon stand on
+          their own in greyscale.
+        </li>
+        <li>
+          <strong>Tap targets (Fitts):</strong> Ignore / Monitor / Mark missing
+          are ≥48px tall; rows are ≥60px. The destructive
+          <strong>Mark missing</strong> is positioned apart (its own full-width
+          row, or the right slot when Monitor is gone) and gated behind a
+          confirm dialog — deliberately harder to reach than the constructive
+          actions.
+        </li>
+        <li>
+          <strong
+            >Three actions distinguished by label + treatment, not colour (Hick
+            / WCAG 1.4.1):</strong
+          >
+          Monitor = primary (accent, the expected next step), Ignore = ghost
+          (neutral), Mark missing = ghost-danger → danger-in-dialog. Each has a
+          distinct verb label; a colour-blind user reads the words and the
+          position, not the hue.
+        </li>
+        <li>
+          <strong>Never-auto-mark reassurance in copy:</strong> every flagged
+          state says "surfaced for review" / "the app hasn't changed this cat's
+          status" / "A caretaker will review it". The status pill stays
+          <code>active</code> until the human acts; the word "missing" appears
+          only on the action label and after a confirmed decision.
+        </li>
+        <li>
+          <strong>Count badges:</strong> "Cats of concern" carries an amber
+          badge (live work), Monitoring a parenthetical count, "New · needs
+          review" the existing neutral badge — three queues, three glanceable
+          counts.
+        </li>
+        <li>
+          <strong>Keyboard:</strong> the Mark-missing dialog (ConfirmButton)
+          traps focus, opens on Cancel, closes on Esc / backdrop; the trigger
+          carries <code>aria-haspopup="dialog"</code>.
+        </li>
+        <li>
+          <strong>Contrast (WCAG 1.4.3, AA):</strong> amber-800 on amber-50 and
+          red-700 on red-50 for chips/banners, emerald-800 on emerald-50 for the
+          empty-state tick, white-on-accent / white-on-red for buttons — all
+          text ≥4.5:1, UI accents ≥3:1.
+        </li>
+        <li>
+          <strong>States handled:</strong> <em>empty</em> ("No cats need review"
+          + threshold explainer), <em>flagged</em> (all 3 actions),
+          <em>monitoring</em> (Ignore / Mark-missing + "since" indicator),
+          <em>missing</em> (status chip, no actions, attribution),
+          <em>read-only</em> (feeder context, no actions). No loading-skeleton
+          frame here — surfacing is derived server-side on the colony page load,
+          same as unconfirmed-first ordering.
+        </li>
+      </ul>
+
+      <h2>6 · Component reuse</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>UI piece</th>
+            <th>Reuses</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>"Cats of concern" section + count badge</td>
+            <td>
+              The New · unconfirmed "needs review" section on
+              <code>colonies/[id]/page.tsx</code>
+            </td>
+            <td>
+              Parallel section with its own eyebrow heading and badge; placed
+              directly below it. Same row/avatar/chevron markup.
+            </td>
+          </tr>
+          <tr>
+            <td>Concern-first ordering + Monitoring split</td>
+            <td><code>compareCatsForList</code> pattern (lib/cat-report.ts)</td>
+            <td>
+              A parallel pure comparator/partition (derived only, nothing
+              stored) — concerns first, then a Monitoring sub-group, then the
+              plain list.
+            </td>
+          </tr>
+          <tr>
+            <td>Reason chips</td>
+            <td>
+              <code>toneClass</code> + <code>statusTone</code> /
+              <code>formatStatus</code> (lib/cat-display.ts), icons.tsx family
+            </td>
+            <td>
+              <code>concern</code> → warn, <code>not_seen</code> → bad already
+              map. Add small clock/flag/eye glyphs in the existing 24-viewbox
+              icon family; chip text is computed ("Not seen N days").
+            </td>
+          </tr>
+          <tr>
+            <td>Status pill (active / missing)</td>
+            <td>
+              <code>statusTone</code> / <code>formatStatus</code> + the cat
+              detail chip
+            </td>
+            <td>
+              <code>missing</code> → bad tone exists; no new label needed
+              ("missing" reads fine de-underscored).
+            </td>
+          </tr>
+          <tr>
+            <td>Review action block (Ignore / Monitor / Mark missing)</td>
+            <td>
+              The Confirm / Reject block on
+              <code>cats/[catId]/page.tsx</code>
+            </td>
+            <td>
+              Same two-up button row + role gate (<code>canManage</code>) +
+              server-action re-check (mirror <code>canReviewCat</code>). Monitor
+              = <code>btnPrimary</code>, Ignore = <code>btnGhost</code>, Mark
+              missing = <code>btnGhostDanger</code>.
+            </td>
+          </tr>
+          <tr>
+            <td>Mark-missing confirmation</td>
+            <td><code>components/confirm-button.tsx</code></td>
+            <td>Verbatim — destructive in-app dialog with focus trap.</td>
+          </tr>
+          <tr>
+            <td>Context line + attribution ("Marked missing by X · date")</td>
+            <td>
+              Cat detail review-note + attribution lines
+              (<code>cats/[catId]/page.tsx</code>, cat-attribution design)
+            </td>
+            <td>
+              Same <code>role="note"</code> muted card and "by X · date"
+              service-client email lookup.
+            </td>
+          </tr>
+          <tr>
+            <td>Optional note field</td>
+            <td><code>input</code> / <code>fieldLabel</code> (lib/ui.ts)</td>
+            <td>Identical textarea token to the feed/report forms.</td>
+          </tr>
+          <tr>
+            <td>Empty state</td>
+            <td><code>components/empty-state.tsx</code></td>
+            <td>Icon + title + muted body, no CTA (no action to offer).</td>
+          </tr>
+          <tr>
+            <td>Upstream signal (seen / not_seen / concern)</td>
+            <td><code>components/feed-form.tsx</code></td>
+            <td>
+              No change — read-only consumer of the existing sighting data.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="lead tiny">
+        Genuinely new: a derived concern/monitoring partition, the three review
+        server actions (Ignore / Monitor / Mark missing) mirroring
+        confirm/reject, the small clock/flag/eye glyphs, and the reason-chip
+        copy. No new components and no new tokens. The threshold engine that
+        computes candidates, and the alert fan-out (push / SMS / in-app), are
+        separate cards.
+      </p>
+
+      <div class="legend">
+        <span
+          ><span class="swatch" style="background: var(--amber-500)"></span
+          >concern (warn) — not-seen threshold</span
+        >
+        <span
+          ><span class="swatch" style="background: var(--red)"></span>flagged
+          concern / missing (bad) &amp; destructive</span
+        >
+        <span
+          ><span class="swatch" style="background: var(--accent)"></span>Monitor
+          (primary)</span
+        >
+        <span
+          ><span class="swatch" style="background: var(--border)"></span>Ignore
+          (ghost / neutral)</span
+        >
+        <span
+          ><span class="swatch" style="background: var(--emerald-600)"></span>no
+          cats need review (empty)</span
+        >
+      </div>
+    </div>
+  </body>
+</html>
