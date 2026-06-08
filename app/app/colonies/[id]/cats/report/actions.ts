@@ -64,6 +64,12 @@ export async function reportCat(formData: FormData) {
     : null;
 
   const supabase = await createClient();
+  // reported_by is the authenticated session user, NOT form input — same trust
+  // boundary as incidents.reported_by. May be null if the session somehow lacks
+  // a user; the column is nullable and the cat page degrades to a time-only line.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Cross-org write integrity: the route-param colony_id is attacker-controlled,
   // and RLS ("insert cats") only checks org membership + status — there is no DB
@@ -91,6 +97,7 @@ export async function reportCat(formData: FormData) {
     notes,
     photo_url: photoKey,
     status: UNCONFIRMED_STATUS,
+    reported_by: user?.id ?? null,
   });
 
   if (error) fail(error.message);
@@ -121,10 +128,22 @@ export async function confirmCat(formData: FormData) {
     redirect(`${detail}?error=${encodeURIComponent(message)}`);
   }
 
+  // The session user who confirmed. The service client bypasses RLS and carries
+  // no session, so read the user from the RLS-bound client first — confirmed_by
+  // is set from the session, never from form input.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const svc = createServiceClient();
   const { data, error } = await svc
     .from("cats")
-    .update({ status: "active" })
+    .update({
+      status: "active",
+      confirmed_by: user?.id ?? null,
+      confirmed_at: new Date().toISOString(),
+    })
     .eq("id", catId)
     .eq("organisation_id", org.organisation_id)
     .eq("status", UNCONFIRMED_STATUS)

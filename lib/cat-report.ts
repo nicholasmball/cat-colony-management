@@ -41,6 +41,22 @@ export function canReviewCat(cat: {
 export const canConfirmCat = canReviewCat;
 export const canRejectCat = canReviewCat;
 
+// Resolves the email to show on a cat attribution line ("Reported by …" /
+// "Confirmed by …"). Returns null when there's no attributed user OR the user's
+// account no longer resolves to an email (deleted/departed volunteer). Callers
+// render the name only when this is non-null, otherwise a clean time-only line.
+//
+// This deliberately differs from the incident page's "unknown" fallback: a cat
+// attribution line never shows the literal "unknown" — see cat-attribution
+// design, State 2. Pure so the rule is unit-tested and the page just renders.
+export function attributionEmail(
+  userId: string | null | undefined,
+  emails: Map<string, string>,
+): string | null {
+  if (!userId) return null;
+  return emails.get(userId) ?? null;
+}
+
 // Sort priority for the colony cats list: unconfirmed cats float to the top so
 // review work is visible at a glance (design §3.1). Lower number = earlier.
 // Derived ordering only — nothing is stored.
