@@ -11,7 +11,13 @@ import {
   ChevronIcon,
   CalendarIcon,
   WarningIcon,
+  IncidentTypeIcon,
 } from "@/components/icons";
+import {
+  IncidentStatusPill,
+  UrgentBadge,
+} from "@/components/incident-status-pill";
+import { incidentTypeLabel } from "@/lib/incident";
 import { EmptyState } from "@/components/empty-state";
 import { ConfirmButton } from "@/components/confirm-button";
 import { deleteSchedule } from "./schedules/actions";
@@ -88,7 +94,8 @@ export default async function ColonyDetail({
   const photos = new Map<string, string | null>(
     await Promise.all(
       cats.map(
-        async (c) => [c.id, await photoSrc(c.photo_url)] as [string, string | null],
+        async (c) =>
+          [c.id, await photoSrc(c.photo_url)] as [string, string | null],
       ),
     ),
   );
@@ -107,10 +114,41 @@ export default async function ColonyDetail({
     .order("specific_date", { nullsFirst: false });
   const schedules = (scheduleData ?? []) as Schedule[];
 
+  // Open incidents for this colony (all roles read). One query; urgency badged
+  // from the org's alerts_immediately levels. Links to the flat detail route.
+  const { data: openIncidentData } = await supabase
+    .from("incidents")
+    .select("id, type, status, cat_id, urgency_level_id, occurred_at")
+    .eq("colony_id", id)
+    .in("status", ["open", "in_progress"])
+    .order("occurred_at", { ascending: false });
+  const openIncidents = (openIncidentData ?? []) as {
+    id: string;
+    type: string;
+    status: string;
+    cat_id: string | null;
+    urgency_level_id: string | null;
+    occurred_at: string;
+  }[];
+
+  const urgentLevelIds = new Set<string>();
+  if (openIncidents.length > 0 && org) {
+    const { data: levelData } = await supabase
+      .from("incident_urgency_levels")
+      .select("id, alerts_immediately")
+      .eq("organisation_id", org.organisation_id);
+    for (const l of levelData ?? []) {
+      if (l.alerts_immediately) urgentLevelIds.add(l.id as string);
+    }
+  }
+  const catNameById = new Map(cats.map((c) => [c.id, catLabel(c)]));
+
   // Resolve feeder emails once for the distinct feeder ids (no per-row call).
   const feederEmails = new Map<string, string>();
   const feederIds = [
-    ...new Set(schedules.map((s) => s.feeder_id).filter((v): v is string => !!v)),
+    ...new Set(
+      schedules.map((s) => s.feeder_id).filter((v): v is string => !!v),
+    ),
   ];
   if (feederIds.length > 0) {
     const svc = createServiceClient();
@@ -262,6 +300,56 @@ export default async function ColonyDetail({
                 </Link>
               </li>
             ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
+          Incidents ({openIncidents.length})
+        </h2>
+        {openIncidents.length === 0 ? (
+          <p className={`${card} p-4 text-sm text-muted`}>
+            No open incidents for this colony.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {openIncidents.map((i) => {
+              const urgent =
+                !!i.urgency_level_id && urgentLevelIds.has(i.urgency_level_id);
+              return (
+                <li key={i.id}>
+                  <Link
+                    href={`/app/incidents/${i.id}`}
+                    className={`${card} flex min-h-[56px] items-center gap-3 px-4 py-3 transition hover:bg-foreground/5 ${
+                      urgent && i.status === "open"
+                        ? "border-l-4 border-l-red-500"
+                        : ""
+                    }`}
+                  >
+                    <IncidentTypeIcon
+                      type={i.type}
+                      className="h-5 w-5 shrink-0 text-muted"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium">
+                        <span className="truncate">
+                          {incidentTypeLabel(i.type)}
+                        </span>
+                        {urgent ? <UrgentBadge /> : null}
+                        <IncidentStatusPill status={i.status} />
+                      </p>
+                      {i.cat_id && catNameById.get(i.cat_id) ? (
+                        <p className="mt-0.5 truncate text-xs text-muted">
+                          {catNameById.get(i.cat_id)}
+                        </p>
+                      ) : null}
+                    </div>
+                    <ChevronIcon className="h-4 w-4 shrink-0 text-muted" />
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

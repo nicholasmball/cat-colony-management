@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ComponentType, SVGProps } from "react";
-import { HomeIcon, PawIcon, UsersIcon, CogIcon, CalendarIcon } from "./icons";
+import {
+  HomeIcon,
+  PawIcon,
+  UsersIcon,
+  CogIcon,
+  CalendarIcon,
+  WarningIcon,
+} from "./icons";
 import { navItemsFor } from "@/lib/nav-items";
 
 // Icons can't live in the pure nav-items lib, so map each item's href to its
@@ -12,6 +19,7 @@ const iconByHref: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
   "/app": HomeIcon,
   "/app/today": CalendarIcon,
   "/app/colonies": PawIcon,
+  "/app/incidents": WarningIcon,
   "/app/members": UsersIcon,
   "/app/org": CogIcon,
 };
