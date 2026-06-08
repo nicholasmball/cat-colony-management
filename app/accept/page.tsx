@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { getPendingInvite } from "@/lib/pending-invite";
 import { Logo } from "@/components/logo";
 import { SubmitButton } from "@/components/submit-button";
 import { btnPrimary, card, fieldLabel, input } from "@/lib/ui";
@@ -54,14 +55,7 @@ export default async function AcceptPage({
       .maybeSingle();
     inv = (data as Invite) ?? null;
   } else if (user?.email) {
-    const { data } = await svc
-      .from("invitations")
-      .select("email, role, token, accepted_at, organisations(name)")
-      .ilike("email", user.email)
-      .is("accepted_at", null)
-      .limit(1)
-      .maybeSingle();
-    inv = (data as Invite) ?? null;
+    inv = await getPendingInvite(user.email);
   }
 
   const orgRel = inv?.organisations;

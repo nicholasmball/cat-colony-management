@@ -7,6 +7,7 @@ import { PawIcon, ChevronIcon } from "@/components/icons";
 import { EmptyState } from "@/components/empty-state";
 import { getActiveOrg } from "@/lib/active-org";
 import { firstRunStep } from "@/lib/onboarding";
+import { firstRunDestination, getPendingInvite } from "@/lib/pending-invite";
 import { btnPrimary, card, input } from "@/lib/ui";
 
 type MembershipRow = {
@@ -41,6 +42,21 @@ export default async function AppHome({
 
   // ── First-run: no organisation yet → onboarding ───────────────────────────
   if (memberships.length === 0) {
+    // An invitee who signs in before accepting has no membership yet, but they
+    // shouldn't be offered create-org — send them to /accept, which resolves the
+    // pending invite by their signed-in email.
+    const pendingInvite = user.email
+      ? await getPendingInvite(user.email)
+      : null;
+    if (
+      firstRunDestination({
+        hasMembership: false,
+        hasPendingInvite: pendingInvite !== null,
+      }) === "accept"
+    ) {
+      redirect("/accept");
+    }
+
     return (
       <div className="mx-auto flex max-w-md flex-col gap-5 p-6">
         {error ? (
