@@ -21,6 +21,12 @@ const EXT: Record<string, string> = {
 //                  org/{orgId}/incidents/{colonyId}/{uuid}.jpg
 //                  (entity_id is set on the attachments row after the incident
 //                  saves; the key just needs to be org-scoped and unique).
+//   • "cat_report" → ANY org member (feeders report new cats). Like incident,
+//                  the cat row doesn't exist yet, so the key is colony-scoped:
+//                  org/{orgId}/cats/_unassigned/{colonyId}/{uuid}.jpg
+//                  The report action stores this key on cats.photo_url on
+//                  insert. DISTINCT from the manager-only "cat" branch — it
+//                  never widens that branch.
 export async function POST(req: Request) {
   if (!r2Configured()) {
     return NextResponse.json(
@@ -51,13 +57,18 @@ export async function POST(req: Request) {
 
   // Default to the cat branch so the existing caller (image-upload.tsx, which
   // sends no entityType) keeps its exact behaviour.
-  const entityType = body.entityType === "incident" ? "incident" : "cat";
+  const entityType =
+    body.entityType === "incident"
+      ? "incident"
+      : body.entityType === "cat_report"
+        ? "cat_report"
+        : "cat";
   const supabase = await createClient();
 
-  if (entityType === "incident") {
-    // Any member of the org may attach an incident photo (RLS lets any member
-    // insert attachments + incidents). Scope the key to a colony the caller can
-    // see in their org.
+  // Both "incident" and "cat_report" are colony-scoped, member-allowed branches:
+  // the target entity doesn't exist yet at upload time, so the key is scoped to
+  // a colony the caller can see in their org. They differ only in the key prefix.
+  if (entityType === "incident" || entityType === "cat_report") {
     const colonyId = String(body.colonyId ?? "");
     if (!colonyId) {
       return NextResponse.json({ error: "Bad request." }, { status: 400 });
@@ -72,7 +83,11 @@ export async function POST(req: Request) {
     if (!colony) {
       return NextResponse.json({ error: "Colony not found." }, { status: 404 });
     }
-    const key = `org/${org.organisation_id}/incidents/${colonyId}/${crypto.randomUUID()}.${ext}`;
+    const prefix =
+      entityType === "incident"
+        ? `incidents/${colonyId}`
+        : `cats/_unassigned/${colonyId}`;
+    const key = `org/${org.organisation_id}/${prefix}/${crypto.randomUUID()}.${ext}`;
     const uploadUrl = await presignPut(key);
     return NextResponse.json({ uploadUrl, key });
   }
