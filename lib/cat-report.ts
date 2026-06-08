@@ -7,6 +7,14 @@
 // while status = this value). Centralised so the form, action and guards agree.
 export const UNCONFIRMED_STATUS = "new_unconfirmed";
 
+// Maps the neutered tri-state form value to its stored type. The control sends
+// "yes" / "no" / "" (unknown) — "unknown" must stay null so records accept
+// incomplete data. Pure so the report/edit actions share one rule and it's
+// unit-testable without a form. Anything unrecognised is treated as unknown.
+export function parseNeutered(raw: string | null | undefined): boolean | null {
+  return raw === "yes" ? true : raw === "no" ? false : null;
+}
+
 // A report needs at least ONE identifier — a name OR a description (temp_id) —
 // mirroring the cats_need_identifier CHECK. Everything else is optional and
 // must never block the report. Whitespace-only is treated as empty.

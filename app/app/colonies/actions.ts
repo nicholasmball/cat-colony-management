@@ -211,6 +211,27 @@ export async function createCat(formData: FormData) {
   const notes = String(formData.get("notes") ?? "").trim() || null;
 
   const supabase = await createClient();
+
+  // Cross-org write integrity: the route-param colony_id is attacker-controlled
+  // and RLS ("insert cats") only checks org membership + status — there is no DB
+  // constraint tying cats.colony_id to cats.organisation_id. Re-validate that the
+  // colony belongs to the caller's active org before inserting, so an Org A
+  // member can't pass an Org B colony_id and create an orphaned row.
+  const { data: colony } = await supabase
+    .from("colonies")
+    .select("id")
+    .eq("id", colonyId)
+    .eq("organisation_id", org.organisation_id)
+    .is("deleted_at", null)
+    .maybeSingle();
+  if (!colony) {
+    redirect(
+      `/app/colonies/${colonyId}/cats/new?error=${encodeURIComponent(
+        "Colony not found.",
+      )}`,
+    );
+  }
+
   const { error } = await supabase.from("cats").insert({
     organisation_id: org.organisation_id,
     colony_id: colonyId,

@@ -3,12 +3,28 @@ import assert from "node:assert/strict";
 import {
   UNCONFIRMED_STATUS,
   hasReportIdentifier,
+  parseNeutered,
   canReviewCat,
   canConfirmCat,
   canRejectCat,
   catSortPriority,
   compareCatsForList,
 } from "./cat-report.ts";
+
+// ── parseNeutered ──
+test("parseNeutered maps 'yes' to true", () => {
+  assert.equal(parseNeutered("yes"), true);
+});
+
+test("parseNeutered maps 'no' to false", () => {
+  assert.equal(parseNeutered("no"), false);
+});
+
+test("parseNeutered maps unknown/empty/missing to null", () => {
+  assert.equal(parseNeutered(""), null);
+  assert.equal(parseNeutered(undefined), null);
+  assert.equal(parseNeutered("anything-else"), null);
+});
 
 // ── hasReportIdentifier ──
 test("hasReportIdentifier accepts a name only", () => {
