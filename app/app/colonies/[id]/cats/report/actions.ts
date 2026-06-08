@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
 import { isFailedWrite, writeErrorMessage } from "@/lib/mutation-result";
+import { isKeyInOrg } from "@/lib/photo-key";
 import {
   UNCONFIRMED_STATUS,
   hasReportIdentifier,
@@ -53,8 +54,14 @@ export async function reportCat(formData: FormData) {
 
   // Non-blocking photo: the key was presigned + PUT by the browser (entityType
   // "cat_report", colony-scoped). We store it on photo_url at insert; if the
-  // upload failed the key is empty and the report still saves.
-  const photoKey = String(formData.get("photo_key") ?? "").trim() || null;
+  // upload failed the key is empty and the report still saves. The key is
+  // client-supplied, so only keep one minted under this org's prefix
+  // (`org/{orgId}/…`) — a foreign/tampered key is dropped to "no photo" rather
+  // than persisted, consistent with the non-blocking rule.
+  const submittedKey = String(formData.get("photo_key") ?? "").trim();
+  const photoKey = isKeyInOrg(submittedKey, org.organisation_id)
+    ? submittedKey
+    : null;
 
   const supabase = await createClient();
 

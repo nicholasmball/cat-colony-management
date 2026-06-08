@@ -51,7 +51,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Bad request." }, { status: 400 });
   }
 
-  const ext = EXT[String(body.contentType ?? "")];
+  const contentType = String(body.contentType ?? "");
+  const ext = EXT[contentType];
   if (!ext) {
     return NextResponse.json(
       { error: "Unsupported image type." },
@@ -92,7 +93,7 @@ export async function POST(req: Request) {
         ? `incidents/${colonyId}`
         : `cats/_unassigned/${colonyId}`;
     const key = `org/${org.organisation_id}/${prefix}/${crypto.randomUUID()}.${ext}`;
-    const uploadUrl = await presignPut(key);
+    const uploadUrl = await presignPut(key, contentType);
     return NextResponse.json({ uploadUrl, key });
   }
 
@@ -119,6 +120,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Cat not found." }, { status: 404 });
 
   const key = `org/${org.organisation_id}/cats/${catId}/${crypto.randomUUID()}.${ext}`;
-  const uploadUrl = await presignPut(key);
+  const uploadUrl = await presignPut(key, contentType);
   return NextResponse.json({ uploadUrl, key });
 }

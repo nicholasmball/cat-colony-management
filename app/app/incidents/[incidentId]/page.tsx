@@ -118,7 +118,7 @@ export default async function IncidentDetailPage({
   const urgent = urgencyRes.data?.alerts_immediately === true;
   const comments = (commentRes.data ?? []) as Comment[];
   const photoKey = attachmentRes.data?.[0]?.storage_path ?? null;
-  const photo = await photoSrc(photoKey);
+  const photo = await photoSrc(photoKey, org.organisation_id);
 
   // Resolve all the user emails we display: reporter, assignee, comment authors,
   // and (manager only) the org's active managers for the assignee dropdown.

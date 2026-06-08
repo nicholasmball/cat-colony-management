@@ -74,7 +74,10 @@ export default async function CatDetail({
     .eq("id", id)
     .maybeSingle();
 
-  const photo = await photoSrc(cat.photo_url as string | null);
+  const photo = await photoSrc(
+    cat.photo_url as string | null,
+    org?.organisation_id ?? "",
+  );
   const canManage = org?.role === "admin" || org?.role === "caretaker";
   const unconfirmed = cat.status === UNCONFIRMED_STATUS;
   // Confirm/Reject show only for a manager AND only while the cat is still
