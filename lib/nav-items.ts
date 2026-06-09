@@ -47,3 +47,18 @@ export function navItemsFor({ role }: { role?: string | null }): NavItem[] {
   if (role === "admin") items.push(...adminItems);
   return items;
 }
+
+// The mobile bottom tab bar only fits ~5 cells before labels collide (admins
+// have 8 items: "Notifications"/"Alert thresholds"/"Organisation" overflowed).
+// With more than `maxCells`, show the first `maxCells - 1` inline and collapse
+// the rest under a "More" sheet. Pure + React-free so it stays unit-testable.
+export function splitNavForTabbar<T extends NavItem>(
+  items: T[],
+  maxCells = 5,
+): { visible: T[]; overflow: T[] } {
+  if (items.length <= maxCells) return { visible: items, overflow: [] };
+  return {
+    visible: items.slice(0, maxCells - 1),
+    overflow: items.slice(maxCells - 1),
+  };
+}
