@@ -646,5 +646,34 @@
     "alertRepeatedRange": "As faltas seguidas têm de ser um número inteiro entre 1 e 10.",
     "alertMissedRange": "As horas após a janela de alimentação têm de ser um número inteiro entre 1 e 72.",
     "alertSettingsNoLongerExist": "Não foi possível guardar estes limites de alerta."
+  },
+  "offline": {
+    "online": "Online",
+    "offline": "Offline",
+    "pending": "{count, plural, one {# por sincronizar} other {# por sincronizar}}",
+    "syncing": "A sincronizar…",
+    "synced": "Guardado",
+    "allSynced": "Tudo guardado",
+    "failed": "{count, plural, one {# não foi guardado} other {# não foram guardados}}",
+    "retry": "Tentar novamente",
+    "announce": "{connection}. {queue}.",
+    "queueHeading": "Fila de sincronização",
+    "emptyTitle": "Tudo em dia",
+    "emptyBody": "Não há nada por sincronizar — todas as atualizações foram guardadas.",
+    "savedWillSync": "Guardado neste dispositivo — será sincronizado quando voltar a ter ligação.",
+    "failedAuth": "Não foi possível guardar — inicie sessão novamente e tente outra vez.",
+    "failedValidation": "Não foi possível guardar — esta atualização foi rejeitada.",
+    "pendingNetwork": "À espera de ligação para sincronizar.",
+    "state": {
+      "pending": "À espera",
+      "syncing": "A sincronizar",
+      "synced": "Guardado",
+      "failed": "Não guardado"
+    },
+    "kind": {
+      "feeding": "Atualização de alimentação",
+      "cat_report": "Relatório de gato",
+      "incident": "Relatório de incidente"
+    }
   }
 }
