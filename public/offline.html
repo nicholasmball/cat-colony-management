@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f7f4f2" />
+    <title>Offline · Está offline</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        background: #f7f4f2;
+        color: #1f1b18;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
+        line-height: 1.5;
+      }
+      .card {
+        width: 100%;
+        max-width: 24rem;
+        text-align: center;
+        background: #ffffff;
+        border-radius: 1rem;
+        padding: 2rem 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .glyph {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 1.25rem;
+        color: #5b524c;
+      }
+      h1 {
+        font-size: 1.375rem;
+        margin: 0 0 0.75rem;
+        font-weight: 700;
+      }
+      h1 .pt {
+        display: block;
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #5b524c;
+      }
+      p {
+        margin: 0 0 1.75rem;
+        font-size: 0.9375rem;
+        color: #3d3733;
+      }
+      p .pt {
+        display: block;
+        margin-top: 0.5rem;
+        color: #5b524c;
+      }
+      button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-height: 44px;
+        padding: 0.75rem 1.25rem;
+        font-size: 1rem;
+        font-weight: 600;
+        font-family: inherit;
+        color: #ffffff;
+        background: #1f1b18;
+        border: 0;
+        border-radius: 0.625rem;
+        cursor: pointer;
+      }
+      button:active {
+        opacity: 0.85;
+      }
+      button:focus-visible {
+        outline: 3px solid #8a7d74;
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <svg
+        class="glyph"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path
+          d="M12 11c2.9 0 5.4 1.9 6.3 4.6.4 1.2-.5 2.4-1.7 2.4-1 0-1.5-.5-2.3-.9-.7-.4-1.4-.7-2.3-.7s-1.6.3-2.3.7c-.8.4-1.3.9-2.3.9-1.2 0-2.1-1.2-1.7-2.4C6.6 12.9 9.1 11 12 11Z"
+        />
+        <circle cx="5.5" cy="7" r="1.9" />
+        <circle cx="10" cy="4.6" r="1.9" />
+        <circle cx="14" cy="4.6" r="1.9" />
+        <circle cx="18.5" cy="7" r="1.9" />
+      </svg>
+      <h1>
+        You're offline
+        <span class="pt">Está offline</span>
+      </h1>
+      <p>
+        Reconnect to load this page — anything you've already saved will sync
+        automatically.
+        <span class="pt"
+          >Ligue-se novamente para carregar esta página — o que já guardou será
+          sincronizado automaticamente.</span
+        >
+      </p>
+      <button type="button" onclick="location.reload()">
+        Reload · Recarregar
+      </button>
+    </main>
+  </body>
+</html>
