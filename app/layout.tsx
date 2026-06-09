@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Raleway, Cormorant_Garamond } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { SwRegister } from "@/components/sw-register";
 import "./globals.css";
 
 // Matched to the SCoT public site: Raleway body + Cormorant Garamond display.
@@ -39,6 +40,7 @@ export default async function RootLayout({
     >
       <body className="flex min-h-full flex-col">
         <NextIntlClientProvider messages={messages}>
+          <SwRegister />
           {children}
         </NextIntlClientProvider>
       </body>
