@@ -55,3 +55,11 @@ next-env.d.ts
 # supabase local
 supabase/.temp/
 supabase/.branches/
+
+# e2e (Playwright) — never commit sessions, run-state, browsers, or reports
+/e2e/.auth/
+/e2e/.run-state.json
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
