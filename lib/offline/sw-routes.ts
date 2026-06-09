@@ -27,28 +27,47 @@ export function isWriteRoute(pathname: string): boolean {
   return (WRITE_ROUTES as readonly string[]).includes(pathname);
 }
 
-// The LIMITED read-cache scope approved in the plan: ONLY last-viewed colony and
-// cat GET *document* pages get StaleWhileRevalidate — NOT the whole org, NOT
-// dashboards/today/alerts (those must always be fresh), NOT API/data routes.
+// The LIMITED read-cache scope approved in the plan (A+D): ONLY last-viewed
+// colony + cat GET *document* pages, PLUS the per-colony feed page and the Today
+// page, get StaleWhileRevalidate — NOT the whole org, NOT dashboards/alerts/the
+// colonies index (those must always be fresh), NOT API/data routes.
 //
 // Matches:
 //   /app/colonies/<id>                      (a colony page)
 //   /app/colonies/<id>/cats/<catId>         (a cat page)
-// Excludes (returns false): the colonies index, any */edit, */new, */feed,
-// */report, */incidents, */schedules sub-pages (write/action surfaces — never
-// served stale), and anything outside /app/colonies.
+//   /app/colonies/<id>/feed                 (the feed-update page — a GET form)
+//   /app/today                              (the Today landing page)
+// Excludes (returns false): the colonies index, the dashboard, alerts, any
+// */edit, */new, */report, */incidents, */schedules sub-pages (write/action
+// surfaces — never served stale), and anything outside the above.
 //
 // `new` and `report` are RESERVED route segments (the create/report write
 // surfaces — /app/colonies/new, /app/colonies/<id>/cats/new and /cats/report),
 // never real colony/cat ids, so they are explicitly excluded from the id slot —
 // otherwise CAT_PAGE would wrongly match /cats/report (a write page) and serve a
 // stale form. Real ids are UUIDs, so this exclusion can never reject a genuine page.
+// The same ID guard is reused for the feed regex so /app/colonies/new/feed (an
+// impossible-but-defensive case) can't be cached.
+//
+// HONEST LIMITATION: this only makes offline navigation work for pages the user
+// actually OPENED while ONLINE earlier today — SWR caches on first network hit.
+// A cold start straight to a never-opened colony/cat/feed page while offline gets
+// offline.html, not the page. Whole-org prefetch was REJECTED (too much data /
+// stale-cat risk). The cache is BOUNDED (40 entries / 24h) so it self-evicts and
+// never hoards the org.
 const ID = "(?!new$|report$)[^/]+";
 const COLONY_PAGE = new RegExp(`^/app/colonies/${ID}$`);
 const CAT_PAGE = new RegExp(`^/app/colonies/${ID}/cats/${ID}$`);
+const FEED_PAGE = new RegExp(`^/app/colonies/${ID}/feed$`);
+const TODAY_PAGE = /^\/app\/today$/;
 
 export function isReadCacheablePage(pathname: string): boolean {
-  return COLONY_PAGE.test(pathname) || CAT_PAGE.test(pathname);
+  return (
+    COLONY_PAGE.test(pathname) ||
+    CAT_PAGE.test(pathname) ||
+    FEED_PAGE.test(pathname) ||
+    TODAY_PAGE.test(pathname)
+  );
 }
 
 // Is this a navigation/data request under the app shell (/app/**) that must be
