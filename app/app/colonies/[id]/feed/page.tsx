@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { FeedForm } from "@/components/feed-form";
 
@@ -15,6 +16,7 @@ export default async function FeedPage({
 }) {
   const { id } = await params;
   const { error } = await searchParams;
+  const t = await getTranslations("feed");
   const supabase = await createClient();
 
   const { data: colony } = await supabase
@@ -37,7 +39,7 @@ export default async function FeedPage({
       <Link href={`/app/colonies/${id}`} className="text-sm text-accent">
         ← {colony.name}
       </Link>
-      <h1 className="font-display text-3xl">Feeding update</h1>
+      <h1 className="font-display text-3xl">{t("title")}</h1>
       {error ? (
         <p role="alert" className={errorClass}>
           {error}

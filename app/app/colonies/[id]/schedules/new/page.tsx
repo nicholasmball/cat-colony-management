@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { SubmitButton } from "@/components/submit-button";
 import { btnGhost, btnPrimary, fieldLabel, input } from "@/lib/ui";
@@ -19,6 +20,7 @@ export default async function NewSchedule({
 }) {
   const { id } = await params;
   const { error } = await searchParams;
+  const t = await getTranslations("schedules");
 
   const org = await getActiveOrg();
   if (!org) redirect("/app");
@@ -32,11 +34,11 @@ export default async function NewSchedule({
   return (
     <div className="flex max-w-xl flex-col gap-5 px-6 py-6 md:px-10">
       <Link href={`/app/colonies/${id}`} className="text-sm text-accent">
-        ← Colony
+        {t("backToColony")}
       </Link>
       <div>
-        <h1 className="font-display text-3xl">Add schedule</h1>
-        <p className="text-sm text-muted">Assign a feeder to this colony</p>
+        <h1 className="font-display text-3xl">{t("addTitle")}</h1>
+        <p className="text-sm text-muted">{t("addSubtitle")}</p>
       </div>
 
       {error ? (
@@ -47,15 +49,14 @@ export default async function NewSchedule({
 
       {feeders.length === 0 ? (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
-          No feeders or caretakers to assign yet. Invite a volunteer from
-          Members first.
+          {t("noFeeders")}
         </p>
       ) : (
         <form action={createSchedule} className="flex flex-col gap-4">
           <input type="hidden" name="colony_id" value={id} />
 
           <label className={fieldLabel}>
-            <span>Feeder</span>
+            <span>{t("feeder")}</span>
             <select name="feeder_id" required className={input}>
               {feeders.map((f) => (
                 <option key={f.user_id} value={f.user_id}>
@@ -69,29 +70,30 @@ export default async function NewSchedule({
 
           <label className={fieldLabel}>
             <span>
-              Approx time{" "}
-              <span className="font-normal text-muted">(optional)</span>
+              {t("approxTime")}{" "}
+              <span className="font-normal text-muted">({t("optional")})</span>
             </span>
             <input type="time" name="approx_time" className={input} />
           </label>
 
           <label className={fieldLabel}>
             <span>
-              Notes <span className="font-normal text-muted">(optional)</span>
+              {t("notes")}{" "}
+              <span className="font-normal text-muted">({t("optional")})</span>
             </span>
             <textarea
               name="notes"
               rows={3}
-              placeholder="e.g. Dry food in the blue bowl"
+              placeholder={t("notesPlaceholder")}
               className={`${input} py-2`}
             />
           </label>
 
-          <SubmitButton pendingText="Saving…" className={btnPrimary}>
-            Save schedule
+          <SubmitButton pendingText={t("saving")} className={btnPrimary}>
+            {t("saveSchedule")}
           </SubmitButton>
           <Link href={`/app/colonies/${id}`} className={btnGhost}>
-            Cancel
+            {t("cancel")}
           </Link>
         </form>
       )}

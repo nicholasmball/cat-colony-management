@@ -121,6 +121,7 @@
     "moreNeedReview": "+ {count} more need review"
   },
   "feed": {
+    "title": "Feeding update",
     "wasColonyFed": "Was the colony fed?",
     "fed": "✓ Fed",
     "notFed": "Not fed",
@@ -261,28 +262,31 @@
     "markReviewed": "Mark reviewed"
   },
   "schedules": {
-    "newTitle": "New schedule",
+    "backToColony": "← Colony",
+    "addTitle": "Add schedule",
+    "addSubtitle": "Assign a feeder to this colony",
     "editTitle": "Edit schedule",
+    "noFeeders": "No feeders or caretakers to assign yet. Invite a volunteer from Members first.",
     "feeder": "Feeder",
-    "selectFeeder": "Select a feeder",
-    "repeats": "Repeats",
-    "weekly": "Weekly",
-    "oneOff": "One-off date",
-    "weekday": "Weekday",
+    "type": "Type",
+    "scheduleType": "Schedule type",
+    "weeklyToggle": "⟳ Weekly",
+    "oneOffToggle": "★ One-off",
+    "weeklyLabel": "⟳ Weekly",
+    "oneOffLabel": "★ One-off",
+    "repeatsOn": "Repeats on",
     "date": "Date",
-    "approxTime": "Approx. time",
-    "notesOptional": "Notes (optional)",
-    "createSchedule": "Create schedule",
+    "approxTime": "Approx time",
+    "optional": "optional",
+    "notes": "Notes",
+    "notesPlaceholder": "e.g. Dry food in the blue bowl",
     "saveSchedule": "Save schedule",
-    "weekdays": {
-      "0": "Sunday",
-      "1": "Monday",
-      "2": "Tuesday",
-      "3": "Wednesday",
-      "4": "Thursday",
-      "5": "Friday",
-      "6": "Saturday"
-    }
+    "saveChanges": "Save changes",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "active": "Active",
+    "deleteSchedule": "Delete schedule",
+    "removeConfirm": "Remove this schedule?"
   },
   "incidents": {
     "title": "Incidents",

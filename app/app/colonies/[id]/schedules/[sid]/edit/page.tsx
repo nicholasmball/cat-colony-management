@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { SubmitButton } from "@/components/submit-button";
@@ -27,6 +28,7 @@ export default async function EditSchedule({
 }) {
   const { id, sid } = await params;
   const { error } = await searchParams;
+  const t = await getTranslations("schedules");
 
   const org = await getActiveOrg();
   if (!org) redirect("/app");
@@ -50,15 +52,17 @@ export default async function EditSchedule({
     weekday: schedule.weekday as number | null,
     specific_date: schedule.specific_date as string | null,
   });
-  const typeLabel = schedule.specific_date ? "★ One-off" : "⟳ Weekly";
+  const typeLabel = schedule.specific_date
+    ? t("oneOffLabel")
+    : t("weeklyLabel");
 
   return (
     <div className="flex max-w-xl flex-col gap-5 px-6 py-6 md:px-10">
       <Link href={`/app/colonies/${id}`} className="text-sm text-accent">
-        ← Colony
+        {t("backToColony")}
       </Link>
       <div>
-        <h1 className="font-display text-3xl">Edit schedule</h1>
+        <h1 className="font-display text-3xl">{t("editTitle")}</h1>
         <p className="text-sm text-muted">
           {typeLabel} · {when}
         </p>
@@ -75,7 +79,7 @@ export default async function EditSchedule({
         <input type="hidden" name="schedule_id" value={sid} />
 
         <label className={fieldLabel}>
-          <span>Feeder</span>
+          <span>{t("feeder")}</span>
           <select
             name="feeder_id"
             required
@@ -92,8 +96,8 @@ export default async function EditSchedule({
 
         <label className={fieldLabel}>
           <span>
-            Approx time{" "}
-            <span className="font-normal text-muted">(optional)</span>
+            {t("approxTime")}{" "}
+            <span className="font-normal text-muted">({t("optional")})</span>
           </span>
           <input
             type="time"
@@ -107,7 +111,8 @@ export default async function EditSchedule({
 
         <label className={fieldLabel}>
           <span>
-            Notes <span className="font-normal text-muted">(optional)</span>
+            {t("notes")}{" "}
+            <span className="font-normal text-muted">({t("optional")})</span>
           </span>
           <textarea
             name="notes"
@@ -124,14 +129,14 @@ export default async function EditSchedule({
             defaultChecked={schedule.is_active as boolean}
             className="h-5 w-5 rounded border-border"
           />
-          <span>Active</span>
+          <span>{t("active")}</span>
         </label>
 
-        <SubmitButton pendingText="Saving…" className={btnPrimary}>
-          Save changes
+        <SubmitButton pendingText={t("saving")} className={btnPrimary}>
+          {t("saveChanges")}
         </SubmitButton>
         <Link href={`/app/colonies/${id}`} className={btnGhost}>
-          Cancel
+          {t("cancel")}
         </Link>
       </form>
 
@@ -139,10 +144,10 @@ export default async function EditSchedule({
         <input type="hidden" name="colony_id" value={id} />
         <input type="hidden" name="schedule_id" value={sid} />
         <ConfirmButton
-          confirm="Remove this schedule?"
+          confirm={t("removeConfirm")}
           className={`${btnGhostDanger} text-sm`}
         >
-          Delete schedule
+          {t("deleteSchedule")}
         </ConfirmButton>
       </form>
     </div>
