@@ -4,22 +4,29 @@
 // The "missed" threshold matches SCoT's alert default: a colony counts as missed
 // only once its feeding window closed at least 12h ago (720 min). Anything sooner
 // is still "pending" — never auto-escalate on a window that only just lapsed.
+// The default is now editable per org (alert_settings.feeding_missed_hours);
+// callers pass `missedAfterMin` (= feeding_missed_hours × 60) when they have the
+// row, falling back to this constant otherwise.
 
 export const MISSED_AFTER_MIN = 720;
 
 export type FeedingStatus = "fed" | "pending" | "missed";
 
-// `fed` always wins. Otherwise, with a known window that closed ≥720 min ago the
-// colony is "missed"; before that (or with no window at all) it's "pending".
-export function feedingStatus({
-  fed,
-  minutesAfterClose,
-}: {
-  fed: boolean;
-  minutesAfterClose: number | null;
-}): FeedingStatus {
+// `fed` always wins. Otherwise, with a known window that closed ≥ the threshold
+// (default 720 min / 12h, or the org's feeding_missed_hours×60) the colony is
+// "missed"; before that (or with no window at all) it's "pending".
+export function feedingStatus(
+  {
+    fed,
+    minutesAfterClose,
+  }: {
+    fed: boolean;
+    minutesAfterClose: number | null;
+  },
+  missedAfterMin: number = MISSED_AFTER_MIN,
+): FeedingStatus {
   if (fed) return "fed";
-  if (minutesAfterClose != null && minutesAfterClose >= MISSED_AFTER_MIN) {
+  if (minutesAfterClose != null && minutesAfterClose >= missedAfterMin) {
     return "missed";
   }
   return "pending";

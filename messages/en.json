@@ -22,6 +22,7 @@
     "colonies": "Colonies",
     "incidents": "Incidents",
     "notifications": "Notifications",
+    "alerts": "Alert thresholds",
     "members": "Members",
     "org": "Organisation"
   },
@@ -506,6 +507,23 @@
     "saving": "Saving…",
     "saveChanges": "Save changes"
   },
+  "alerts": {
+    "title": "Alert thresholds",
+    "subtitle": "Control when the app flags a problem. Applies to your whole organisation.",
+    "notSeenLabel": "Days before a cat is flagged “not seen”",
+    "notSeenHint": "A cat is flagged for review after this many days with no sighting. Between 1 and 60.",
+    "repeatedLabel": "Misses in a row before “repeated not-seen”",
+    "repeatedHint": "How many feeding visits in a row a cat can be missed before it’s escalated. Between 1 and 10.",
+    "missedLabel": "Hours after feeding window = “missed feed”",
+    "missedHint": "A feed is marked missed this many hours after its window closes with no update. Between 1 and 72.",
+    "usingDefault": "Using default",
+    "save": "Save thresholds",
+    "saving": "Saving…",
+    "savedToast": "✓ Saved.",
+    "unitDays": "days",
+    "unitVisits": "visits",
+    "unitHours": "hours"
+  },
   "appHome": {
     "welcome": "Welcome",
     "welcomeBack": "Welcome back",
@@ -620,6 +638,10 @@
     "chooseFeeder": "Choose a feeder for this colony.",
     "pickOneOffDate": "Pick a date to save this one-off feed.",
     "chooseWeekday": "Choose at least one weekday.",
-    "scheduleNoLongerExists": "That schedule no longer exists."
+    "scheduleNoLongerExists": "That schedule no longer exists.",
+    "alertNotSeenRange": "Days before a cat is “not seen” must be a whole number between 1 and 60.",
+    "alertRepeatedRange": "Misses in a row must be a whole number between 1 and 10.",
+    "alertMissedRange": "Hours after the feeding window must be a whole number between 1 and 72.",
+    "alertSettingsNoLongerExist": "Those alert settings could not be saved."
   }
 }

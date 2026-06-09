@@ -22,6 +22,7 @@
     "colonies": "Colónias",
     "incidents": "Incidentes",
     "notifications": "Notificações",
+    "alerts": "Limites de alerta",
     "members": "Membros",
     "org": "Organização"
   },
@@ -506,6 +507,23 @@
     "saving": "A guardar…",
     "saveChanges": "Guardar alterações"
   },
+  "alerts": {
+    "title": "Limites de alerta",
+    "subtitle": "Defina quando a app sinaliza um problema. Aplica-se a toda a organização.",
+    "notSeenLabel": "Dias até um gato ser sinalizado como “não visto”",
+    "notSeenHint": "Um gato é sinalizado para revisão após este número de dias sem ser avistado. Entre 1 e 60.",
+    "repeatedLabel": "Faltas seguidas até “não visto repetido”",
+    "repeatedHint": "Quantas visitas de alimentação seguidas um gato pode faltar antes de ser escalado. Entre 1 e 10.",
+    "missedLabel": "Horas após a janela de alimentação = “refeição falhada”",
+    "missedHint": "Uma refeição é marcada como falhada este número de horas após o fecho da janela sem atualização. Entre 1 e 72.",
+    "usingDefault": "A usar predefinição",
+    "save": "Guardar limites",
+    "saving": "A guardar…",
+    "savedToast": "✓ Guardado.",
+    "unitDays": "dias",
+    "unitVisits": "visitas",
+    "unitHours": "horas"
+  },
   "appHome": {
     "welcome": "Bem-vindo",
     "welcomeBack": "Bem-vindo de volta",
@@ -620,6 +638,10 @@
     "chooseFeeder": "Escolha um alimentador para esta colónia.",
     "pickOneOffDate": "Escolha uma data para guardar esta alimentação pontual.",
     "chooseWeekday": "Escolha pelo menos um dia da semana.",
-    "scheduleNoLongerExists": "Esse horário já não existe."
+    "scheduleNoLongerExists": "Esse horário já não existe.",
+    "alertNotSeenRange": "Os dias até um gato ser “não visto” têm de ser um número inteiro entre 1 e 60.",
+    "alertRepeatedRange": "As faltas seguidas têm de ser um número inteiro entre 1 e 10.",
+    "alertMissedRange": "As horas após a janela de alimentação têm de ser um número inteiro entre 1 e 72.",
+    "alertSettingsNoLongerExist": "Não foi possível guardar estes limites de alerta."
   }
 }

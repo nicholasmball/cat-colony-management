@@ -15,6 +15,7 @@ import {
   type ConcernSighting,
   type ConcernReview,
 } from "@/lib/cat-concern";
+import { DEFAULT_FEEDING_MISSED_HOURS } from "@/lib/alert-settings";
 import { UNCONFIRMED_STATUS } from "@/lib/cat-report";
 import { catLabel } from "@/lib/cat-display";
 import {
@@ -280,7 +281,7 @@ export default async function DashboardPage() {
     // (5) org alert thresholds (defaults applied in concernCandidate).
     supabase
       .from("alert_settings")
-      .select("not_seen_days, repeated_not_seen")
+      .select("not_seen_days, repeated_not_seen, feeding_missed_hours")
       .eq("organisation_id", org.organisation_id)
       .maybeSingle(),
   ]);
@@ -293,6 +294,10 @@ export default async function DashboardPage() {
     feeding_window_end: string | null;
   }[];
   const latest = latestFedByColony(feedsResult.data ?? []);
+  // Effective feeding-missed threshold in minutes: the org's row, else default.
+  const missedAfterMin =
+    ((settingsResult.data?.feeding_missed_hours as number | null) ??
+      DEFAULT_FEEDING_MISSED_HOURS) * 60;
   const feedRows: FeedRow[] = colonies.map((c) => {
     const event = latest.get(c.id);
     const fed = event?.fed === true;
@@ -304,7 +309,7 @@ export default async function DashboardPage() {
       name: c.name,
       windowStart: c.feeding_window_start,
       windowEnd: c.feeding_window_end,
-      status: feedingStatus({ fed, minutesAfterClose }),
+      status: feedingStatus({ fed, minutesAfterClose }, missedAfterMin),
     };
   });
   const feedCounts = summariseTodayFeeds(feedRows.map((r) => r.status));

@@ -10,6 +10,7 @@ import {
   latestFedByColony,
   type FeedingStatus,
 } from "@/lib/feeding-status";
+import { DEFAULT_FEEDING_MISSED_HOURS } from "@/lib/alert-settings";
 import { CalendarIcon, ChevronIcon, PawIcon } from "@/components/icons";
 import { EmptyState } from "@/components/empty-state";
 import { card } from "@/lib/ui";
@@ -158,8 +159,9 @@ export default async function TodayPage() {
   }
 
   // Both reads org-scoped (RLS also enforces it). No per-colony loop: a single
-  // feeding_events query for the whole day powers every row's status.
-  const [coloniesResult, feedsResult] = await Promise.all([
+  // feeding_events query for the whole day powers every row's status. The org's
+  // alert_settings row supplies the editable feeding-missed threshold.
+  const [coloniesResult, feedsResult, settingsResult] = await Promise.all([
     isManager || assignedColonyIds.size > 0
       ? coloniesQuery
       : Promise.resolve({ data: [] as ColonyRow[] }),
@@ -169,9 +171,18 @@ export default async function TodayPage() {
       .eq("organisation_id", org.organisation_id)
       .gte("observed_at", dayRange.startUtc.toISOString())
       .lt("observed_at", dayRange.endUtc.toISOString()),
+    supabase
+      .from("alert_settings")
+      .select("feeding_missed_hours")
+      .eq("organisation_id", org.organisation_id)
+      .maybeSingle(),
   ]);
 
   const colonies = (coloniesResult.data ?? []) as ColonyRow[];
+  // Effective feeding-missed threshold in minutes: the org row, else the default.
+  const missedAfterMin =
+    (settingsResult.data?.feeding_missed_hours ??
+      DEFAULT_FEEDING_MISSED_HOURS) * 60;
 
   // colony_id → the most recent feeding_event today (by observed_at). Events are
   // append-only, so the latest one is the current truth — a later "Not fed"
@@ -189,7 +200,7 @@ export default async function TodayPage() {
       name: c.name,
       windowStart: c.feeding_window_start,
       windowEnd: c.feeding_window_end,
-      status: feedingStatus({ fed, minutesAfterClose }),
+      status: feedingStatus({ fed, minutesAfterClose }, missedAfterMin),
       fedAt: fed ? (event?.at ?? null) : null,
       // Coverage gap marker is manager-only; feeders already see only their own.
       assignedToday: isManager ? assignedColonyIds.has(c.id) : null,

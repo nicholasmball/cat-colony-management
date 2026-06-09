@@ -182,9 +182,10 @@ export type FeedingMissedColony = {
   colonyId: string;
   colonyName: string;
   minutesAfterClose: number | null;
-  // The org's feeding-missed threshold in hours (alert_settings, default 12) —
-  // surfaced in the message body. Detection itself uses feedingStatus's fixed
-  // MISSED_AFTER_MIN; this is the human-facing number only.
+  // The org's feeding-missed threshold in hours (alert_settings, default 12).
+  // Drives BOTH the message body AND detection: feedingStatus is called with
+  // thresholdHours×60 so the per-org setting actually takes effect (no hardcoded
+  // 720). The caller passes the row value (fallback DEFAULT_FEEDING_MISSED_HOURS).
   thresholdHours: number;
 };
 
@@ -206,10 +207,13 @@ export function planFeedingMissedAlerts(
   for (const c of input.colonies) {
     const event = latest.get(c.colonyId);
     const fed = event?.fed === true;
-    const status = feedingStatus({
-      fed,
-      minutesAfterClose: c.minutesAfterClose,
-    });
+    const status = feedingStatus(
+      {
+        fed,
+        minutesAfterClose: c.minutesAfterClose,
+      },
+      c.thresholdHours * 60,
+    );
     if (status !== "missed") continue;
     const key = dedupKey.feedingMissed(c.colonyId, input.localDate);
     if (existing.has(key)) continue;
