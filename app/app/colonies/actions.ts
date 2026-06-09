@@ -10,6 +10,9 @@ import { deleteObject } from "@/lib/storage/r2";
 import { isFailedWrite, writeErrorMessage } from "@/lib/mutation-result";
 import { isKeyInOrg } from "@/lib/photo-key";
 import { parseNeutered } from "@/lib/cat-report";
+import { planConcernSightingAlert } from "@/lib/alert-engine";
+import { alertRecipients } from "@/lib/alert-recipients";
+import { persistAlerts } from "@/lib/alert-persist";
 
 type PhotoResult = { ok: true } | { error: string };
 
@@ -369,14 +372,69 @@ export async function submitFeeding(formData: FormData) {
     }
   }
 
+  let insertedSightings:
+    | { cat_id: string; observed_at: string; status: string }[]
+    | null = null;
   if (sightings.length > 0) {
-    const { error: sightingError } = await supabase
+    const { data: sightingData, error: sightingError } = await supabase
       .from("cat_sightings")
-      .insert(sightings);
+      .insert(sightings)
+      .select("cat_id, observed_at, status");
     if (sightingError) {
       redirect(
         `/app/colonies/${colonyId}/feed?error=${encodeURIComponent(sightingError.message)}`,
       );
+    }
+    insertedSightings = sightingData ?? null;
+  }
+
+  // Non-blocking alert: any sighting the feeder marked `concern` raises one
+  // routine alert per (cat, observed_at) to the org's caretakers+admins. The
+  // cron sweep owns the time-based not_seen rules and deliberately SKIPS concern
+  // (lib/alert-engine.planNotSeenAlerts), so this hook is the only path for a
+  // live concern flag. A failure here must NEVER fail the feeding update
+  // (mirrors the non-blocking photo pattern); records intent only — no
+  // push/SMS/email, dispatched_at stays NULL.
+  const concernSightings = (insertedSightings ?? []).filter(
+    (s) => s.status === "concern",
+  );
+  if (concernSightings.length > 0) {
+    try {
+      const svc = createServiceClient();
+      const concernCatIds = [...new Set(concernSightings.map((s) => s.cat_id))];
+      const [{ data: colony }, { data: catRows }, { data: members }] =
+        await Promise.all([
+          svc.from("colonies").select("name").eq("id", colonyId).maybeSingle(),
+          svc.from("cats").select("id, name, temp_id").in("id", concernCatIds),
+          svc
+            .from("memberships")
+            .select("user_id, role, deleted_at")
+            .eq("organisation_id", org.organisation_id),
+        ]);
+      const recipients = alertRecipients(members ?? []);
+      if (recipients.length > 0) {
+        const catNameById = new Map(
+          (catRows ?? []).map((c) => [
+            c.id as string,
+            (c.name as string | null)?.trim() ||
+              (c.temp_id as string | null)?.trim() ||
+              "",
+          ]),
+        );
+        const specs = concernSightings.flatMap((s) =>
+          planConcernSightingAlert({
+            catId: s.cat_id,
+            colonyId,
+            colonyName: colony?.name ?? "",
+            catName: catNameById.get(s.cat_id) ?? "",
+            reporterName: user?.email ?? "",
+            observedAt: s.observed_at,
+          }),
+        );
+        await persistAlerts(svc, org.organisation_id, specs, recipients);
+      }
+    } catch {
+      // Swallow: the feeding update stands regardless of the alert fan-out.
     }
   }
 
