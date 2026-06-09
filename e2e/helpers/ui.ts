@@ -32,3 +32,21 @@ export async function addCatViaUI(
   await page.waitForURL(/\/app\/colonies\/[0-9a-f-]+(\?|$)/);
   return catName;
 }
+
+// Report a NEW cat (new_unconfirmed) through the field "Report a new cat" form —
+// available to every role (feeders included). Posts via fetch then redirects to
+// the colony with ?reported=cat. Returns the unique name used so the caller can
+// find it. The form's "Name" field accessible-name contains "Name", so match it
+// by its placeholder to disambiguate from the "Description" field.
+export async function reportCatViaUI(
+  page: Page,
+  colonyUrl: string,
+): Promise<string> {
+  const catName = `E2E Report ${randomUUID().slice(0, 8)}`;
+  await page.goto(`${colonyUrl}/cats/report`);
+  await page.getByRole("heading", { name: "Report a new cat" }).waitFor();
+  await page.getByPlaceholder("e.g. Smudge").fill(catName);
+  await page.getByRole("button", { name: "Report cat" }).click();
+  await page.waitForURL(/\/app\/colonies\/[0-9a-f-]+\?reported=cat/);
+  return catName;
+}
