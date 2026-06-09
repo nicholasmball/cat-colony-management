@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { photoSrc } from "@/lib/photo";
@@ -7,7 +8,7 @@ import { catLabel, formatStatus, statusTone } from "@/lib/cat-display";
 import { UNCONFIRMED_STATUS, compareCatsForList } from "@/lib/cat-report";
 import {
   concernCandidate,
-  concernReasonText,
+  concernReasonKey,
   type ConcernSighting,
   type ConcernReview,
 } from "@/lib/cat-concern";
@@ -24,7 +25,6 @@ import {
   IncidentStatusPill,
   UrgentBadge,
 } from "@/components/incident-status-pill";
-import { incidentTypeLabel } from "@/lib/incident";
 import { EmptyState } from "@/components/empty-state";
 import { ConfirmButton } from "@/components/confirm-button";
 import { deleteSchedule } from "./schedules/actions";
@@ -79,8 +79,18 @@ export default async function ColonyDetail({
   const { id } = await params;
   const { updated, error, reported, photo, confirmed, rejected } =
     await searchParams;
+  const t = await getTranslations("colonies");
+  const tc = await getTranslations("common");
+  const tCat = await getTranslations("cats");
+  const tType = await getTranslations("incidents.type");
+  const tConcern = await getTranslations();
   const org = await getActiveOrg();
   const supabase = await createClient();
+  // Translate a concern flag (reason + count) via the pure key mapper.
+  const concernText = (flag: {
+    reason: "concern" | "not_seen_days" | "repeated_not_seen";
+    count: number;
+  }) => tConcern(concernReasonKey(flag.reason), { count: flag.count });
 
   const { data: colony } = await supabase
     .from("colonies")
@@ -257,7 +267,7 @@ export default async function ColonyDetail({
   return (
     <div className="flex max-w-3xl flex-col gap-6 px-6 py-6 md:px-10">
       <Link href="/app/colonies" className="text-sm text-accent">
-        ← Colonies
+        {t("backToColonies")}
       </Link>
 
       <div className="flex items-start justify-between gap-3">
@@ -265,9 +275,9 @@ export default async function ColonyDetail({
           <h1 className="font-display text-3xl">{colony.name}</h1>
           <p className="text-sm text-muted">
             {start
-              ? `Feeds ${start}${end ? `–${end}` : ""}`
-              : "No feeding window set"}
-            {!colony.is_active ? " · inactive" : ""}
+              ? t("feedsAt", { time: `${start}${end ? `–${end}` : ""}` })
+              : t("noFeedingWindow")}
+            {!colony.is_active ? ` · ${tc("inactive")}` : ""}
           </p>
         </div>
         {canManage ? (
@@ -275,7 +285,7 @@ export default async function ColonyDetail({
             href={`/app/colonies/${id}/edit`}
             className={`${btnGhost} text-sm`}
           >
-            Edit
+            {tc("edit")}
           </Link>
         ) : null}
       </div>
@@ -292,7 +302,7 @@ export default async function ColonyDetail({
 
       {updated ? (
         <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">
-          ✓ Feeding update recorded.
+          {t("toast.feedingRecorded")}
         </p>
       ) : null}
 
@@ -303,14 +313,15 @@ export default async function ColonyDetail({
         >
           {/* Honest copy: "we'll review it", NOT "added" — a reported cat is
               new_unconfirmed until a caretaker confirms it. */}
-          ✓ Cat reported. A caretaker will review it.
+          {t("toast.catReported")}
         </p>
       ) : reported ? (
         <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300">
           {/* Honest copy: "flagged for caretakers", NOT "notified" —
               push/SMS isn't built yet. */}
-          ✓ Incident reported.
-          {reported === "urgent" ? " Flagged as urgent for caretakers." : ""}
+          {reported === "urgent"
+            ? t("toast.incidentReportedUrgent")
+            : t("toast.incidentReported")}
         </p>
       ) : null}
 
@@ -319,7 +330,7 @@ export default async function ColonyDetail({
           role="status"
           className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
         >
-          ✓ Cat confirmed and added to the colony.
+          {t("toast.catConfirmed")}
         </p>
       ) : null}
 
@@ -328,7 +339,7 @@ export default async function ColonyDetail({
           role="status"
           className="rounded-lg bg-foreground/5 px-3 py-2 text-sm text-muted"
         >
-          Reported cat rejected and removed from the colony.
+          {t("toast.catRejected")}
         </p>
       ) : null}
 
@@ -337,7 +348,7 @@ export default async function ColonyDetail({
           role="status"
           className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
         >
-          The photo didn’t attach, but your report was saved.
+          {t("toast.photoFailed")}
         </p>
       ) : null}
 
@@ -345,7 +356,7 @@ export default async function ColonyDetail({
         href={`/app/colonies/${id}/feed`}
         className={`${btnPrimary} min-h-14 text-base`}
       >
-        Record feeding update
+        {t("recordFeedingUpdate")}
       </Link>
 
       <Link
@@ -353,7 +364,7 @@ export default async function ColonyDetail({
         className={`${btnGhostDanger} -mt-3 inline-flex min-h-12 items-center justify-center gap-2 text-base`}
       >
         <WarningIcon className="h-5 w-5" aria-hidden />
-        Report an incident
+        {t("reportIncident")}
       </Link>
 
       {/* Report a new cat — available to ALL roles (feeders included). The
@@ -363,7 +374,7 @@ export default async function ColonyDetail({
         className={`${btnGhost} -mt-3 inline-flex min-h-12 items-center justify-center gap-2 text-base`}
       >
         <PawIcon className="h-5 w-5" aria-hidden />
-        Report a new cat
+        {t("reportNewCat")}
       </Link>
 
       {/* Cats of concern — human-review queue. Caretakers see actionable rows
@@ -373,7 +384,7 @@ export default async function ColonyDetail({
       <section className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Cats of concern
+            {t("catsOfConcern")}
           </h2>
           {activeConcern.length > 0 ? (
             <span
@@ -386,7 +397,7 @@ export default async function ColonyDetail({
 
         {concernCats.length === 0 ? (
           <p className={`${card} p-4 text-sm text-muted`}>
-            No cats need review.
+            {t("noCatsNeedReview")}
           </p>
         ) : (
           <div className="flex flex-col gap-3">
@@ -405,7 +416,7 @@ export default async function ColonyDetail({
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium">{catLabel(c)}</p>
                         <p className="text-xs text-muted">
-                          {concernReasonText(flag)}
+                          {concernText(flag)}
                         </p>
                       </div>
                       <ChevronIcon className="h-4 w-4 shrink-0 text-muted" />
@@ -418,7 +429,7 @@ export default async function ColonyDetail({
             {monitoringConcern.length > 0 ? (
               <div className="flex flex-col gap-2">
                 <h3 className="text-xs font-medium text-muted">
-                  Monitoring ({monitoringConcern.length})
+                  {t("monitoringCount", { count: monitoringConcern.length })}
                 </h3>
                 <ul className="flex flex-col gap-2">
                   {monitoringConcern.map(({ cat: c, flag }) => (
@@ -430,12 +441,12 @@ export default async function ColonyDetail({
                         <span
                           className={`rounded-full px-2 py-0.5 text-xs font-medium ${toneClass.neutral}`}
                         >
-                          Monitoring
+                          {t("monitoring")}
                         </span>
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-medium">{catLabel(c)}</p>
                           <p className="text-xs text-muted">
-                            {concernReasonText(flag)}
+                            {concernText(flag)}
                           </p>
                         </div>
                         <ChevronIcon className="h-4 w-4 shrink-0 text-muted" />
@@ -452,14 +463,14 @@ export default async function ColonyDetail({
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Cats ({cats.length})
+            {t("catsHeading", { count: cats.length })}
           </h2>
           {canManage ? (
             <Link
               href={`/app/colonies/${id}/cats/new`}
               className={`${btnPrimary} text-sm`}
             >
-              Add cat
+              {t("addCat")}
             </Link>
           ) : null}
         </div>
@@ -467,11 +478,11 @@ export default async function ColonyDetail({
         {cats.length === 0 ? (
           <EmptyState
             icon={<PawIcon className="h-7 w-7" />}
-            title="No cats recorded"
-            body="Add the cats you see here so feeders can mark them each visit."
+            title={t("catsEmptyTitle")}
+            body={t("catsEmptyBody")}
             cta={
               canManage
-                ? { href: `/app/colonies/${id}/cats/new`, label: "Add a cat" }
+                ? { href: `/app/colonies/${id}/cats/new`, label: t("addACat") }
                 : undefined
             }
           />
@@ -512,7 +523,9 @@ export default async function ColonyDetail({
                           } ${toneClass[statusTone(c.status)]}`}
                         >
                           {unconfirmed ? "★ " : ""}
-                          {formatStatus(c.status)}
+                          {unconfirmed
+                            ? tCat("status.newUnconfirmed")
+                            : formatStatus(c.status)}
                         </span>
                       </p>
                     </div>
@@ -527,11 +540,11 @@ export default async function ColonyDetail({
 
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-          Incidents ({openIncidents.length})
+          {t("incidentsHeading", { count: openIncidents.length })}
         </h2>
         {openIncidents.length === 0 ? (
           <p className={`${card} p-4 text-sm text-muted`}>
-            No open incidents for this colony.
+            {t("noOpenIncidents")}
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -554,9 +567,7 @@ export default async function ColonyDetail({
                     />
                     <div className="min-w-0 flex-1">
                       <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium">
-                        <span className="truncate">
-                          {incidentTypeLabel(i.type)}
-                        </span>
+                        <span className="truncate">{tType(i.type)}</span>
                         {urgent ? <UrgentBadge /> : null}
                         <IncidentStatusPill status={i.status} />
                       </p>
@@ -578,14 +589,14 @@ export default async function ColonyDetail({
       <section className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Feeding schedule ({schedules.length})
+            {t("scheduleHeading", { count: schedules.length })}
           </h2>
           {canManage ? (
             <Link
               href={`/app/colonies/${id}/schedules/new`}
               className={`${btnPrimary} text-sm`}
             >
-              Add schedule
+              {t("addSchedule")}
             </Link>
           ) : null}
         </div>
@@ -593,13 +604,13 @@ export default async function ColonyDetail({
         {schedules.length === 0 ? (
           <EmptyState
             icon={<CalendarIcon className="h-7 w-7" />}
-            title="No schedule yet"
-            body="Assign feeders to this colony so it shows up on their Today list."
+            title={t("scheduleEmptyTitle")}
+            body={t("scheduleEmptyBody")}
             cta={
               canManage
                 ? {
                     href: `/app/colonies/${id}/schedules/new`,
-                    label: "Add a schedule",
+                    label: t("addASchedule"),
                   }
                 : undefined
             }
@@ -608,8 +619,8 @@ export default async function ColonyDetail({
           <ul className="flex flex-col gap-2">
             {schedules.map((s) => {
               const email = s.feeder_id
-                ? (feederEmails.get(s.feeder_id) ?? "unknown")
-                : "Unassigned";
+                ? (feederEmails.get(s.feeder_id) ?? tc("unknown"))
+                : tc("unassigned");
               const time = hhmm(s.approx_time);
               const isOneOff = !!s.specific_date;
               return (
@@ -621,7 +632,7 @@ export default async function ColonyDetail({
                     <p className="truncate font-medium">{email}</p>
                     <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
                       <span className={pill}>
-                        {isOneOff ? "★ one-off" : "⟳ weekly"}
+                        {isOneOff ? t("scheduleOneOff") : t("scheduleWeekly")}
                       </span>
                       <span>
                         {scheduleWhen({
@@ -630,7 +641,7 @@ export default async function ColonyDetail({
                         })}
                       </span>
                       <span aria-hidden>·</span>
-                      <span>{time ? `~${time}` : "no time"}</span>
+                      <span>{time ? `~${time}` : t("noTime")}</span>
                       {s.notes ? (
                         <span className="truncate">· {s.notes}</span>
                       ) : null}
@@ -640,20 +651,20 @@ export default async function ColonyDetail({
                     <div className="flex shrink-0 items-center gap-2">
                       <Link
                         href={`/app/colonies/${id}/schedules/${s.id}/edit`}
-                        aria-label={`Edit schedule for ${email}`}
+                        aria-label={t("editScheduleFor", { email })}
                         className={`${btnGhost} h-9 px-3 text-sm`}
                       >
-                        Edit
+                        {tc("edit")}
                       </Link>
                       <form action={deleteSchedule}>
                         <input type="hidden" name="colony_id" value={id} />
                         <input type="hidden" name="schedule_id" value={s.id} />
                         <ConfirmButton
-                          confirm="Remove this schedule?"
-                          aria-label={`Delete schedule for ${email}`}
+                          confirm={t("removeScheduleConfirm")}
+                          aria-label={t("deleteScheduleFor", { email })}
                           className={`${btnGhostDanger} h-9 px-3 text-sm`}
                         >
-                          Delete
+                          {tc("delete")}
                         </ConfirmButton>
                       </form>
                     </div>
