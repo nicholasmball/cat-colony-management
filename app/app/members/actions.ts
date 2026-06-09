@@ -131,24 +131,38 @@ export async function deactivateMember(formData: FormData) {
     err(t("cantDeactivateLastAdmin"));
   }
 
-  await svc
+  // .select() + isFailedWrite turns a 0-row match (membership gone / already
+  // changed) into a visible failure instead of a silent success — mirrors
+  // deleteSchedule/updateSchedule/updateMemberRole.
+  const { data, error } = await svc
     .from("memberships")
     .update({ deleted_at: new Date().toISOString() })
     .eq("user_id", userId)
-    .eq("organisation_id", org.organisation_id);
+    .eq("organisation_id", org.organisation_id)
+    .select("user_id");
+  if (isFailedWrite({ error, rows: data })) {
+    err(writeErrorMessage({ error, rows: data }, t("memberNoLongerExists")));
+  }
   revalidatePath(MEMBERS);
   redirect(MEMBERS);
 }
 
 export async function reactivateMember(formData: FormData) {
   const org = await requireAdminOrg();
+  const t = await getTranslations("errors");
   const userId = String(formData.get("user_id") ?? "");
   const svc = createServiceClient();
-  await svc
+  // Same 0-row guard as deactivateMember: a reactivate hitting a non-existent
+  // membership must surface, not look like success.
+  const { data, error } = await svc
     .from("memberships")
     .update({ deleted_at: null })
     .eq("user_id", userId)
-    .eq("organisation_id", org.organisation_id);
+    .eq("organisation_id", org.organisation_id)
+    .select("user_id");
+  if (isFailedWrite({ error, rows: data })) {
+    err(writeErrorMessage({ error, rows: data }, t("memberNoLongerExists")));
+  }
   revalidatePath(MEMBERS);
   redirect(MEMBERS);
 }
