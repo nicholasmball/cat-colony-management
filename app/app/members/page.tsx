@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { getTranslations } from "next-intl/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -49,6 +50,7 @@ export default async function MembersPage({
   if (!org) redirect("/app");
   if (org.role !== "admin") redirect("/app"); // admin-only screen
 
+  const t = await getTranslations("members");
   const {
     error,
     invited,
@@ -92,7 +94,7 @@ export default async function MembersPage({
   await Promise.all(
     members.map(async (m) => {
       const { data } = await svc.auth.admin.getUserById(m.user_id);
-      emails.set(m.user_id, data.user?.email ?? "unknown");
+      emails.set(m.user_id, data.user?.email ?? t("memberFallback"));
     }),
   );
 
@@ -103,7 +105,7 @@ export default async function MembersPage({
     <div className="flex max-w-2xl flex-col gap-6 px-6 py-6 md:px-10">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-3xl">Members</h1>
+          <h1 className="font-display text-3xl">{t("title")}</h1>
           <p className="text-sm text-muted">{org.name}</p>
         </div>
       </div>
@@ -115,16 +117,22 @@ export default async function MembersPage({
       ) : null}
       {invited ? (
         <p className={okClass}>
-          ✓ Invited <strong>{invited}</strong>.{" "}
-          {sent === "1"
-            ? "We’ve emailed them an invite link."
-            : "Email isn’t set up yet — copy their invite link below and send it."}
+          {t.rich("invitedToast", {
+            email: invited,
+            strong: (chunks) => <strong>{chunks}</strong>,
+          })}
+          {sent === "1" ? t("invitedEmailed") : t("invitedCopyLink")}
         </p>
       ) : null}
       {updated ? (
         <p role="status" className={okClass}>
-          ✓ Updated <strong>{emails.get(updated) ?? "member"}</strong>
-          {updatedRole ? <> to {updatedRole}.</> : "."}
+          {t.rich("updatedToast", {
+            name: emails.get(updated) ?? t("memberFallback"),
+            strong: (chunks) => <strong>{chunks}</strong>,
+          })}
+          {updatedRole
+            ? t("updatedToRole", { role: t(`role.${updatedRole}`) })
+            : "."}
         </p>
       ) : null}
 
@@ -134,39 +142,41 @@ export default async function MembersPage({
         className={`${card} flex flex-col gap-3 p-4`}
       >
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-          Invite a volunteer
+          {t("inviteHeading")}
         </h2>
         <div className="flex flex-col gap-3 sm:flex-row">
           <label className={`${fieldLabel} flex-1`}>
-            <span>Email</span>
+            <span>{t("emailLabel")}</span>
             <input
               name="email"
               type="email"
               required
-              placeholder="volunteer@example.com"
+              placeholder={t("emailPlaceholder")}
               className={input}
             />
           </label>
           <label className={`${fieldLabel} sm:w-44`}>
-            <span>Role</span>
+            <span>{t("roleLabel")}</span>
             <select name="role" defaultValue="feeder" className={input}>
-              <option value="feeder">Feeder</option>
-              <option value="caretaker">Caretaker</option>
+              <option value="feeder">{t("role.feeder")}</option>
+              <option value="caretaker">{t("role.caretaker")}</option>
             </select>
           </label>
         </div>
         <SubmitButton
-          pendingText="Inviting…"
+          pendingText={t("inviting")}
           className={`${btnPrimary} self-start`}
         >
-          Send invite
+          {t("sendInvite")}
         </SubmitButton>
       </form>
 
       {/* Team */}
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-          Team ({members.filter((m) => !m.deleted_at).length})
+          {t("teamHeading", {
+            count: members.filter((m) => !m.deleted_at).length,
+          })}
         </h2>
         <ul className="flex flex-col gap-2">
           {members.map((m) => {
@@ -188,14 +198,16 @@ export default async function MembersPage({
                     {emails.get(m.user_id)}
                   </p>
                   <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs">
-                    {editable ? null : <span className={pill}>{m.role}</span>}
-                    {isSelf ? <span className={pill}>You</span> : null}
+                    {editable ? null : (
+                      <span className={pill}>{t(`role.${m.role}`)}</span>
+                    )}
+                    {isSelf ? <span className={pill}>{t("you")}</span> : null}
                     <span className="text-muted">
-                      {inactive ? "deactivated" : "active"}
+                      {inactive ? t("deactivatedLabel") : t("activeLabel")}
                     </span>
                     {isSelf && !inactive ? (
                       <span className="text-muted">
-                        · 🔒 you can’t change your own role
+                        {t("cantChangeOwnRole")}
                       </span>
                     ) : null}
                   </p>
@@ -205,7 +217,7 @@ export default async function MembersPage({
                     <RoleSelectForm
                       action={updateMemberRole}
                       userId={m.user_id}
-                      email={emails.get(m.user_id) ?? "this member"}
+                      email={emails.get(m.user_id) ?? t("thisMember")}
                       currentRole={m.role as AppRole}
                       isLastAdmin={isLastAdmin}
                     />
@@ -217,17 +229,19 @@ export default async function MembersPage({
                         pendingText="…"
                         className={`${btnGhost} h-9 px-3 text-sm`}
                       >
-                        Reactivate
+                        {t("reactivate")}
                       </SubmitButton>
                     </form>
                   ) : isSelf ? null : (
                     <form action={deactivateMember}>
                       <input type="hidden" name="user_id" value={m.user_id} />
                       <ConfirmButton
-                        confirm={`Deactivate ${emails.get(m.user_id)}? They'll lose access immediately.`}
+                        confirm={t("deactivateConfirm", {
+                          email: emails.get(m.user_id) ?? t("thisMember"),
+                        })}
                         className={`${btnGhostDanger} h-9 px-3 text-sm`}
                       >
-                        Deactivate
+                        {t("deactivate")}
                       </ConfirmButton>
                     </form>
                   )}
@@ -241,11 +255,11 @@ export default async function MembersPage({
       {/* Pending invites */}
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-          Pending invites ({invites.length})
+          {t("pendingInvites")} ({invites.length})
         </h2>
         {invites.length === 0 ? (
           <p className={`${card} p-4 text-sm text-muted`}>
-            No pending invites.
+            {t("noPendingInvites")}
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -257,8 +271,8 @@ export default async function MembersPage({
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{inv.email}</p>
                   <p className="mt-0.5 text-xs">
-                    <span className={pill}>{inv.role}</span>{" "}
-                    <span className="text-muted">· pending</span>
+                    <span className={pill}>{t(`role.${inv.role}`)}</span>{" "}
+                    <span className="text-muted">{t("pendingSuffix")}</span>
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -269,16 +283,16 @@ export default async function MembersPage({
                       pendingText="…"
                       className={`${btnGhost} h-9 px-3 text-sm`}
                     >
-                      Resend email
+                      {t("resendEmail")}
                     </SubmitButton>
                   </form>
                   <form action={revokeInvite}>
                     <input type="hidden" name="invite_id" value={inv.id} />
                     <ConfirmButton
-                      confirm={`Revoke the invite for ${inv.email}?`}
+                      confirm={t("revokeInviteConfirm", { email: inv.email })}
                       className={`${btnGhostDanger} h-9 px-3 text-sm`}
                     >
-                      Revoke
+                      {t("revoke")}
                     </ConfirmButton>
                   </form>
                 </div>
@@ -286,11 +300,7 @@ export default async function MembersPage({
             ))}
           </ul>
         )}
-        <p className="mt-1 text-xs text-muted">
-          Invitees are emailed a link automatically (once email is set up). You
-          can also copy the link to send it yourself, or resend the email. They
-          set a password and join.
-        </p>
+        <p className="mt-1 text-xs text-muted">{t("invitesHint")}</p>
       </section>
     </div>
   );

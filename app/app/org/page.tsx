@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { SubmitButton } from "@/components/submit-button";
 import { btnPrimary, card, fieldLabel, input } from "@/lib/ui";
@@ -20,6 +21,9 @@ export default async function OrgSettings({
   if (org.role !== "admin") redirect("/app"); // admin-only screen
 
   const { error, saved } = await searchParams;
+  const t = await getTranslations("org");
+  const locale = await getLocale();
+  const displayLocale = locale === "pt" ? "pt-PT" : "en-GB";
 
   const supabase = await createClient();
   const { data } = await supabase
@@ -29,7 +33,7 @@ export default async function OrgSettings({
     .maybeSingle();
 
   const created = data?.created_at
-    ? new Date(data.created_at).toLocaleDateString(undefined, {
+    ? new Date(data.created_at).toLocaleDateString(displayLocale, {
         day: "numeric",
         month: "long",
         year: "numeric",
@@ -48,7 +52,7 @@ export default async function OrgSettings({
   ];
   const zones = COMMON.includes(current) ? COMMON : [current, ...COMMON];
   // Render-time confirmation of the current local date/time in that zone.
-  const localNow = new Intl.DateTimeFormat("en-GB", {
+  const localNow = new Intl.DateTimeFormat(displayLocale, {
     timeZone: current,
     weekday: "short",
     day: "numeric",
@@ -60,9 +64,11 @@ export default async function OrgSettings({
   return (
     <div className="flex max-w-xl flex-col gap-5 px-6 py-6 md:px-10">
       <div>
-        <h1 className="font-display text-3xl">Organisation</h1>
+        <h1 className="font-display text-3xl">{t("title")}</h1>
         {created ? (
-          <p className="text-sm text-muted">Created {created}</p>
+          <p className="text-sm text-muted">
+            {t("createdOn", { date: created })}
+          </p>
         ) : null}
       </div>
 
@@ -71,14 +77,14 @@ export default async function OrgSettings({
           {error}
         </p>
       ) : null}
-      {saved ? <p className={okClass}>✓ Saved.</p> : null}
+      {saved ? <p className={okClass}>{t("savedToast")}</p> : null}
 
       <form
         action={updateOrganisation}
         className={`${card} flex flex-col gap-4 p-4`}
       >
         <label className={fieldLabel}>
-          <span>Name</span>
+          <span>{t("name")}</span>
           <input
             name="name"
             required
@@ -87,17 +93,17 @@ export default async function OrgSettings({
           />
         </label>
         <label className={fieldLabel}>
-          <span>Notes</span>
+          <span>{t("notes")}</span>
           <textarea
             name="notes"
             rows={4}
             defaultValue={data?.notes ?? ""}
-            placeholder="e.g. Registered charity no., main contact, anything the team should know."
+            placeholder={t("notesPlaceholder")}
             className={`${input} py-2`}
           />
         </label>
         <label className={fieldLabel}>
-          <span>Timezone</span>
+          <span>{t("timezone")}</span>
           <select name="timezone" defaultValue={current} className={input}>
             {zones.map((z) => (
               <option key={z} value={z}>
@@ -106,15 +112,14 @@ export default async function OrgSettings({
             ))}
           </select>
           <span className="text-xs font-normal text-muted">
-            Used to decide what counts as “today” for feeds, schedules and
-            missed-feed alerts. Currently {localNow} there.
+            {t("timezoneHint", { time: localNow })}
           </span>
         </label>
         <SubmitButton
-          pendingText="Saving…"
+          pendingText={t("saving")}
           className={`${btnPrimary} self-start`}
         >
-          Save changes
+          {t("saveChanges")}
         </SubmitButton>
       </form>
     </div>
