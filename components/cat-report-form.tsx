@@ -1,9 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { SubmitButton } from "@/components/submit-button";
-import { reportCat } from "@/app/app/colonies/[id]/cats/report/actions";
 import { PawIcon } from "@/components/icons";
 import { hasReportIdentifier } from "@/lib/cat-report";
 import {
@@ -65,6 +64,7 @@ function Segmented({
 
 export function CatReportForm({ colonyId }: { colonyId: string }) {
   const t = useTranslations("cats");
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
@@ -72,6 +72,11 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
   const [sex, setSex] = useState("unknown");
   const [neutered, setNeutered] = useState("unknown");
   const [idError, setIdError] = useState(false);
+  // Drives the submit button's pending state and an inline submit error,
+  // replacing useFormStatus now that we POST via fetch instead of a <form
+  // action>. Preserves the exact same disabled-while-submitting behaviour.
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Photo state mirrors incident-form.tsx: presign → PUT to R2, then stash the
   // returned key in a hidden field so the action stores it on the cat. A failed
@@ -86,12 +91,67 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
   // append &photo=failed and the colony page shows the soft warning.
   const [photoFailed, setPhotoFailed] = useState(false);
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    // Client-side first (no round-trip); the action re-validates server-side.
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    // Client-side first (no round-trip); the route re-validates server-side.
     if (!hasReportIdentifier({ name, temp_id: tempId })) {
-      e.preventDefault();
       setIdError(true);
       nameRef.current?.focus();
+      return;
+    }
+    if (submitting) return;
+    setSubmitting(true);
+    setSubmitError(null);
+
+    const form = e.currentTarget;
+    const colour =
+      (form.elements.namedItem("colour") as HTMLInputElement)?.value?.trim() ||
+      null;
+    const notes =
+      (
+        form.elements.namedItem("notes") as HTMLTextAreaElement
+      )?.value?.trim() || null;
+
+    // Phase 1 transport: a client UUID becomes the new cat's PK so a replay is
+    // idempotent (the route upserts onConflict:"id"). The photo presign→PUT
+    // already ran on pick (online-only, unchanged); we just pass the key here.
+    const body = {
+      id: crypto.randomUUID(),
+      colonyId,
+      name: name.trim() || null,
+      tempId: tempId.trim() || null,
+      colour,
+      sex: sex === "unknown" ? null : sex,
+      neutered,
+      notes,
+      photoKey: photoKey || null,
+      photoFailed,
+    };
+
+    try {
+      const res = await fetch("/api/cats/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        photoFailed?: boolean;
+      };
+      if (!res.ok || !json.ok) {
+        setSubmitError(json.error || t("submitFailed"));
+        setSubmitting(false);
+        return;
+      }
+      // Same destination + ?reported=cat the server action used, preserving the
+      // non-blocking &photo=failed contract when the photo couldn't be saved.
+      const photoParam = json.photoFailed ? "&photo=failed" : "";
+      router.push(`/app/colonies/${colonyId}?reported=cat${photoParam}`);
+      router.refresh();
+    } catch {
+      setSubmitError(t("submitFailed"));
+      setSubmitting(false);
     }
   }
 
@@ -156,19 +216,20 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
   }
 
   return (
-    <form
-      ref={formRef}
-      action={reportCat}
-      onSubmit={onSubmit}
-      className="flex flex-col gap-6"
-    >
-      <input type="hidden" name="colony_id" value={colonyId} />
-      <input type="hidden" name="sex" value={sex === "unknown" ? "" : sex} />
-      <input type="hidden" name="neutered" value={neutered} />
-      <input type="hidden" name="photo_key" value={photoKey} />
-      <input type="hidden" name="photo_failed" value={photoFailed ? "1" : ""} />
+    <form ref={formRef} onSubmit={onSubmit} className="flex flex-col gap-6">
+      {/* sex/neutered/photo are read from component state in onSubmit now, so no
+          hidden mirror fields are needed (the form POSTs JSON via fetch). */}
 
       <p className="text-sm text-muted">{t("reportLede")}</p>
+
+      {submitError ? (
+        <p
+          role="alert"
+          className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700 dark:bg-red-950/60 dark:text-red-300"
+        >
+          {submitError}
+        </p>
+      ) : null}
 
       {/* ── Identifier (name OR description) ── */}
       {idError ? (
@@ -358,12 +419,14 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
         </div>
       </section>
 
-      <SubmitButton
-        pendingText={t("reporting")}
-        className={`${btnPrimary} sticky bottom-4 min-h-13`}
+      <button
+        type="submit"
+        disabled={submitting}
+        aria-busy={submitting}
+        className={`${btnPrimary} sticky bottom-4 min-h-13 disabled:cursor-not-allowed disabled:opacity-60`}
       >
-        {t("reportCat")}
-      </SubmitButton>
+        {submitting ? t("reporting") : t("reportCat")}
+      </button>
     </form>
   );
 }

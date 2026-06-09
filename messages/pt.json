@@ -144,7 +144,8 @@
     "sightingConcern": "Preocupação",
     "notesOptional": "Notas (opcional)",
     "saveUpdate": "Guardar atualização",
-    "savingUpdate": "A guardar…"
+    "savingUpdate": "A guardar…",
+    "submitFailed": "Não foi possível guardar a atualização de alimentação. Tente novamente."
   },
   "colonies": {
     "title": "Colónias",
@@ -263,6 +264,7 @@
     "notAnImage": "Isto não é uma imagem.",
     "imageTooLarge": "Essa imagem é demasiado grande (máx. 25 MB).",
     "uploadFailed": "Falha no carregamento.",
+    "submitFailed": "Não foi possível guardar o gato. Tente novamente.",
     "couldNotRemovePhoto": "Não foi possível remover a foto.",
     "status": {
       "newUnconfirmed": "Novo · por confirmar"
@@ -396,7 +398,8 @@
       "uploadFailed": "Falha no carregamento.",
       "reportUrgent": "Reportar incidente urgente",
       "reportIncident": "Reportar incidente",
-      "reporting": "A reportar…"
+      "reporting": "A reportar…",
+      "submitFailed": "Não foi possível guardar o incidente. Tente novamente."
     },
     "resolve": {
       "markResolved": "Marcar como resolvido…",

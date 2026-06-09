@@ -144,7 +144,8 @@
     "sightingConcern": "Concern",
     "notesOptional": "Notes (optional)",
     "saveUpdate": "Save update",
-    "savingUpdate": "Saving…"
+    "savingUpdate": "Saving…",
+    "submitFailed": "Could not save the feeding update. Please try again."
   },
   "colonies": {
     "title": "Colonies",
@@ -263,6 +264,7 @@
     "notAnImage": "That’s not an image.",
     "imageTooLarge": "That image is too large (max 25 MB).",
     "uploadFailed": "Upload failed.",
+    "submitFailed": "Could not save the cat. Please try again.",
     "couldNotRemovePhoto": "Couldn’t remove the photo.",
     "status": {
       "newUnconfirmed": "New · unconfirmed"
@@ -396,7 +398,8 @@
       "uploadFailed": "Upload failed.",
       "reportUrgent": "Report urgent incident",
       "reportIncident": "Report incident",
-      "reporting": "Reporting…"
+      "reporting": "Reporting…",
+      "submitFailed": "Could not save the incident. Please try again."
     },
     "resolve": {
       "markResolved": "Mark resolved…",
