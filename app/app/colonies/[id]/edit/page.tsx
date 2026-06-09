@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { updateColony, archiveColony } from "../../actions";
 import { SubmitButton } from "@/components/submit-button";
@@ -17,6 +18,7 @@ export default async function EditColony({
 }) {
   const { id } = await params;
   const { error } = await searchParams;
+  const t = await getTranslations("colonies");
   const supabase = await createClient();
 
   const { data: colony } = await supabase
@@ -34,7 +36,7 @@ export default async function EditColony({
       <Link href={`/app/colonies/${id}`} className="text-sm text-accent">
         ← {colony.name}
       </Link>
-      <h1 className="font-display text-3xl">Edit colony</h1>
+      <h1 className="font-display text-3xl">{t("editColonyTitle")}</h1>
 
       {error ? (
         <p role="alert" className={errorClass}>
@@ -45,7 +47,7 @@ export default async function EditColony({
       <form action={updateColony} className="flex flex-col gap-4">
         <input type="hidden" name="id" value={id} />
         <label className={fieldLabel}>
-          <span>Name</span>
+          <span>{t("name")}</span>
           <input
             name="name"
             required
@@ -55,7 +57,7 @@ export default async function EditColony({
         </label>
         <div className="grid grid-cols-2 gap-3">
           <label className={fieldLabel}>
-            <span>Feeding from</span>
+            <span>{t("feedingFrom")}</span>
             <input
               type="time"
               name="feeding_window_start"
@@ -64,7 +66,7 @@ export default async function EditColony({
             />
           </label>
           <label className={fieldLabel}>
-            <span>to</span>
+            <span>{t("feedingTo")}</span>
             <input
               type="time"
               name="feeding_window_end"
@@ -74,7 +76,7 @@ export default async function EditColony({
           </label>
         </div>
         <label className={fieldLabel}>
-          <span>Notes</span>
+          <span>{t("notes")}</span>
           <textarea
             name="notes"
             rows={3}
@@ -89,25 +91,22 @@ export default async function EditColony({
             defaultChecked={colony.is_active}
             className="h-4 w-4 accent-[var(--accent)]"
           />
-          Active
+          {t("activeLabel")}
         </label>
-        <SubmitButton pendingText="Saving…" className={btnPrimary}>
-          Save changes
+        <SubmitButton pendingText={t("saving")} className={btnPrimary}>
+          {t("saveChanges")}
         </SubmitButton>
       </form>
 
       <form action={archiveColony} className="border-t border-border pt-4">
         <input type="hidden" name="id" value={id} />
         <SubmitButton
-          pendingText="Archiving…"
+          pendingText={t("archiving")}
           className={`${btnGhost} text-red-700 dark:text-red-300`}
         >
-          Archive colony
+          {t("archiveColony")}
         </SubmitButton>
-        <p className="mt-1.5 text-xs text-muted">
-          Hides it from the list. Data is kept (soft delete) and can be restored
-          later.
-        </p>
+        <p className="mt-1.5 text-xs text-muted">{t("archiveHint")}</p>
       </form>
     </div>
   );

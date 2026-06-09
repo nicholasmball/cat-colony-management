@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { CatReportForm } from "@/components/cat-report-form";
@@ -19,6 +20,7 @@ export default async function ReportCatPage({
 }) {
   const { id } = await params;
   const { error } = await searchParams;
+  const t = await getTranslations("cats");
   const org = await getActiveOrg();
   if (!org) redirect("/app");
 
@@ -36,7 +38,7 @@ export default async function ReportCatPage({
       <Link href={`/app/colonies/${id}`} className="text-sm text-accent">
         ← {colony.name}
       </Link>
-      <h1 className="font-display text-3xl">Report a new cat</h1>
+      <h1 className="font-display text-3xl">{t("reportTitle")}</h1>
       {error ? (
         <p role="alert" className={errorClass}>
           {error}

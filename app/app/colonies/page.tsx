@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { btnPrimary, card } from "@/lib/ui";
@@ -14,14 +15,16 @@ type Colony = {
 };
 
 export default async function ColoniesPage() {
+  const t = await getTranslations("colonies");
+  const tc = await getTranslations("common");
   const org = await getActiveOrg();
   if (!org) {
     return (
       <div className="max-w-md px-6 py-6 md:px-10">
         <p className={`${card} p-4 text-sm text-muted`}>
-          Create an organisation first.{" "}
+          {t("createOrgFirst")}{" "}
           <Link href="/app" className="text-accent underline">
-            Go home
+            {tc("goHome")}
           </Link>
         </p>
       </div>
@@ -42,12 +45,12 @@ export default async function ColoniesPage() {
     <div className="flex max-w-3xl flex-col gap-4 px-6 py-6 md:px-10">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl">Colonies</h1>
+          <h1 className="font-display text-2xl">{t("title")}</h1>
           <p className="text-xs text-muted">{org.name}</p>
         </div>
         {canManage ? (
           <Link href="/app/colonies/new" className={`${btnPrimary} text-sm`}>
-            Add colony
+            {t("addColony")}
           </Link>
         ) : null}
       </div>
@@ -55,11 +58,11 @@ export default async function ColoniesPage() {
       {colonies.length === 0 ? (
         <EmptyState
           icon={<PawIcon className="h-7 w-7" />}
-          title="No colonies yet"
-          body="A colony is a place you feed — a street, a yard, a car park."
+          title={t("emptyTitle")}
+          body={t("emptyBody")}
           cta={
             canManage
-              ? { href: "/app/colonies/new", label: "Add your first colony" }
+              ? { href: "/app/colonies/new", label: t("addFirstColony") }
               : undefined
           }
         />
@@ -75,17 +78,20 @@ export default async function ColoniesPage() {
                   <p className="font-medium">{c.name}</p>
                   {c.feeding_window_start ? (
                     <p className="text-xs text-muted">
-                      Feeds {c.feeding_window_start.slice(0, 5)}
-                      {c.feeding_window_end
-                        ? `–${c.feeding_window_end.slice(0, 5)}`
-                        : ""}
+                      {t("feedsAt", {
+                        time: `${c.feeding_window_start.slice(0, 5)}${
+                          c.feeding_window_end
+                            ? `–${c.feeding_window_end.slice(0, 5)}`
+                            : ""
+                        }`,
+                      })}
                     </p>
                   ) : null}
                 </div>
                 <span className="flex items-center gap-2">
                   {!c.is_active ? (
                     <span className="rounded-full bg-foreground/10 px-2.5 py-0.5 text-xs text-muted">
-                      inactive
+                      {tc("inactive")}
                     </span>
                   ) : null}
                   <ChevronIcon className="h-5 w-5 text-muted" />
