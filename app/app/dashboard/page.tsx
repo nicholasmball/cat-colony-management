@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { dayRangeInTz, minutesAfterWindow } from "@/lib/time";
@@ -10,13 +11,12 @@ import {
 } from "@/lib/feeding-status";
 import {
   concernCandidate,
-  concernReasonText,
+  concernReasonKey,
   type ConcernSighting,
   type ConcernReview,
 } from "@/lib/cat-concern";
 import { UNCONFIRMED_STATUS } from "@/lib/cat-report";
 import { catLabel } from "@/lib/cat-display";
-import { incidentTypeLabel } from "@/lib/incident";
 import {
   capRowsPerKey,
   summariseTodayFeeds,
@@ -105,10 +105,14 @@ function hhmm(t: string | null) {
   return t ? t.slice(0, 5) : null;
 }
 
-function windowText(start: string | null, end: string | null) {
+function windowText(
+  start: string | null,
+  end: string | null,
+  noWindow: string,
+) {
   const s = hhmm(start);
   const e = hhmm(end);
-  if (!s && !e) return "No window";
+  if (!s && !e) return noWindow;
   return `${s ?? "—"}–${e ?? "—"}`;
 }
 
@@ -215,6 +219,17 @@ export default async function DashboardPage() {
   const org = await getActiveOrg();
   if (!org) redirect("/app");
   if (org.role !== "admin" && org.role !== "caretaker") redirect("/app/today");
+
+  const t = await getTranslations("dashboard");
+  const tType = await getTranslations("incidents.type");
+  const tCommon = await getTranslations("common");
+  const tConcern = await getTranslations();
+  const locale = await getLocale();
+  const displayLocale = locale === "pt" ? "pt-PT" : "en-GB";
+  const concernText = (flag: {
+    reason: "concern" | "not_seen_days" | "repeated_not_seen";
+    count: number;
+  }) => tConcern(concernReasonKey(flag.reason), { count: flag.count });
 
   const supabase = await createClient();
   const dayRange = dayRangeInTz(org.timezone);
@@ -482,14 +497,14 @@ export default async function DashboardPage() {
     concernCats: activeConcern.length,
   });
 
-  const dateLabel = new Intl.DateTimeFormat(undefined, {
+  const dateLabel = new Intl.DateTimeFormat(displayLocale, {
     timeZone: org.timezone,
     weekday: "long",
     day: "numeric",
     month: "long",
   }).format(now);
 
-  const timeFmt = new Intl.DateTimeFormat(undefined, {
+  const timeFmt = new Intl.DateTimeFormat(displayLocale, {
     timeZone: org.timezone,
     day: "numeric",
     month: "short",
@@ -504,12 +519,12 @@ export default async function DashboardPage() {
       <div>
         <h1 className="flex items-center gap-2 font-display text-3xl">
           <GridIcon className="h-7 w-7 text-accent" aria-hidden />
-          Dashboard
+          {t("title")}
         </h1>
         <p className="text-sm text-muted">
           {dateLabel} · {org.name}
           {colonyCount > 0
-            ? ` · ${colonyCount} ${colonyCount === 1 ? "colony" : "colonies"}`
+            ? ` · ${t("colonyCount", { count: colonyCount })}`
             : ""}
         </p>
       </div>
@@ -536,27 +551,23 @@ export default async function DashboardPage() {
             </svg>
           </span>
           <h2 className="font-display text-xl">
-            All clear across {colonyCount}{" "}
-            {colonyCount === 1 ? "colony" : "colonies"} today
+            {t("allClearTitle", { count: colonyCount })}
           </h2>
-          <p className="max-w-md text-sm text-muted">
-            Every feed is on track, no urgent incidents, and no cats need
-            review. Nothing needs you right now.
-          </p>
-          <ViewAllLink href="/app/today" label="View Today" />
+          <p className="max-w-md text-sm text-muted">{t("allClearBody")}</p>
+          <ViewAllLink href="/app/today" label={t("viewToday")} />
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {/* ── 1. Today's feeds (spans both columns — the daily anchor) ── */}
           <SectionCard
-            title="Today's feeds"
+            title={t("todaysFeeds")}
             span
             icon={<CalendarIcon className="h-4 w-4" aria-hidden />}
           >
             {feedCounts.total === 0 ? (
               <SectionAllClear
-                title="No colonies to feed yet"
-                body="When a colony is added to this organisation, it'll show up here for the day."
+                title={t("feedsEmptyTitle")}
+                body={t("feedsEmptyBody")}
               />
             ) : (
               <>
@@ -568,19 +579,22 @@ export default async function DashboardPage() {
                         className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${feedTone[s]}`}
                       >
                         <FeedGlyph status={s} />
-                        {feedCounts[s]} {s}
+                        {t("feedStatus", {
+                          count: feedCounts[s],
+                          status: t(`feedStatusWord.${s}`),
+                        })}
                       </span>
                     ),
                   )}
                 </div>
-                <ViewAllLink href="/app/today" label="View Today" />
+                <ViewAllLink href="/app/today" label={t("viewToday")} />
               </>
             )}
           </SectionCard>
 
           {/* ── 2. Missed feeds (act now) ── */}
           <SectionCard
-            title="Missed feeds"
+            title={t("missedFeeds")}
             icon={<CalendarIcon className="h-4 w-4" aria-hidden />}
             badge={
               missedRows.length > 0
@@ -591,8 +605,8 @@ export default async function DashboardPage() {
             {missedRows.length === 0 ? (
               <SectionAllClear
                 good
-                title="All feeds on track"
-                body="No colony has slipped past its feeding window today."
+                title={t("missedEmptyTitle")}
+                body={t("missedEmptyBody")}
               />
             ) : (
               <>
@@ -607,19 +621,23 @@ export default async function DashboardPage() {
                           <p className="truncate font-medium">{r.name}</p>
                           <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
                             <span>
-                              {windowText(r.windowStart, r.windowEnd)}
+                              {windowText(
+                                r.windowStart,
+                                r.windowEnd,
+                                t("noWindow"),
+                              )}
                             </span>
                             <span aria-hidden>·</span>
                             <span
                               className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium ${feedTone.missed}`}
                             >
                               <FeedGlyph status="missed" />
-                              missed
+                              {t("missed")}
                             </span>
                           </p>
                         </div>
                         <span className="shrink-0 text-sm font-semibold text-accent">
-                          Feed →
+                          {t("feedArrow")}
                         </span>
                         <ChevronIcon className="h-4 w-4 shrink-0 text-muted" />
                       </Link>
@@ -627,7 +645,7 @@ export default async function DashboardPage() {
                   ))}
                 </ul>
                 {missedRows.length > TOP_N ? (
-                  <ViewAllLink href="/app/today" label="View Today" />
+                  <ViewAllLink href="/app/today" label={t("viewToday")} />
                 ) : null}
               </>
             )}
@@ -635,7 +653,7 @@ export default async function DashboardPage() {
 
           {/* ── 4. Urgent incidents (act now) ── */}
           <SectionCard
-            title="Urgent incidents"
+            title={t("urgentIncidents")}
             icon={<WarningIcon className="h-4 w-4" aria-hidden />}
             badge={
               urgentIncidents.length > 0
@@ -646,8 +664,8 @@ export default async function DashboardPage() {
             {urgentIncidents.length === 0 ? (
               <SectionAllClear
                 good
-                title="No urgent incidents — all clear"
-                body="Urgent reports from feeders will land here for immediate triage."
+                title={t("urgentEmptyTitle")}
+                body={t("urgentEmptyBody")}
               />
             ) : (
               <>
@@ -668,15 +686,13 @@ export default async function DashboardPage() {
                         />
                         <div className="min-w-0 flex-1">
                           <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium">
-                            <span className="truncate">
-                              {incidentTypeLabel(i.type)}
-                            </span>
+                            <span className="truncate">{tType(i.type)}</span>
                             <UrgentBadge />
                             <IncidentStatusPill status={i.status} />
                           </p>
                           <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
                             <span className="truncate">
-                              {colonyName.get(i.colony_id) ?? "Colony"}
+                              {colonyName.get(i.colony_id) ?? tCommon("colony")}
                             </span>
                             {i.cat_id && catNameById.get(i.cat_id) ? (
                               <>
@@ -700,7 +716,7 @@ export default async function DashboardPage() {
                 {urgentIncidents.length > TOP_N ? (
                   <ViewAllLink
                     href="/app/incidents?urgent=1"
-                    label="View all urgent"
+                    label={t("viewAllUrgent")}
                   />
                 ) : null}
               </>
@@ -709,7 +725,7 @@ export default async function DashboardPage() {
 
           {/* ── 3. New cat reports ── */}
           <SectionCard
-            title="New cat reports"
+            title={t("newCatReports")}
             icon={<PawIcon className="h-4 w-4" aria-hidden />}
             badge={
               newCats.length > 0
@@ -719,8 +735,8 @@ export default async function DashboardPage() {
           >
             {newCats.length === 0 ? (
               <SectionAllClear
-                title="No cats to confirm"
-                body="When a feeder reports a new cat, it'll appear here for review."
+                title={t("newCatsEmptyTitle")}
+                body={t("newCatsEmptyBody")}
               />
             ) : (
               <>
@@ -740,15 +756,15 @@ export default async function DashboardPage() {
                             <span
                               className={`rounded-full px-2 py-0.5 text-xs font-medium ${toneClass.neutral} text-accent`}
                             >
-                              ★ New · unconfirmed
+                              {t("newUnconfirmed")}
                             </span>
                           </p>
                           <p className="mt-0.5 truncate text-xs text-muted">
-                            {colonyName.get(c.colony_id) ?? "Colony"}
+                            {colonyName.get(c.colony_id) ?? tCommon("colony")}
                           </p>
                         </div>
                         <span className="shrink-0 text-sm font-semibold text-accent">
-                          Confirm →
+                          {t("confirmArrow")}
                         </span>
                         <ChevronIcon className="h-4 w-4 shrink-0 text-muted" />
                       </Link>
@@ -757,7 +773,7 @@ export default async function DashboardPage() {
                 </ul>
                 {newCats.length > TOP_N ? (
                   <p className="mt-2 text-sm text-muted">
-                    + {newCats.length - TOP_N} more awaiting review
+                    {t("moreAwaitingReview", { count: newCats.length - TOP_N })}
                   </p>
                 ) : null}
               </>
@@ -766,7 +782,7 @@ export default async function DashboardPage() {
 
           {/* ── 5. Cats not seen / concern ── */}
           <SectionCard
-            title="Cats not seen / concern"
+            title={t("concern")}
             icon={<WarningIcon className="h-4 w-4" aria-hidden />}
             badge={
               activeConcern.length > 0
@@ -778,12 +794,12 @@ export default async function DashboardPage() {
               <>
                 <SectionAllClear
                   good
-                  title="No cats need review"
-                  body="Cats that go unseen past the threshold will be flagged here."
+                  title={t("concernEmptyTitle")}
+                  body={t("concernEmptyBody")}
                 />
                 {monitoringCount > 0 ? (
                   <p className="mt-2 text-xs text-muted">
-                    {monitoringCount} under monitoring
+                    {t("underMonitoring", { count: monitoringCount })}
                   </p>
                 ) : null}
               </>
@@ -791,7 +807,7 @@ export default async function DashboardPage() {
               <>
                 {monitoringCount > 0 ? (
                   <p className="mt-1 text-xs text-muted">
-                    + {monitoringCount} monitoring
+                    {t("monitoringPlus", { count: monitoringCount })}
                   </p>
                 ) : null}
                 <ul className="mt-2 flex flex-col gap-2">
@@ -812,11 +828,11 @@ export default async function DashboardPage() {
                               className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium ${toneClass.warn}`}
                             >
                               <WarningIcon className="h-3 w-3" aria-hidden />
-                              {concernReasonText(flag)}
+                              {concernText(flag)}
                             </span>
                             <span aria-hidden>·</span>
                             <span className="truncate">
-                              {colonyName.get(c.colony_id) ?? "Colony"}
+                              {colonyName.get(c.colony_id) ?? tCommon("colony")}
                             </span>
                           </p>
                         </div>
@@ -827,7 +843,9 @@ export default async function DashboardPage() {
                 </ul>
                 {activeConcern.length > TOP_N ? (
                   <p className="mt-2 text-sm text-muted">
-                    + {activeConcern.length - TOP_N} more need review
+                    {t("moreNeedReview", {
+                      count: activeConcern.length - TOP_N,
+                    })}
                   </p>
                 ) : null}
               </>

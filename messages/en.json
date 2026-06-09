@@ -45,7 +45,8 @@
     "unassigned": "Unassigned",
     "unknown": "unknown",
     "colony": "Colony",
-    "you": "You"
+    "you": "You",
+    "unnamedCat": "Unnamed cat"
   },
   "auth": {
     "signInToYourAccount": "Sign in to your account",
@@ -99,6 +100,11 @@
     "feedsEmptyTitle": "No colonies to feed yet",
     "feedsEmptyBody": "When a colony is added to this organisation, it'll show up here for the day.",
     "feedStatus": "{count} {status}",
+    "feedStatusWord": {
+      "fed": "fed",
+      "pending": "pending",
+      "missed": "missed"
+    },
     "missedFeeds": "Missed feeds",
     "missedEmptyTitle": "All feeds on track",
     "missedEmptyBody": "No colony has slipped past its feeding window today.",
@@ -315,7 +321,7 @@
     "resolvedBy": "✓ Resolved by {email}",
     "resolved": "✓ Resolved",
     "manageIncident": "Manage incident",
-    "assignedTo": "Assigned to {email}",
+    "assignedTo": "Assigned to <strong>{email}</strong>",
     "noOneYet": "No one is on this yet.",
     "start": "▷ Start",
     "reopen": "↺ Reopen",

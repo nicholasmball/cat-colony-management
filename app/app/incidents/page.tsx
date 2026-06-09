@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
 import { photoSrc } from "@/lib/photo";
-import { incidentTypeLabel } from "@/lib/incident";
 import {
   IncidentStatusPill,
   UrgentBadge,
@@ -63,6 +63,11 @@ export default async function IncidentsPage({
   // Manager-only screen — feeders have no triage list (reach incidents by link).
   if (org.role !== "admin" && org.role !== "caretaker") redirect("/app/today");
 
+  const t = await getTranslations("incidents");
+  const tType = await getTranslations("incidents.type");
+  const tc = await getTranslations("common");
+  const locale = await getLocale();
+  const displayLocale = locale === "pt" ? "pt-PT" : "en-GB";
   const sp = await searchParams;
   const supabase = await createClient();
   const {
@@ -188,7 +193,7 @@ export default async function IncidentsPage({
   const catName = new Map(
     (catRows.data ?? []).map((c) => [
       c.id,
-      c.name ?? c.temp_id ?? "Unnamed cat",
+      c.name ?? c.temp_id ?? tc("unnamedCat"),
     ]),
   );
 
@@ -223,7 +228,7 @@ export default async function IncidentsPage({
     );
   }
 
-  const timeFmt = new Intl.DateTimeFormat(undefined, {
+  const timeFmt = new Intl.DateTimeFormat(displayLocale, {
     timeZone: org.timezone,
     day: "numeric",
     month: "short",
@@ -252,8 +257,8 @@ export default async function IncidentsPage({
   return (
     <div className="flex max-w-3xl flex-col gap-5 px-6 py-6 md:px-10">
       <div>
-        <h1 className="font-display text-3xl">Incidents</h1>
-        <p className="text-sm text-muted">Open problems across your colonies</p>
+        <h1 className="font-display text-3xl">{t("title")}</h1>
+        <p className="text-sm text-muted">{t("subtitle")}</p>
       </div>
 
       {sp.error ? (
@@ -267,7 +272,7 @@ export default async function IncidentsPage({
         {/* Active / Done segmented toggle */}
         <div
           role="group"
-          aria-label="Filter by status"
+          aria-label={t("filterByStatus")}
           className="inline-flex w-fit items-center rounded-full border border-border p-0.5"
         >
           <Link
@@ -279,7 +284,7 @@ export default async function IncidentsPage({
                 : "text-muted hover:text-foreground"
             }`}
           >
-            Active
+            {t("active")}
           </Link>
           <Link
             href={toggleHref(true)}
@@ -290,7 +295,7 @@ export default async function IncidentsPage({
                 : "text-muted hover:text-foreground"
             }`}
           >
-            Done
+            {t("done")}
           </Link>
         </div>
 
@@ -302,14 +307,16 @@ export default async function IncidentsPage({
             className={`${chip} ${urgentOnly ? chipOn : chipOff}`}
           >
             <WarningIcon className="h-4 w-4" aria-hidden />
-            Urgent only{urgentOnly ? " ✕" : ""}
+            {t("urgentOnly")}
+            {urgentOnly ? " ✕" : ""}
           </Link>
           <Link
             href={chipHref(baseParams, "mine", mineOnly ? null : "1")}
             aria-pressed={mineOnly}
             className={`${chip} ${mineOnly ? chipOn : chipOff}`}
           >
-            Assigned to me{mineOnly ? " ✕" : ""}
+            {t("assignedToMe")}
+            {mineOnly ? " ✕" : ""}
           </Link>
           {/* Colony filter as a tiny GET form so the value preserves others. */}
           <form method="get" className="flex items-center gap-2">
@@ -323,12 +330,12 @@ export default async function IncidentsPage({
             <select
               name="colony"
               defaultValue={colonyFilter ?? "all"}
-              aria-label="Filter by colony"
+              aria-label={t("filterByColony")}
               className={`${chip} ${colonyFilter ? chipOn : chipOff} bg-transparent`}
               // Auto-submit on change for a one-tap field feel.
               // (Progressive enhancement: still submits via the button fallback.)
             >
-              <option value="all">All colonies</option>
+              <option value="all">{t("allColonies")}</option>
               {(colonyChoices.data ?? []).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -337,7 +344,7 @@ export default async function IncidentsPage({
             </select>
             <noscript>
               <button type="submit" className={`${chip} ${chipOff}`}>
-                Go
+                {t("go")}
               </button>
             </noscript>
           </form>
@@ -346,7 +353,7 @@ export default async function IncidentsPage({
               href={clearHref}
               className="text-sm text-accent underline-offset-2 hover:underline"
             >
-              Clear filters
+              {t("clearFilters")}
             </Link>
           ) : null}
         </div>
@@ -356,31 +363,32 @@ export default async function IncidentsPage({
         anyFilterActive ? (
           <EmptyState
             icon={<WarningIcon className="h-7 w-7" />}
-            title="Nothing matches these filters"
-            body="No incidents match the filters you've set right now."
+            title={t("noFiltersMatchTitle")}
+            body={t("noFiltersMatchBody")}
             cta={{
               href: clearHref,
-              label: "Clear filters",
+              label: t("clearFilters"),
             }}
           />
         ) : showDone ? (
           <EmptyState
             icon={<WarningIcon className="h-7 w-7" />}
-            title="Nothing resolved yet"
-            body="Resolved incidents will be listed here for the record."
+            title={t("noneResolvedTitle")}
+            body={t("noneResolvedBody")}
           />
         ) : (
           <EmptyState
             icon={<WarningIcon className="h-7 w-7" />}
-            title="All clear"
-            body="No open incidents across your colonies. New reports from feeders will land here."
+            title={t("allClearTitle")}
+            body={t("allClearBody")}
           />
         )
       ) : (
         <section className="flex flex-col gap-2">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-            {incidents.length} {showDone ? "resolved" : "active"} incident
-            {incidents.length === 1 ? "" : "s"}
+            {showDone
+              ? t("countResolved", { count: incidents.length })
+              : t("countActive", { count: incidents.length })}
           </h2>
           <ul className="flex flex-col gap-2">
             {incidents.map((i) => {
@@ -391,9 +399,9 @@ export default async function IncidentsPage({
                 : null;
               const assignee = i.assigned_to
                 ? i.assigned_to === user?.id
-                  ? "You"
-                  : (emails.get(i.assigned_to) ?? "unknown")
-                : "Unassigned";
+                  ? tc("you")
+                  : (emails.get(i.assigned_to) ?? tc("unknown"))
+                : tc("unassigned");
               return (
                 <li key={i.id}>
                   <Link
@@ -421,15 +429,13 @@ export default async function IncidentsPage({
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="flex flex-wrap items-center gap-1.5 font-medium">
-                        <span className="truncate">
-                          {incidentTypeLabel(i.type)}
-                        </span>
+                        <span className="truncate">{tType(i.type)}</span>
                         {urgent ? <UrgentBadge /> : null}
                         <IncidentStatusPill status={i.status} />
                       </p>
                       <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
                         <span className="truncate">
-                          {colonyName.get(i.colony_id) ?? "Colony"}
+                          {colonyName.get(i.colony_id) ?? tc("colony")}
                         </span>
                         {i.cat_id ? (
                           <>
@@ -442,7 +448,9 @@ export default async function IncidentsPage({
                         {reporter ? (
                           <>
                             <span aria-hidden>·</span>
-                            <span className="truncate">by {reporter}</span>
+                            <span className="truncate">
+                              {t("by", { name: reporter })}
+                            </span>
                           </>
                         ) : null}
                         <span aria-hidden>·</span>
