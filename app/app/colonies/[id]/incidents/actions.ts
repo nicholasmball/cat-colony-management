@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
 import { isKeyInOrg } from "@/lib/photo-key";
 import {
@@ -11,6 +12,9 @@ import {
   isValidIncidentType,
   type UrgencyLevel,
 } from "@/lib/incident";
+import { planIncidentAlert } from "@/lib/alert-engine";
+import { alertRecipients } from "@/lib/alert-recipients";
+import { persistAlerts } from "@/lib/alert-persist";
 
 // Report one incident against a colony. Any org member may report (RLS:
 // "members insert incidents" / "members insert attachments" — org-membership
@@ -18,9 +22,11 @@ import {
 // the service role. The colony comes from the trusted route param; the org from
 // getActiveOrg(); reported_by from the auth session — none are client-supplied.
 //
-// Alert seam (approved): a reported incident simply EXISTS with a non-null
-// urgency_level_id. This action imports/calls ZERO alert or notification code —
-// a later alert engine reads the row. Hence urgency must never insert as null.
+// Alert seam (approved): a reported incident EXISTS with a non-null
+// urgency_level_id, then — AFTER the row is saved — a NON-BLOCKING hook fans an
+// alert to caretakers+admins (urgent if the level alerts_immediately, else
+// routine; routine incidents alert in-app too). The fan-out can never roll back
+// or fail the report. Urgency must never insert as null (it drives severity).
 export async function createIncident(formData: FormData) {
   const colonyId = String(formData.get("colony_id"));
   const org = await getActiveOrg();
@@ -124,6 +130,39 @@ export async function createIncident(formData: FormData) {
       uploaded_by: reporterId,
     });
     if (attachError) photoWarning = true;
+  }
+
+  // Non-blocking alert (fills the documented "alert seam"): the incident is
+  // already saved. Fan one alert to the org's caretakers+admins — urgent (the
+  // level alerts_immediately) → push+sms intent; routine → in_app+email. A
+  // failure here must NEVER roll back or fail the report (mirrors the
+  // non-blocking photo pattern above); the cron sweep does not re-raise event
+  // alerts, but the dedup key keeps a retry safe. Records intent only — no
+  // push/SMS/email is sent here and dispatched_at stays NULL.
+  try {
+    const svc = createServiceClient();
+    const [{ data: colony }, { data: members }] = await Promise.all([
+      svc.from("colonies").select("name").eq("id", colonyId).maybeSingle(),
+      svc
+        .from("memberships")
+        .select("user_id, role, deleted_at")
+        .eq("organisation_id", org.organisation_id),
+    ]);
+    const recipients = alertRecipients(members ?? []);
+    if (recipients.length > 0) {
+      const specs = planIncidentAlert({
+        incidentId: incident.id,
+        colonyId,
+        catId,
+        incidentType: String(type),
+        colonyName: colony?.name ?? "",
+        reporterName: user?.email ?? "",
+        urgent: chosen.alerts_immediately,
+      });
+      await persistAlerts(svc, org.organisation_id, specs, recipients);
+    }
+  } catch {
+    // Swallow: the incident report stands regardless of the alert fan-out.
   }
 
   revalidatePath(`/app/colonies/${colonyId}`);

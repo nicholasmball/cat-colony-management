@@ -13,6 +13,9 @@ import {
   hasReportIdentifier,
   parseNeutered,
 } from "@/lib/cat-report";
+import { planNewCatAlert } from "@/lib/alert-engine";
+import { alertRecipients } from "@/lib/alert-recipients";
+import { persistAlerts } from "@/lib/alert-persist";
 
 // A manager (admin/caretaker) of the active org may confirm/reject a reported
 // cat. Mirrors the schedules/incidents actions' requireManagerOrg — the UI also
@@ -81,28 +84,57 @@ export async function reportCat(formData: FormData) {
   // member could pass an Org B colony_id and create an orphaned row.
   const { data: colony } = await supabase
     .from("colonies")
-    .select("id")
+    .select("id, name")
     .eq("id", colonyId)
     .eq("organisation_id", org.organisation_id)
     .is("deleted_at", null)
     .maybeSingle();
   if (!colony) fail(t("colonyNotFound"));
 
-  const { error } = await supabase.from("cats").insert({
-    organisation_id: org.organisation_id,
-    colony_id: colonyId,
-    name,
-    temp_id: tempId,
-    colour,
-    sex,
-    neutered,
-    notes,
-    photo_url: photoKey,
-    status: UNCONFIRMED_STATUS,
-    reported_by: user?.id ?? null,
-  });
+  const { data: cat, error } = await supabase
+    .from("cats")
+    .insert({
+      organisation_id: org.organisation_id,
+      colony_id: colonyId,
+      name,
+      temp_id: tempId,
+      colour,
+      sex,
+      neutered,
+      notes,
+      photo_url: photoKey,
+      status: UNCONFIRMED_STATUS,
+      reported_by: user?.id ?? null,
+    })
+    .select("id")
+    .single();
 
-  if (error) fail(error.message);
+  if (error || !cat) fail(error?.message ?? t("couldNotSaveCat"));
+
+  // Non-blocking alert: the new cat is saved and awaits caretaker confirm/reject.
+  // Fan a routine alert to the org's caretakers+admins (in_app+email intent). A
+  // failure here must NEVER fail the report (mirrors the non-blocking photo
+  // pattern); records intent only — no push/SMS/email, dispatched_at stays NULL.
+  try {
+    const svc = createServiceClient();
+    const { data: members } = await svc
+      .from("memberships")
+      .select("user_id, role, deleted_at")
+      .eq("organisation_id", org.organisation_id);
+    const recipients = alertRecipients(members ?? []);
+    if (recipients.length > 0) {
+      const specs = planNewCatAlert({
+        catId: cat.id,
+        colonyId,
+        colonyName: colony?.name ?? "",
+        catName: name?.trim() || tempId?.trim() || "",
+        reporterName: user?.email ?? "",
+      });
+      await persistAlerts(svc, org.organisation_id, specs, recipients);
+    }
+  } catch {
+    // Swallow: the cat report stands regardless of the alert fan-out.
+  }
 
   revalidatePath(`/app/colonies/${colonyId}`);
   // Honest "we'll review it" copy lives on the colony page, keyed by ?reported.
