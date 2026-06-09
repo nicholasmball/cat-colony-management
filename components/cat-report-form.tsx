@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { PawIcon } from "@/components/icons";
 import { hasReportIdentifier } from "@/lib/cat-report";
+import { enqueue } from "@/lib/offline/outbox";
+import { getStore, isDefinitelyOffline } from "@/lib/offline/client";
 import {
   btnGhost,
   btnGhostDanger,
@@ -128,6 +130,21 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
       photoFailed,
     };
 
+    // Phase 2 offline-first: if the browser KNOWS it's offline, queue without
+    // hitting the network. A queued report carries no photo (presign needs the
+    // network), which the form already tolerates; the client UUID PK makes the
+    // later replay idempotent.
+    if (isDefinitelyOffline()) {
+      if (await queueOffline(body)) {
+        router.push(`/app/colonies/${colonyId}?reported=cat`);
+        router.refresh();
+        return;
+      }
+      setSubmitError(t("submitFailed"));
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/cats/report", {
         method: "POST",
@@ -140,6 +157,7 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
         photoFailed?: boolean;
       };
       if (!res.ok || !json.ok) {
+        // Real server rejection → surface as before, NOT queued.
         setSubmitError(json.error || t("submitFailed"));
         setSubmitting(false);
         return;
@@ -150,8 +168,34 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
       router.push(`/app/colonies/${colonyId}?reported=cat${photoParam}`);
       router.refresh();
     } catch {
+      // Network failure mid-submit → queue + proceed.
+      if (await queueOffline(body)) {
+        router.push(`/app/colonies/${colonyId}?reported=cat`);
+        router.refresh();
+        return;
+      }
       setSubmitError(t("submitFailed"));
       setSubmitting(false);
+    }
+  }
+
+  // Enqueue the cat report to the offline outbox; false only if no queue exists
+  // (no IndexedDB) or the write failed, so the caller can surface an error rather
+  // than silently dropping the report.
+  async function queueOffline(body: unknown): Promise<boolean> {
+    const store = getStore();
+    if (!store) return false;
+    try {
+      await enqueue(store, {
+        localId: (body as { id: string }).id,
+        kind: "cat_report",
+        url: "/api/cats/report",
+        body,
+        createdAt: Date.now(),
+      });
+      return true;
+    } catch {
+      return false;
     }
   }
 
