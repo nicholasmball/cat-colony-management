@@ -59,6 +59,13 @@ export function FeedForm({
     setSubmitting(true);
     setError(null);
 
+    // Capture the field-observation time NOW, at the tap — before the offline/
+    // online branch — so a queued offline write carries the true field time and
+    // keeps it after syncing minutes/hours later (the server would otherwise
+    // stamp observed_at at sync time). The route applies this same value to the
+    // feeding event and every sighting.
+    const observedAt = new Date().toISOString();
+
     // Phase 1 transport: mint a client UUID for the feeding event and one per
     // marked cat sighting, then POST JSON to the route. The client UUIDs make a
     // replay idempotent (Phase 2's offline outbox relies on this); the route
@@ -66,6 +73,7 @@ export function FeedForm({
     const body = {
       id: crypto.randomUUID(),
       colonyId,
+      observedAt,
       fed,
       problem: !!flags.problem,
       foodIssue: !!flags.food_issue,

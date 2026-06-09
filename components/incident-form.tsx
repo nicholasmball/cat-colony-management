@@ -111,6 +111,11 @@ export function IncidentForm({
     setSubmitting(true);
     setSubmitError(null);
 
+    // Capture the field time NOW, at the tap — before the offline/online branch
+    // — so a queued offline report keeps when it actually occurred after syncing
+    // later (the server would otherwise stamp occurred_at at sync time).
+    const occurredAt = new Date().toISOString();
+
     const form = e.currentTarget;
     const notes =
       (
@@ -124,6 +129,7 @@ export function IncidentForm({
     const body = {
       id: crypto.randomUUID(),
       colonyId,
+      occurredAt,
       type,
       urgencyLevelId: urgencyId || null,
       catId: catId || null,

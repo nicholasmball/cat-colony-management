@@ -117,7 +117,8 @@ export async function POST(req: Request) {
   }
 
   // Client UUID as PK; onConflict:"id" + ignoreDuplicates makes a racing replay
-  // a no-op rather than a duplicate-key error. status/occurred_at are DB-set.
+  // a no-op rather than a duplicate-key error. status is DB-set; occurred_at is
+  // the client field time when present, else the DB default (see below).
   const { error } = await supabase.from("incidents").upsert(
     {
       id: input.id,
@@ -128,6 +129,10 @@ export async function POST(req: Request) {
       urgency_level_id: chosen.id,
       notes: input.notes,
       reported_by: reporterId,
+      // Client-captured field time. Omitted when absent so Postgres keeps the
+      // occurred_at = now() default (online pre-fix behaviour + old queued
+      // items); created_at stays the DB default = insert/sync time.
+      ...(input.occurredAt ? { occurred_at: input.occurredAt } : {}),
     },
     { onConflict: "id", ignoreDuplicates: true },
   );

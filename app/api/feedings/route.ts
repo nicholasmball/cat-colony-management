@@ -78,6 +78,11 @@ export async function POST(req: Request) {
       food_issue: input.foodIssue,
       danger: input.danger,
       notes: input.notes,
+      // Client-captured field time. Omitted when absent so Postgres keeps the
+      // observed_at = now() default (online pre-fix behaviour + old queued
+      // items); created_at always stays the DB default, so created_at −
+      // observed_at is the real sync lag.
+      ...(input.observedAt ? { observed_at: input.observedAt } : {}),
     },
     { onConflict: "id", ignoreDuplicates: true },
   );
@@ -104,6 +109,9 @@ export async function POST(req: Request) {
           feeding_event_id: input.id,
           feeder_id: feederId,
           status: s.status,
+          // Same field time as the parent event, so the concern-alert hook
+          // (which reads observed_at back below) anchors on the true field time.
+          ...(input.observedAt ? { observed_at: input.observedAt } : {}),
         })),
         { onConflict: "id", ignoreDuplicates: true },
       );
