@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { SubmitButton } from "@/components/submit-button";
 import { transitionIncident } from "@/app/app/incidents/actions";
 import { btnGhost, btnPrimary, input } from "@/lib/ui";
@@ -11,6 +12,8 @@ import { btnGhost, btnPrimary, input } from "@/lib/ui";
 // also block client-side and keep focus in the field for a fast, accessible
 // correction. Server-side validation stays the real guard.
 export function IncidentResolveForm({ incidentId }: { incidentId: string }) {
+  const t = useTranslations("incidents");
+  const tErr = useTranslations("errors");
   const [open, setOpen] = useState(false);
   const [touchedEmpty, setTouchedEmpty] = useState(false);
   const noteRef = useRef<HTMLTextAreaElement>(null);
@@ -22,7 +25,7 @@ export function IncidentResolveForm({ incidentId }: { incidentId: string }) {
         onClick={() => setOpen(true)}
         className={`${btnPrimary} min-h-11 text-sm`}
       >
-        Mark resolved…
+        {t("resolve.markResolved")}
       </button>
     );
   }
@@ -43,7 +46,7 @@ export function IncidentResolveForm({ incidentId }: { incidentId: string }) {
       <input type="hidden" name="status" value="resolved" />
       <label className="flex flex-col gap-1.5 text-sm font-medium">
         <span>
-          Resolution note <span className="text-red-600">*</span>
+          {t("resolve.resolutionNote")} <span className="text-red-600">*</span>
         </span>
         <textarea
           ref={noteRef}
@@ -53,7 +56,7 @@ export function IncidentResolveForm({ incidentId }: { incidentId: string }) {
           aria-invalid={touchedEmpty}
           aria-describedby={touchedEmpty ? "resolve-error" : undefined}
           onChange={() => touchedEmpty && setTouchedEmpty(false)}
-          placeholder="How was this resolved? (recorded in the colony's history)"
+          placeholder={t("resolve.resolutionPlaceholder")}
           className={`${input} py-2 ${
             touchedEmpty ? "border-red-600 ring-2 ring-red-600/25" : ""
           }`}
@@ -65,20 +68,17 @@ export function IncidentResolveForm({ incidentId }: { incidentId: string }) {
           role="alert"
           className="text-sm font-medium text-red-700"
         >
-          Add a short note on how this was resolved before closing it.
+          {tErr("resolveNoteRequired")}
         </p>
       ) : (
-        <p className="text-xs text-muted">
-          A note is required so the colony&rsquo;s history records how it was
-          solved.
-        </p>
+        <p className="text-xs text-muted">{t("resolve.noteHint")}</p>
       )}
       <div className="flex items-center gap-2">
         <SubmitButton
-          pendingText="Resolving…"
+          pendingText={t("resolve.resolving")}
           className={`${btnPrimary} min-h-11 text-sm`}
         >
-          ✓ Resolve incident
+          {t("resolve.confirmResolve")}
         </SubmitButton>
         <button
           type="button"
@@ -88,7 +88,7 @@ export function IncidentResolveForm({ incidentId }: { incidentId: string }) {
           }}
           className={`${btnGhost} min-h-11 text-sm`}
         >
-          Cancel
+          {t("resolve.cancel")}
         </button>
       </div>
     </form>

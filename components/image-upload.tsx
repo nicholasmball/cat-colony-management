@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { setCatPhoto, removeCatPhoto } from "@/app/app/colonies/actions";
 import { PawIcon } from "@/components/icons";
 import { btnGhost, btnGhostDanger } from "@/lib/ui";
@@ -49,6 +50,7 @@ export function ImageUpload({
   initialSrc: string | null;
   label?: string;
 }) {
+  const t = useTranslations("cats");
   const fileRef = useRef<HTMLInputElement>(null);
   const [src, setSrc] = useState<string | null>(initialSrc);
   const [busy, setBusy] = useState(false);
@@ -59,11 +61,11 @@ export function ImageUpload({
     e.target.value = ""; // allow re-picking the same file
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setError("That’s not an image.");
+      setError(t("notAnImage"));
       return;
     }
     if (file.size > 25 * 1024 * 1024) {
-      setError("That image is too large (max 25 MB).");
+      setError(t("imageTooLarge"));
       return;
     }
 
@@ -97,7 +99,7 @@ export function ImageUpload({
 
       setSrc(URL.createObjectURL(blob));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed.");
+      setError(err instanceof Error ? err.message : t("uploadFailed"));
     } finally {
       setBusy(false);
     }
@@ -111,9 +113,7 @@ export function ImageUpload({
       if ("error" in res) throw new Error(res.error);
       setSrc(null);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Couldn’t remove the photo.",
-      );
+      setError(err instanceof Error ? err.message : t("couldNotRemovePhoto"));
     } finally {
       setBusy(false);
     }
@@ -126,7 +126,7 @@ export function ImageUpload({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={src}
-            alt={`Photo of ${label}`}
+            alt={t("photoOfAlt", { label })}
             className="h-full w-full object-cover"
           />
         ) : (
@@ -150,7 +150,7 @@ export function ImageUpload({
             onClick={() => fileRef.current?.click()}
             className={`${btnGhost} h-9 px-3 text-sm disabled:opacity-60`}
           >
-            {busy ? "Working…" : src ? "Replace photo" : "Add photo"}
+            {busy ? t("working") : src ? t("replacePhoto") : t("addPhoto")}
           </button>
           {src && !busy ? (
             <button
@@ -158,14 +158,14 @@ export function ImageUpload({
               onClick={onRemove}
               className={`${btnGhostDanger} h-9 px-3 text-sm`}
             >
-              Remove
+              {t("remove")}
             </button>
           ) : null}
         </div>
         {error ? (
           <p className="text-xs text-red-700 dark:text-red-300">{error}</p>
         ) : (
-          <p className="text-xs text-muted">JPG/PNG/WebP · optional.</p>
+          <p className="text-xs text-muted">{t("photoHint")}</p>
         )}
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { useTranslations } from "next-intl";
 import { btnDanger, btnGhost, card } from "@/lib/ui";
 
 // Submit button for a server-action form that asks for confirmation first via
@@ -13,7 +14,7 @@ export function ConfirmButton({
   children,
   confirm,
   className,
-  confirmLabel = "Confirm",
+  confirmLabel,
   "aria-label": ariaLabel,
 }: {
   children: React.ReactNode;
@@ -22,6 +23,7 @@ export function ConfirmButton({
   confirmLabel?: string;
   "aria-label"?: string;
 }) {
+  const t = useTranslations("common");
   const { pending } = useFormStatus();
   const [open, setOpen] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -104,14 +106,14 @@ export function ConfirmButton({
                 disabled={pending}
                 className={`${btnGhost} px-3 text-sm`}
               >
-                Cancel
+                {t("cancel")}
               </button>
               <button
                 type="submit"
                 disabled={pending}
                 className={`${btnDanger} px-3 text-sm`}
               >
-                {pending ? "…" : confirmLabel}
+                {pending ? "…" : (confirmLabel ?? t("confirm"))}
               </button>
             </div>
           </div>

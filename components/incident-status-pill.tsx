@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { incidentStatusLabel } from "@/lib/incident";
 import { WarningIcon } from "@/components/icons";
 
@@ -67,29 +68,35 @@ function StatusGlyph({ status }: { status: StatusKey }) {
   );
 }
 
-export function IncidentStatusPill({ status }: { status: string }) {
+export async function IncidentStatusPill({ status }: { status: string }) {
   const key = (["open", "in_progress", "resolved", "closed"] as const).includes(
     status as StatusKey,
   )
     ? (status as StatusKey)
     : "open";
+  // Translate the status; fall back to the pure lib for an unknown enum value.
+  const t = await getTranslations("incidents.statusLabel");
+  const label = ["open", "in_progress", "resolved", "closed"].includes(status)
+    ? t(status)
+    : incidentStatusLabel(status);
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${statusTone[key]}`}
     >
       <StatusGlyph status={key} />
-      {incidentStatusLabel(status)}
+      {label}
     </span>
   );
 }
 
 // Red urgency badge, shown only when the incident's urgency level alerts
 // immediately. Icon + word, never colour alone.
-export function UrgentBadge() {
+export async function UrgentBadge() {
+  const t = await getTranslations("incidents");
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700 dark:bg-red-950/60 dark:text-red-300">
       <WarningIcon className="h-3 w-3" aria-hidden />
-      Urgent
+      {t("urgentBadge")}
     </span>
   );
 }
