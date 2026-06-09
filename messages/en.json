@@ -442,6 +442,11 @@
     "feedingMissedHours": "Feeding missed (hours after window)",
     "saved": "Settings saved."
   },
+  "concern": {
+    "flagged": "Flagged: concern",
+    "notSeenDays": "Not seen {count, plural, one {# day} other {# days}}",
+    "repeatedNotSeen": "Not seen {count, plural, one {# time} other {# times}} in a row"
+  },
   "errors": {
     "notAllowed": "Not allowed.",
     "photoCouldNotBeSaved": "That photo couldn’t be saved.",

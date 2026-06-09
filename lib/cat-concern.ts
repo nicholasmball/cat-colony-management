@@ -184,3 +184,17 @@ export function concernReasonText(candidate: {
       return `Not seen ${candidate.count} ${candidate.count === 1 ? "time" : "times"} in a row`;
   }
 }
+
+// i18n message key (namespace `concern`) for a candidate's reason. Pure + React-
+// free so it stays unit-testable; the server component passes `{ count }` to the
+// translator. Keeps concernReasonText (the English source-of-truth) for tests.
+export function concernReasonKey(reason: ConcernReason): string {
+  switch (reason) {
+    case "concern":
+      return "concern.flagged";
+    case "not_seen_days":
+      return "concern.notSeenDays";
+    case "repeated_not_seen":
+      return "concern.repeatedNotSeen";
+  }
+}

@@ -442,6 +442,11 @@
     "feedingMissedHours": "Alimentação em falta (horas após o horário)",
     "saved": "Definições guardadas."
   },
+  "concern": {
+    "flagged": "Sinalizado: preocupação",
+    "notSeenDays": "Não visto há {count, plural, one {# dia} other {# dias}}",
+    "repeatedNotSeen": "Não visto {count, plural, one {# vez} other {# vezes}} seguidas"
+  },
   "errors": {
     "notAllowed": "Não permitido.",
     "photoCouldNotBeSaved": "Não foi possível guardar essa foto.",
