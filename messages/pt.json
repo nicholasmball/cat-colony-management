@@ -21,6 +21,7 @@
     "today": "Hoje",
     "colonies": "Colónias",
     "incidents": "Incidentes",
+    "notifications": "Notificações",
     "members": "Membros",
     "org": "Organização"
   },
@@ -539,6 +540,21 @@
     "flagged": "Sinalizado: preocupação",
     "notSeenDays": "Não visto há {count, plural, one {# dia} other {# dias}}",
     "repeatedNotSeen": "Não visto {count, plural, one {# vez} other {# vezes}} seguidas"
+  },
+  "notifications": {
+    "title": "Notificações",
+    "subtitle": "Alertas nas suas colónias",
+    "markAllRead": "Marcar tudo como lido",
+    "markRead": "Marcar como lido",
+    "markReadAria": "Marcar “{title}” como lido",
+    "unreadBadgeAria": "{count, plural, one {# notificação por ler} other {# notificações por ler}}",
+    "severityUrgent": "Urgente",
+    "severityRoutine": "Normal",
+    "unreadCount": "{count, plural, one {# por ler} other {# por ler}}",
+    "allReadTitle": "Está tudo em dia",
+    "allReadBody": "Sem alertas por ler. Os novos alertas nas suas colónias aparecerão aqui.",
+    "emptyTitle": "Ainda sem notificações",
+    "emptyBody": "Os alertas sobre alimentações em falta, incidentes urgentes e gatos a precisar de revisão aparecerão aqui."
   },
   "alerts": {
     "feeding_missed": {

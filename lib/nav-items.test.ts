@@ -18,39 +18,48 @@ test("feeder omits Dashboard and Incidents, leading with Today", () => {
   assert.ok(!ls.includes("nav.incidents"));
 });
 
-test("caretaker leads with Dashboard and gets Incidents but no admin items", () => {
+test("caretaker leads with Dashboard and gets Incidents + Notifications but no admin items", () => {
   const ls = keys("caretaker");
   assert.deepEqual(ls, [
     "nav.dashboard",
     "nav.today",
     "nav.colonies",
     "nav.incidents",
+    "nav.notifications",
   ]);
   // Dashboard replaces the old Home item and is first for managers.
   assert.equal(ls[0], "nav.dashboard");
   assert.ok(!ls.includes("nav.home"));
-  // Incidents is a manager item (admin + caretaker), unlike admin-only Members.
+  // Incidents + Notifications are manager items (admin + caretaker), unlike
+  // admin-only Members.
   assert.ok(ls.includes("nav.incidents"));
+  assert.ok(ls.includes("nav.notifications"));
   assert.ok(!ls.includes("nav.members"));
   assert.ok(!ls.includes("nav.org"));
 });
 
-test("admin leads with Dashboard and gets Incidents + Members + Organisation", () => {
+test("admin leads with Dashboard and gets Incidents + Notifications + Members + Organisation", () => {
   const ls = keys("admin");
   assert.deepEqual(ls, [
     "nav.dashboard",
     "nav.today",
     "nav.colonies",
     "nav.incidents",
+    "nav.notifications",
     "nav.members",
     "nav.org",
   ]);
+});
+
+test("feeders never see the manager-only Notifications centre", () => {
+  assert.ok(!keys("feeder").includes("nav.notifications"));
 });
 
 test("unknown/undefined role is treated as a feeder (no Dashboard, no Incidents)", () => {
   assert.deepEqual(keys(undefined), ["nav.today", "nav.colonies"]);
   assert.deepEqual(keys(null), ["nav.today", "nav.colonies"]);
   assert.deepEqual(keys("stranger"), ["nav.today", "nav.colonies"]);
+  assert.ok(!keys("stranger").includes("nav.notifications"));
 });
 
 test("Dashboard is exact-match so it only highlights on /app/dashboard", () => {
