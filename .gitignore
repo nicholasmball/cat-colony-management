@@ -17,6 +17,14 @@
 /.next/
 /out/
 
+# Serwist build output (Phase 3) — public/sw.js is GENERATED from app/sw.ts by
+# withSerwist at build time (only when NEXT_PUBLIC_SW_ENABLED=true). Never commit
+# it; the source of truth is app/sw.ts. public/sw-kill.js is hand-written and IS
+# committed.
+/public/sw.js
+/public/sw.js.map
+/public/swe-worker-*.js
+
 # production
 /build
 
