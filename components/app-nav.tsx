@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { ComponentType, SVGProps } from "react";
 import {
   HomeIcon,
@@ -34,8 +35,12 @@ export function AppNav({
   role?: string | null;
 }) {
   const path = usePathname();
+  // nav-items is pure and carries i18n keys; translate them here. The keys are
+  // already namespaced ("nav.dashboard"), so use the root translator.
+  const t = useTranslations();
   const items = navItemsFor({ role }).map((item) => ({
     ...item,
+    label: t(item.labelKey),
     Icon: iconByHref[item.href],
   }));
   const isActive = (href: string, exact: boolean) =>
