@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { SubmitButton } from "@/components/submit-button";
 import { reportCat } from "@/app/app/colonies/[id]/cats/report/actions";
 import { PawIcon } from "@/components/icons";
@@ -63,6 +64,7 @@ function Segmented({
 }
 
 export function CatReportForm({ colonyId }: { colonyId: string }) {
+  const t = useTranslations("cats");
   const formRef = useRef<HTMLFormElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
@@ -98,11 +100,11 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
     e.target.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setPhotoError("That’s not an image.");
+      setPhotoError(t("notAnImage"));
       return;
     }
     if (file.size > 25 * 1024 * 1024) {
-      setPhotoError("That image is too large (max 25 MB).");
+      setPhotoError(t("imageTooLarge"));
       return;
     }
     setPhotoError(null);
@@ -138,7 +140,7 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
       setPhotoPreview(URL.createObjectURL(blob));
       setPhotoFailed(false);
     } catch (err) {
-      setPhotoError(err instanceof Error ? err.message : "Upload failed.");
+      setPhotoError(err instanceof Error ? err.message : t("uploadFailed"));
       // Non-blocking: let the report submit and surface the soft photo warning.
       setPhotoFailed(true);
     } finally {
@@ -166,10 +168,7 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
       <input type="hidden" name="photo_key" value={photoKey} />
       <input type="hidden" name="photo_failed" value={photoFailed ? "1" : ""} />
 
-      <p className="text-sm text-muted">
-        Spotted a cat that isn’t on the list? Give it a name or a quick
-        description — that’s all you need. A caretaker will review it.
-      </p>
+      <p className="text-sm text-muted">{t("reportLede")}</p>
 
       {/* ── Identifier (name OR description) ── */}
       {idError ? (
@@ -177,7 +176,7 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
           role="alert"
           className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700 dark:bg-red-950/60 dark:text-red-300"
         >
-          Add a name or a short description so the cat can be identified.
+          {t("idErrorAlert")}
         </p>
       ) : null}
       <div
@@ -189,9 +188,9 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
       >
         <label className={fieldLabel}>
           <span>
-            Name{" "}
+            {t("name")}{" "}
             <span className="font-normal text-muted">
-              (or description below)
+              {t("nameOrDescription")}
             </span>
           </span>
           <input
@@ -202,15 +201,17 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
               setName(e.target.value);
               if (idError) setIdError(false);
             }}
-            placeholder="e.g. Smudge"
+            placeholder={t("namePlaceholder")}
             aria-invalid={idError}
             className={input}
           />
         </label>
         <label className={fieldLabel}>
           <span>
-            Description{" "}
-            <span className="font-normal text-muted">(if it has no name)</span>
+            {t("description")}{" "}
+            <span className="font-normal text-muted">
+              {t("descriptionIfNoName")}
+            </span>
           </span>
           <input
             name="temp_id"
@@ -219,7 +220,7 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
               setTempId(e.target.value);
               if (idError) setIdError(false);
             }}
-            placeholder="e.g. black & white by the wall"
+            placeholder={t("descriptionPlaceholder")}
             aria-invalid={idError}
             className={input}
           />
@@ -229,12 +230,12 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
       {/* ── Colour (optional) ── */}
       <label className={fieldLabel}>
         <span>
-          Colour / markings{" "}
-          <span className="font-normal text-muted">(optional)</span>
+          {t("colourMarkings")}{" "}
+          <span className="font-normal text-muted">({t("optional")})</span>
         </span>
         <input
           name="colour"
-          placeholder="e.g. tabby, white paws"
+          placeholder={t("colourPlaceholder")}
           className={input}
         />
       </label>
@@ -245,16 +246,16 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
           id="sex-label"
           className="text-xs font-semibold uppercase tracking-wide text-muted"
         >
-          Sex
+          {t("sex")}
         </h2>
         <Segmented
           legendId="sex-label"
           value={sex}
           onChange={setSex}
           options={[
-            { key: "unknown", label: "Unknown" },
-            { key: "male", label: "Male" },
-            { key: "female", label: "Female" },
+            { key: "unknown", label: t("sexUnknown") },
+            { key: "male", label: t("sexMale") },
+            { key: "female", label: t("sexFemale") },
           ]}
         />
       </section>
@@ -265,16 +266,16 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
           id="neutered-label"
           className="text-xs font-semibold uppercase tracking-wide text-muted"
         >
-          Neutered?
+          {t("neutered")}
         </h2>
         <Segmented
           legendId="neutered-label"
           value={neutered}
           onChange={setNeutered}
           options={[
-            { key: "unknown", label: "Unknown" },
-            { key: "yes", label: "Yes" },
-            { key: "no", label: "No" },
+            { key: "unknown", label: t("neuteredUnknown") },
+            { key: "yes", label: t("neuteredYes") },
+            { key: "no", label: t("neuteredNo") },
           ]}
         />
       </section>
@@ -282,12 +283,13 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
       {/* ── Notes (optional) ── */}
       <label className={fieldLabel}>
         <span>
-          Notes <span className="font-normal text-muted">(optional)</span>
+          {t("notes")}{" "}
+          <span className="font-normal text-muted">({t("optional")})</span>
         </span>
         <textarea
           name="notes"
           rows={2}
-          placeholder="Anything useful — limping, friendly, kitten…"
+          placeholder={t("notesPlaceholder")}
           className={`${input} py-2`}
         />
       </label>
@@ -295,8 +297,10 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
       {/* ── Photo (optional, non-blocking) ── */}
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-          Photo{" "}
-          <span className="font-normal normal-case text-muted">(optional)</span>
+          {t("photo")}{" "}
+          <span className="font-normal normal-case text-muted">
+            ({t("optional")})
+          </span>
         </h2>
         <div className="flex items-center gap-4">
           <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-surface">
@@ -304,7 +308,7 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={photoPreview}
-                alt="New cat photo"
+                alt={t("newCatPhotoAlt")}
                 className="h-full w-full object-cover"
               />
             ) : (
@@ -328,10 +332,10 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
                 className={`${btnGhost} h-9 px-3 text-sm disabled:opacity-60`}
               >
                 {photoBusy
-                  ? "Working…"
+                  ? t("working")
                   : photoPreview
-                    ? "Replace photo"
-                    : "Add photo"}
+                    ? t("replacePhoto")
+                    : t("addPhoto")}
               </button>
               {photoPreview && !photoBusy ? (
                 <button
@@ -339,7 +343,7 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
                   onClick={removePhoto}
                   className={`${btnGhostDanger} h-9 px-3 text-sm`}
                 >
-                  Remove
+                  {t("remove")}
                 </button>
               ) : null}
             </div>
@@ -348,17 +352,17 @@ export function CatReportForm({ colonyId }: { colonyId: string }) {
                 {photoError}
               </p>
             ) : (
-              <p className="text-xs text-muted">JPG/PNG/WebP · optional.</p>
+              <p className="text-xs text-muted">{t("photoHint")}</p>
             )}
           </div>
         </div>
       </section>
 
       <SubmitButton
-        pendingText="Reporting…"
+        pendingText={t("reporting")}
         className={`${btnPrimary} sticky bottom-4 min-h-13`}
       >
-        Report cat
+        {t("reportCat")}
       </SubmitButton>
     </form>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { SubmitButton } from "@/components/submit-button";
 import { ConfirmButton } from "@/components/confirm-button";
 import { btnGhostDanger, btnPrimary, input } from "@/lib/ui";
@@ -33,15 +34,18 @@ export function RoleSelectForm({
   // visible, so the form works identically with or without JS — the
   // reveal-on-change flourish from the design is intentionally skipped to keep
   // this a single, dependency-light client wrapper.
+  const t = useTranslations("members");
   const [selected, setSelected] = useState<AppRole>(currentRole);
   const isDemote = ROLE_RANK[selected] < ROLE_RANK[currentRole];
   const hintId = `role-hint-${userId}`;
+  // Translated, capitalised role name per enum value.
+  const roleName = (r: AppRole) => t(`role.${r}`);
 
   return (
     <form action={action} className="flex items-center gap-2">
       <input type="hidden" name="user_id" value={userId} />
       <label htmlFor={`role-${userId}`} className="sr-only">
-        Role for {email}
+        {t("roleFor", { email })}
       </label>
       <select
         id={`role-${userId}`}
@@ -57,7 +61,9 @@ export function RoleSelectForm({
             isLastAdmin && currentRole === "admin" && r !== "admin";
           return (
             <option key={r} value={r} disabled={blocked}>
-              {blocked ? `${r} — promote another admin first` : r}
+              {blocked
+                ? t("roleBlockedOption", { role: roleName(r) })
+                : roleName(r)}
             </option>
           );
         })}
@@ -68,23 +74,27 @@ export function RoleSelectForm({
           unchanged role as a clean no-op. */}
       {isDemote ? (
         <ConfirmButton
-          confirm={`Change ${email} from ${currentRole} to ${selected}? They’ll lose ${currentRole} access immediately.`}
+          confirm={t("demoteConfirm", {
+            email,
+            from: roleName(currentRole),
+            to: roleName(selected),
+          })}
           className={`${btnGhostDanger} h-9 px-3 text-sm`}
         >
-          Save
+          {t("save")}
         </ConfirmButton>
       ) : (
         <SubmitButton
           pendingText="…"
           className={`${btnPrimary} h-9 px-3 text-sm`}
         >
-          Save
+          {t("save")}
         </SubmitButton>
       )}
 
       {isLastAdmin && currentRole === "admin" ? (
         <span id={hintId} className="sr-only">
-          Only active admin — promote another member to admin first.
+          {t("lastAdminHint")}
         </span>
       ) : null}
     </form>

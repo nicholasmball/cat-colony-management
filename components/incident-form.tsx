@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { SubmitButton } from "@/components/submit-button";
 import { createIncident } from "@/app/app/colonies/[id]/incidents/actions";
 import { IncidentTypeIcon, PawIcon, WarningIcon } from "@/components/icons";
@@ -12,21 +13,6 @@ type UrgencyLevel = {
   id: string;
   label: string;
   alerts_immediately: boolean;
-};
-
-// Labels for each enum member. Order/grouping below floats the time-critical
-// types first (Hick's Law — design §2); the enum strings are the REAL
-// public.incident_type values, NOT the design doc's placeholder strings.
-const TYPE_LABEL: Record<IncidentType, string> = {
-  poisoning: "Poisoning",
-  sick_injured: "Sick / injured",
-  dog_danger: "Dog danger",
-  threat_person: "Threat from person",
-  new_cat: "New cat",
-  missing_concern: "Missing concern",
-  dead_cat: "Dead cat",
-  access_problem: "Feeding / access",
-  other: "Other",
 };
 
 const DANGER_TYPES: IncidentType[] = [
@@ -41,11 +27,13 @@ const REPORT_TYPES: IncidentType[] = INCIDENT_TYPES.filter(
 
 function TypeTile({
   type,
+  label,
   checked,
   onSelect,
   full,
 }: {
   type: IncidentType;
+  label: string;
   checked: boolean;
   onSelect: () => void;
   full?: boolean;
@@ -65,7 +53,7 @@ function TypeTile({
       }`}
     >
       <IncidentTypeIcon type={type} className="h-5 w-5 shrink-0" />
-      <span className="flex-1">{TYPE_LABEL[type]}</span>
+      <span className="flex-1">{label}</span>
       {checked ? <span aria-hidden>✓</span> : null}
     </button>
   );
@@ -82,6 +70,8 @@ export function IncidentForm({
   urgencyLevels: UrgencyLevel[];
   defaultUrgencyId: string | null;
 }) {
+  const t = useTranslations("incidents");
+  const tType = useTranslations("incidents.type");
   const formRef = useRef<HTMLFormElement>(null);
   const typeGroupRef = useRef<HTMLDivElement>(null);
   const [type, setType] = useState<IncidentType | "">("");
@@ -116,11 +106,11 @@ export function IncidentForm({
     e.target.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setPhotoError("That’s not an image.");
+      setPhotoError(t("form.notAnImage"));
       return;
     }
     if (file.size > 25 * 1024 * 1024) {
-      setPhotoError("That image is too large (max 25 MB).");
+      setPhotoError(t("form.imageTooLarge"));
       return;
     }
     setPhotoError(null);
@@ -154,7 +144,9 @@ export function IncidentForm({
       setPhotoKey(key);
       setPhotoPreview(URL.createObjectURL(blob));
     } catch (err) {
-      setPhotoError(err instanceof Error ? err.message : "Upload failed.");
+      setPhotoError(
+        err instanceof Error ? err.message : t("form.uploadFailed"),
+      );
     } finally {
       setPhotoBusy(false);
     }
@@ -187,14 +179,14 @@ export function IncidentForm({
           id="type-label"
           className="text-xs font-semibold uppercase tracking-wide text-muted"
         >
-          What’s happening? <span className="text-red-600">*</span>
+          {t("form.whatsHappening")} <span className="text-red-600">*</span>
         </h2>
         {typeError ? (
           <p
             role="alert"
             className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700 dark:bg-red-950/60 dark:text-red-300"
           >
-            Choose what’s happening before you report.
+            {t("form.chooseType")}
           </p>
         ) : null}
         <div
@@ -210,30 +202,33 @@ export function IncidentForm({
           }`}
         >
           <p className="col-span-2 mt-1 flex items-center gap-1.5 text-[0.65rem] font-bold uppercase tracking-wide text-red-600">
-            <WarningIcon className="h-3.5 w-3.5" aria-hidden /> Urgent / danger
+            <WarningIcon className="h-3.5 w-3.5" aria-hidden />{" "}
+            {t("form.urgentDanger")}
           </p>
-          {DANGER_TYPES.map((t) => (
+          {DANGER_TYPES.map((dt) => (
             <TypeTile
-              key={t}
-              type={t}
-              checked={type === t}
+              key={dt}
+              type={dt}
+              label={tType(dt)}
+              checked={type === dt}
               onSelect={() => {
-                setType(t);
+                setType(dt);
                 setTypeError(false);
               }}
             />
           ))}
           <p className="col-span-2 mt-1 text-[0.65rem] font-bold uppercase tracking-wide text-muted">
-            Reports
+            {t("form.reports")}
           </p>
-          {REPORT_TYPES.map((t) => (
+          {REPORT_TYPES.map((rt) => (
             <TypeTile
-              key={t}
-              type={t}
-              checked={type === t}
-              full={t === "other"}
+              key={rt}
+              type={rt}
+              label={tType(rt)}
+              checked={type === rt}
+              full={rt === "other"}
               onSelect={() => {
-                setType(t);
+                setType(rt);
                 setTypeError(false);
               }}
             />
@@ -248,7 +243,7 @@ export function IncidentForm({
             id="urgency-label"
             className="text-xs font-semibold uppercase tracking-wide text-muted"
           >
-            Urgency
+            {t("form.urgency")}
           </h2>
           <div
             role="radiogroup"
@@ -287,9 +282,7 @@ export function IncidentForm({
             className={`text-xs ${urgent ? "font-semibold text-red-600" : "text-muted"}`}
             role="status"
           >
-            {urgent
-              ? "Flagged as urgent for caretakers."
-              : "Defaults to your org’s ‘Not urgent’. Tap Urgent to flag it for caretakers."}
+            {urgent ? t("form.urgentFlagged") : t("form.urgencyHint")}
           </p>
         </section>
       ) : null}
@@ -297,8 +290,10 @@ export function IncidentForm({
       {/* ── Cat (optional) ── */}
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-          Which cat?{" "}
-          <span className="font-normal normal-case text-muted">(optional)</span>
+          {t("form.whichCat")}{" "}
+          <span className="font-normal normal-case text-muted">
+            ({t("form.optional")})
+          </span>
         </h2>
         <ul className="flex flex-col gap-2">
           <li>
@@ -317,7 +312,7 @@ export function IncidentForm({
                 —
               </span>
               <span className="flex-1 text-sm font-medium">
-                No specific cat
+                {t("form.noSpecificCat")}
               </span>
               {catId === "" ? (
                 <span aria-hidden className="text-accent">
@@ -345,7 +340,7 @@ export function IncidentForm({
                     <PawIcon className="h-5 w-5 text-muted" />
                   </span>
                   <span className="flex-1 text-sm font-medium">
-                    {c.name ?? c.temp_id ?? "Unnamed cat"}
+                    {c.name ?? c.temp_id ?? t("form.unnamedCat")}
                   </span>
                   {on ? (
                     <span aria-hidden className="text-accent">
@@ -361,15 +356,17 @@ export function IncidentForm({
 
       {/* ── Notes (optional) ── */}
       <label className="flex flex-col gap-1.5 text-sm font-medium">
-        <span>Notes (optional)</span>
+        <span>{t("form.notesOptional")}</span>
         <textarea name="notes" rows={2} className={`${input} py-2`} />
       </label>
 
       {/* ── Photo (optional, non-blocking) ── */}
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-          Photo{" "}
-          <span className="font-normal normal-case text-muted">(optional)</span>
+          {t("form.photo")}{" "}
+          <span className="font-normal normal-case text-muted">
+            ({t("form.optional")})
+          </span>
         </h2>
         <div className="flex items-center gap-4">
           <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-xl border border-border bg-surface">
@@ -377,7 +374,7 @@ export function IncidentForm({
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={photoPreview}
-                alt="Incident photo"
+                alt={t("form.incidentPhotoAlt")}
                 className="h-full w-full object-cover"
               />
             ) : (
@@ -401,10 +398,10 @@ export function IncidentForm({
                 className={`${btnGhost} h-9 px-3 text-sm disabled:opacity-60`}
               >
                 {photoBusy
-                  ? "Working…"
+                  ? t("form.working")
                   : photoPreview
-                    ? "Replace photo"
-                    : "Add photo"}
+                    ? t("form.replacePhoto")
+                    : t("form.addPhoto")}
               </button>
               {photoPreview && !photoBusy ? (
                 <button
@@ -412,7 +409,7 @@ export function IncidentForm({
                   onClick={removePhoto}
                   className={`${btnGhostDanger} h-9 px-3 text-sm`}
                 >
-                  Remove
+                  {t("form.remove")}
                 </button>
               ) : null}
             </div>
@@ -421,25 +418,25 @@ export function IncidentForm({
                 {photoError}
               </p>
             ) : (
-              <p className="text-xs text-muted">JPG/PNG/WebP · optional.</p>
+              <p className="text-xs text-muted">{t("form.photoHint")}</p>
             )}
           </div>
         </div>
       </section>
 
       <SubmitButton
-        pendingText="Reporting…"
+        pendingText={t("form.reporting")}
         className={`sticky bottom-4 min-h-13 ${
           urgent ? "bg-red-600 text-white hover:bg-red-700" : btnPrimary
         } inline-flex items-center justify-center gap-2 rounded-lg px-4 font-semibold`}
       >
         {urgent ? (
           <>
-            <WarningIcon className="h-4 w-4" aria-hidden /> Report urgent
-            incident
+            <WarningIcon className="h-4 w-4" aria-hidden />{" "}
+            {t("form.reportUrgent")}
           </>
         ) : (
-          "Report incident"
+          t("form.reportIncident")
         )}
       </SubmitButton>
     </form>

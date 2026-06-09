@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { SubmitButton } from "@/components/submit-button";
 import { assignIncident } from "@/app/app/incidents/actions";
 import { btnGhost, btnPrimary, input } from "@/lib/ui";
@@ -21,6 +22,8 @@ export function IncidentAssignForm({
   currentUserId: string | null;
   assignedTo: string | null;
 }) {
+  const t = useTranslations("incidents");
+  const tc = useTranslations("common");
   const assignedToMe = !!currentUserId && assignedTo === currentUserId;
 
   return (
@@ -32,7 +35,7 @@ export function IncidentAssignForm({
       >
         <input type="hidden" name="incident_id" value={incidentId} />
         <label className="sr-only" htmlFor={`assign-${incidentId}`}>
-          Assign to
+          {t("assign.assignTo")}
         </label>
         <select
           id={`assign-${incidentId}`}
@@ -40,19 +43,20 @@ export function IncidentAssignForm({
           defaultValue={assignedTo ?? ""}
           className={`${input} min-w-[12rem] flex-1`}
         >
-          <option value="">Unassigned</option>
+          <option value="">{tc("unassigned")}</option>
           {managers.map((m) => (
             <option key={m.id} value={m.id}>
-              {m.email}
-              {m.id === currentUserId ? " (you)" : ""}
+              {m.id === currentUserId
+                ? t("assign.youSuffix", { email: m.email })
+                : m.email}
             </option>
           ))}
         </select>
         <SubmitButton
-          pendingText="Saving…"
+          pendingText={tc("saving")}
           className={`${btnGhost} min-h-11 text-sm`}
         >
-          Save
+          {tc("save")}
         </SubmitButton>
       </form>
 
@@ -66,7 +70,7 @@ export function IncidentAssignForm({
               pendingText="…"
               className={`${btnPrimary} min-h-11 text-sm`}
             >
-              Assign to me
+              {t("assign.assignToMe")}
             </SubmitButton>
           </form>
         ) : null}
@@ -78,7 +82,7 @@ export function IncidentAssignForm({
               pendingText="…"
               className={`${btnGhost} min-h-11 text-sm`}
             >
-              Unassign
+              {t("assign.unassign")}
             </SubmitButton>
           </form>
         ) : null}
