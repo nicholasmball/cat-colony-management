@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -13,15 +14,16 @@ export async function completeAccept(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
   const back = token ? `/accept?token=${encodeURIComponent(token)}` : "/accept";
+  const t = await getTranslations("errors");
 
   if (password.length < 8) {
     redirect(
-      `${back}${token ? "&" : "?"}error=${encodeURIComponent("Password must be at least 8 characters.")}`,
+      `${back}${token ? "&" : "?"}error=${encodeURIComponent(t("passwordTooShort"))}`,
     );
   }
   if (password !== confirm) {
     redirect(
-      `${back}${token ? "&" : "?"}error=${encodeURIComponent("The two passwords don’t match.")}`,
+      `${back}${token ? "&" : "?"}error=${encodeURIComponent(t("passwordsDontMatch"))}`,
     );
   }
 
@@ -54,7 +56,7 @@ export async function completeAccept(formData: FormData) {
       .maybeSingle();
     if (!inv || inv.accepted_at) {
       redirect(
-        `${back}${token ? "&" : "?"}error=${encodeURIComponent("This invite is invalid or already used.")}`,
+        `${back}${token ? "&" : "?"}error=${encodeURIComponent(t("inviteInvalidOrUsed"))}`,
       );
     }
     inviteEmail = inv.email;
@@ -62,7 +64,7 @@ export async function completeAccept(formData: FormData) {
 
   if (!inviteToken || !inviteEmail) {
     redirect(
-      `${back}${token ? "&" : "?"}error=${encodeURIComponent("No pending invite found for this account.")}`,
+      `${back}${token ? "&" : "?"}error=${encodeURIComponent(t("noPendingInvite"))}`,
     );
   }
 

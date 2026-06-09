@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
@@ -18,15 +19,16 @@ export async function setCatPhoto(
   catId: string,
   key: string,
 ): Promise<PhotoResult> {
+  const t = await getTranslations("errors");
   const org = await getActiveOrg();
   if (!org || (org.role !== "admin" && org.role !== "caretaker")) {
-    return { error: "Not allowed." };
+    return { error: t("notAllowed") };
   }
   // The key is client-supplied; only accept one minted under this org's prefix
   // (`org/{orgId}/…`) so a tampered key can't point the record at another org's
   // object. The presign route always issues org-scoped keys.
   if (!isKeyInOrg(key, org.organisation_id)) {
-    return { error: "That photo couldn’t be saved." };
+    return { error: t("photoCouldNotBeSaved") };
   }
   const supabase = await createClient();
   const { data: cat } = await supabase
@@ -36,7 +38,7 @@ export async function setCatPhoto(
     .eq("organisation_id", org.organisation_id)
     .is("deleted_at", null)
     .maybeSingle();
-  if (!cat) return { error: "Cat not found." };
+  if (!cat) return { error: t("catNotFound") };
 
   const previous = cat.photo_url as string | null;
   // .select("id") + isFailedWrite: an RLS-filtered 0-row update would otherwise
@@ -49,10 +51,7 @@ export async function setCatPhoto(
     .select("id");
   if (isFailedWrite({ error, rows: data })) {
     return {
-      error: writeErrorMessage(
-        { error, rows: data },
-        "That cat no longer exists.",
-      ),
+      error: writeErrorMessage({ error, rows: data }, t("catNoLongerExists")),
     };
   }
 
@@ -63,9 +62,10 @@ export async function setCatPhoto(
 }
 
 export async function removeCatPhoto(catId: string): Promise<PhotoResult> {
+  const t = await getTranslations("errors");
   const org = await getActiveOrg();
   if (!org || (org.role !== "admin" && org.role !== "caretaker")) {
-    return { error: "Not allowed." };
+    return { error: t("notAllowed") };
   }
   const supabase = await createClient();
   const { data: cat } = await supabase
@@ -74,7 +74,7 @@ export async function removeCatPhoto(catId: string): Promise<PhotoResult> {
     .eq("id", catId)
     .eq("organisation_id", org.organisation_id)
     .maybeSingle();
-  if (!cat) return { error: "Cat not found." };
+  if (!cat) return { error: t("catNotFound") };
 
   const previous = cat.photo_url as string | null;
   // .select("id") + isFailedWrite: an RLS-filtered 0-row update would otherwise
@@ -87,10 +87,7 @@ export async function removeCatPhoto(catId: string): Promise<PhotoResult> {
     .select("id");
   if (isFailedWrite({ error, rows: data })) {
     return {
-      error: writeErrorMessage(
-        { error, rows: data },
-        "That cat no longer exists.",
-      ),
+      error: writeErrorMessage({ error, rows: data }, t("catNoLongerExists")),
     };
   }
 
@@ -161,9 +158,10 @@ export async function updateColony(formData: FormData) {
     .select("id");
 
   if (isFailedWrite({ error, rows: data })) {
+    const t = await getTranslations("errors");
     const message = writeErrorMessage(
       { error, rows: data },
-      "That colony no longer exists.",
+      t("colonyNoLongerExists"),
     );
     redirect(`/app/colonies/${id}/edit?error=${encodeURIComponent(message)}`);
   }
@@ -196,9 +194,10 @@ export async function archiveColony(formData: FormData) {
     .select("id");
 
   if (isFailedWrite({ error, rows: data })) {
+    const t = await getTranslations("errors");
     const message = writeErrorMessage(
       { error, rows: data },
-      "That colony no longer exists.",
+      t("colonyNoLongerExists"),
     );
     redirect(`/app/colonies/${id}/edit?error=${encodeURIComponent(message)}`);
   }
@@ -211,13 +210,14 @@ export async function createCat(formData: FormData) {
   const org = await getActiveOrg();
   if (!org) redirect("/app");
 
+  const t = await getTranslations("errors");
   const name = String(formData.get("name") ?? "").trim() || null;
   const tempId = String(formData.get("temp_id") ?? "").trim() || null;
   // Schema requires a name OR a temp id — never block on the rest.
   if (!name && !tempId) {
     redirect(
       `/app/colonies/${colonyId}/cats/new?error=${encodeURIComponent(
-        "Enter a name or a description (at least one).",
+        t("nameOrDescription"),
       )}`,
     );
   }
@@ -241,7 +241,7 @@ export async function createCat(formData: FormData) {
   if (!colony) {
     redirect(
       `/app/colonies/${colonyId}/cats/new?error=${encodeURIComponent(
-        "Colony not found.",
+        t("colonyNotFound"),
       )}`,
     );
   }
@@ -271,16 +271,13 @@ export async function updateCat(formData: FormData) {
   const org = await getActiveOrg();
   if (!org) redirect("/app");
 
+  const t = await getTranslations("errors");
   const name = String(formData.get("name") ?? "").trim() || null;
   const tempId = String(formData.get("temp_id") ?? "").trim() || null;
   const editPath = `/app/colonies/${colonyId}/cats/${catId}/edit`;
   // Same rule as create: at least one identifier, never block on the rest.
   if (!name && !tempId) {
-    redirect(
-      `${editPath}?error=${encodeURIComponent(
-        "Enter a name or a description (at least one).",
-      )}`,
-    );
+    redirect(`${editPath}?error=${encodeURIComponent(t("nameOrDescription"))}`);
   }
   // Tri-state so "unknown" stays null — records accept incomplete data.
   const neutered = parseNeutered(formData.get("neutered")?.toString());
@@ -308,7 +305,7 @@ export async function updateCat(formData: FormData) {
   if (isFailedWrite({ error, rows: data })) {
     const message = writeErrorMessage(
       { error, rows: data },
-      "That cat no longer exists.",
+      t("catNoLongerExists"),
     );
     redirect(`${editPath}?error=${encodeURIComponent(message)}`);
   }
@@ -345,9 +342,10 @@ export async function submitFeeding(formData: FormData) {
     .single();
 
   if (eventError || !event) {
+    const t = await getTranslations("errors");
     redirect(
       `/app/colonies/${colonyId}/feed?error=${encodeURIComponent(
-        eventError?.message ?? "Could not save the feeding update.",
+        eventError?.message ?? t("couldNotSaveFeeding"),
       )}`,
     );
   }

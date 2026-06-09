@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { SubmitButton } from "@/components/submit-button";
 import { submitFeeding } from "@/app/app/colonies/actions";
 import { btnPrimary, input } from "@/lib/ui";
@@ -10,25 +11,25 @@ type Cat = { id: string; name: string | null; temp_id: string | null };
 const sightingOptions = [
   {
     key: "seen",
-    label: "Seen",
+    labelKey: "sightingSeen",
     on: "border-emerald-600 bg-emerald-600 text-white",
   },
   {
     key: "not_seen",
-    label: "Not seen",
+    labelKey: "sightingNotSeen",
     on: "border-amber-500 bg-amber-500 text-white",
   },
   {
     key: "concern",
-    label: "Concern",
+    labelKey: "sightingConcern",
     on: "border-red-600 bg-red-600 text-white",
   },
 ] as const;
 
 const colonyFlags = [
-  { key: "problem", label: "Problem" },
-  { key: "food_issue", label: "Food issue" },
-  { key: "danger", label: "Danger" },
+  { key: "problem", labelKey: "flagProblem" },
+  { key: "food_issue", labelKey: "flagFoodIssue" },
+  { key: "danger", labelKey: "flagDanger" },
 ] as const;
 
 export function FeedForm({
@@ -38,6 +39,7 @@ export function FeedForm({
   colonyId: string;
   cats: Cat[];
 }) {
+  const t = useTranslations("feed");
   const [fed, setFed] = useState(true);
   const [flags, setFlags] = useState<Record<string, boolean>>({});
   const [sightings, setSightings] = useState<Record<string, string>>({});
@@ -61,7 +63,7 @@ export function FeedForm({
             id="fed-label"
             className="text-xs font-semibold uppercase tracking-wide text-muted"
           >
-            Was the colony fed?
+            {t("wasColonyFed")}
           </h2>
           <div
             role="radiogroup"
@@ -83,7 +85,7 @@ export function FeedForm({
                   : "border-border font-medium text-foreground"
               }`}
             >
-              ✓ Fed
+              {t("fed")}
             </button>
             <button
               type="button"
@@ -96,7 +98,7 @@ export function FeedForm({
                   : "border-border font-medium text-foreground"
               }`}
             >
-              Not fed
+              {t("notFed")}
             </button>
           </div>
         </div>
@@ -115,7 +117,7 @@ export function FeedForm({
                     : "border-border text-foreground"
                 }`}
               >
-                {f.label}
+                {t(f.labelKey)}
               </button>
             );
           })}
@@ -124,11 +126,11 @@ export function FeedForm({
 
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-          Cats
+          {t("cats")}
         </h2>
         {cats.length === 0 ? (
           <p className="rounded-xl border border-border bg-surface p-4 text-sm text-muted">
-            No cats in this colony yet.
+            {t("noCatsYet")}
           </p>
         ) : (
           <ul className="flex flex-col gap-2">
@@ -141,7 +143,7 @@ export function FeedForm({
                 >
                   <input type="hidden" name={`cat:${c.id}`} value={sel} />
                   <span className="text-sm font-medium">
-                    {c.name ?? c.temp_id ?? "Unnamed cat"}
+                    {c.name ?? c.temp_id ?? t("unnamedCat")}
                   </span>
                   <div className="grid grid-cols-3 gap-2">
                     {sightingOptions.map((s) => {
@@ -161,7 +163,7 @@ export function FeedForm({
                             on ? s.on : "border-border text-foreground"
                           }`}
                         >
-                          {s.label}
+                          {t(s.labelKey)}
                         </button>
                       );
                     })}
@@ -174,15 +176,15 @@ export function FeedForm({
       </section>
 
       <label className="flex flex-col gap-1.5 text-sm font-medium">
-        <span>Notes (optional)</span>
+        <span>{t("notesOptional")}</span>
         <textarea name="notes" rows={2} className={`${input} py-2`} />
       </label>
 
       <SubmitButton
-        pendingText="Saving…"
+        pendingText={t("savingUpdate")}
         className={`${btnPrimary} sticky bottom-4 min-h-13`}
       >
-        Save update
+        {t("saveUpdate")}
       </SubmitButton>
     </form>
   );

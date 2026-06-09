@@ -413,10 +413,23 @@
     "resolveNoteRequired": "Adicione uma breve nota sobre como foi resolvido antes de o fechar.",
     "assignManagerOnly": "Só pode atribuir um incidente a um cuidador ou administrador.",
     "writeNoteFirst": "Escreva uma nota antes de publicar.",
-    "chooseIncidentType": "Escolha um tipo de incidente.",
-    "writeComment": "Escreva uma nota antes de publicar.",
-    "emailRequired": "Introduza um endereço de email.",
+    "chooseIncidentType": "Escolha o que se passa antes de reportar.",
+    "noUrgencyConfigured": "Esta organização ainda não tem níveis de urgência configurados.",
+    "couldNotSaveIncident": "Não foi possível guardar o incidente.",
+    "addNameOrDescription": "Adicione um nome ou uma breve descrição para que o gato possa ser identificado.",
+    "catNotAwaitingReview": "Este gato já não está a aguardar revisão.",
+    "validEmailRequired": "Introduza um endereço de email válido.",
     "roleRequired": "Escolha uma função.",
-    "couldNotInvite": "Não foi possível criar o convite."
+    "alreadyMember": "Essa pessoa já é membro.",
+    "pendingInviteExists": "Esse email já tem um convite pendente.",
+    "cantDeactivateLastAdmin": "Não pode desativar o último administrador.",
+    "memberNoLongerExists": "Esse membro já não existe.",
+    "orgNameRequired": "O nome da organização é obrigatório.",
+    "validTimezone": "Escolha um fuso horário válido.",
+    "orgNoLongerExists": "Essa organização já não existe.",
+    "chooseFeeder": "Escolha um alimentador para esta colónia.",
+    "pickOneOffDate": "Escolha uma data para guardar esta alimentação pontual.",
+    "chooseWeekday": "Escolha pelo menos um dia da semana.",
+    "scheduleNoLongerExists": "Esse horário já não existe."
   }
 }

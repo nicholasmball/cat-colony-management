@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
@@ -50,13 +51,12 @@ function parseWeekdays(formData: FormData): number[] {
 export async function createSchedule(formData: FormData) {
   const colonyId = String(formData.get("colony_id"));
   const org = await requireManagerOrg();
+  const t = await getTranslations("errors");
   const newPath = `/app/colonies/${colonyId}/schedules/new`;
 
   const feederId = String(formData.get("feeder_id") ?? "");
   if (!feederId || !(await feederIsAssignable(org.organisation_id, feederId))) {
-    redirect(
-      `${newPath}?error=${encodeURIComponent("Choose a feeder for this colony.")}`,
-    );
+    redirect(`${newPath}?error=${encodeURIComponent(t("chooseFeeder"))}`);
   }
 
   const approxTime = String(formData.get("approx_time") ?? "") || null;
@@ -75,17 +75,13 @@ export async function createSchedule(formData: FormData) {
   if (type === "one_off") {
     const date = String(formData.get("specific_date") ?? "");
     if (!date) {
-      redirect(
-        `${newPath}?error=${encodeURIComponent("Pick a date to save this one-off feed.")}`,
-      );
+      redirect(`${newPath}?error=${encodeURIComponent(t("pickOneOffDate"))}`);
     }
     rows = [{ ...base, specific_date: date, weekday: null }];
   } else {
     const weekdays = parseWeekdays(formData);
     if (weekdays.length === 0) {
-      redirect(
-        `${newPath}?error=${encodeURIComponent("Choose at least one weekday.")}`,
-      );
+      redirect(`${newPath}?error=${encodeURIComponent(t("chooseWeekday"))}`);
     }
     // One DB row per selected weekday so Today's filter is a plain weekday match.
     rows = weekdays.map((w) => ({ ...base, weekday: w, specific_date: null }));
@@ -106,13 +102,12 @@ export async function updateSchedule(formData: FormData) {
   const colonyId = String(formData.get("colony_id"));
   const scheduleId = String(formData.get("schedule_id"));
   const org = await requireManagerOrg();
+  const t = await getTranslations("errors");
   const editPath = `/app/colonies/${colonyId}/schedules/${scheduleId}/edit`;
 
   const feederId = String(formData.get("feeder_id") ?? "");
   if (!feederId || !(await feederIsAssignable(org.organisation_id, feederId))) {
-    redirect(
-      `${editPath}?error=${encodeURIComponent("Choose a feeder for this colony.")}`,
-    );
+    redirect(`${editPath}?error=${encodeURIComponent(t("chooseFeeder"))}`);
   }
 
   const approxTime = String(formData.get("approx_time") ?? "") || null;
@@ -138,7 +133,7 @@ export async function updateSchedule(formData: FormData) {
   if (isFailedWrite({ error, rows: data })) {
     const message = writeErrorMessage(
       { error, rows: data },
-      "That schedule no longer exists.",
+      t("scheduleNoLongerExists"),
     );
     redirect(`${editPath}?error=${encodeURIComponent(message)}`);
   }
@@ -151,6 +146,7 @@ export async function deleteSchedule(formData: FormData) {
   const colonyId = String(formData.get("colony_id"));
   const scheduleId = String(formData.get("schedule_id"));
   const org = await requireManagerOrg();
+  const t = await getTranslations("errors");
 
   // requireManagerOrg above is the real trust boundary. Soft-delete through the
   // service-role client (RLS bypassed) scoped to id + org — the RLS-bound
@@ -167,7 +163,7 @@ export async function deleteSchedule(formData: FormData) {
   if (isFailedWrite({ error, rows: data })) {
     const message = writeErrorMessage(
       { error, rows: data },
-      "That schedule no longer exists.",
+      t("scheduleNoLongerExists"),
     );
     redirect(`/app/colonies/${colonyId}?error=${encodeURIComponent(message)}`);
   }
