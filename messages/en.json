@@ -24,7 +24,9 @@
     "notifications": "Notifications",
     "alerts": "Alert thresholds",
     "members": "Members",
-    "org": "Organisation"
+    "org": "Organisation",
+    "more": "More",
+    "closeMenu": "Close menu"
   },
   "common": {
     "edit": "Edit",

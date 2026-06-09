@@ -176,6 +176,17 @@ export function SlidersIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+// Horizontal ellipsis — the mobile tab bar's "More" overflow entry.
+export function EllipsisIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <circle cx="5" cy="12" r="1.6" />
+      <circle cx="12" cy="12" r="1.6" />
+      <circle cx="19" cy="12" r="1.6" />
+    </svg>
+  );
+}
+
 // One glyph per incident_type enum member. Stays in the existing icon family
 // (viewBox 24, currentColor) — recognition support, never icon-alone (every
 // tile pairs it with the type label).

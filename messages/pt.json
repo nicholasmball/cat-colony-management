@@ -24,7 +24,9 @@
     "notifications": "Notificações",
     "alerts": "Limites de alerta",
     "members": "Membros",
-    "org": "Organização"
+    "org": "Organização",
+    "more": "Mais",
+    "closeMenu": "Fechar menu"
   },
   "common": {
     "edit": "Editar",

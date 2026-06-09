@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { navItemsFor } from "./nav-items.ts";
+import { navItemsFor, splitNavForTabbar } from "./nav-items.ts";
 
 // nav-items is pure and React-free: it carries i18n KEYS, not display strings
 // (the label is translated in components/app-nav.tsx). Assert on the keys.
@@ -64,6 +64,48 @@ test("unknown/undefined role is treated as a feeder (no Dashboard, no Incidents)
   assert.deepEqual(keys(null), ["nav.today", "nav.colonies"]);
   assert.deepEqual(keys("stranger"), ["nav.today", "nav.colonies"]);
   assert.ok(!keys("stranger").includes("nav.notifications"));
+});
+
+test("splitNavForTabbar: feeder (2 items) all visible, no overflow", () => {
+  const { visible, overflow } = splitNavForTabbar(
+    navItemsFor({ role: "feeder" }),
+  );
+  assert.equal(visible.length, 2);
+  assert.equal(overflow.length, 0);
+});
+
+test("splitNavForTabbar: <= maxCells stays fully visible (no cramming, no More)", () => {
+  const five = navItemsFor({ role: "admin" }).slice(0, 5);
+  const { visible, overflow } = splitNavForTabbar(five);
+  assert.equal(visible.length, 5);
+  assert.equal(overflow.length, 0);
+});
+
+test("splitNavForTabbar: caretaker (6) → 4 visible + 2 in More", () => {
+  const { visible, overflow } = splitNavForTabbar(
+    navItemsFor({ role: "caretaker" }),
+  );
+  assert.deepEqual(
+    visible.map((i) => i.labelKey),
+    ["nav.dashboard", "nav.today", "nav.colonies", "nav.incidents"],
+  );
+  assert.deepEqual(
+    overflow.map((i) => i.labelKey),
+    ["nav.notifications", "nav.alerts"],
+  );
+});
+
+test("splitNavForTabbar: admin (8) → 4 visible + 4 in More (bar never exceeds 5 cells)", () => {
+  const { visible, overflow } = splitNavForTabbar(
+    navItemsFor({ role: "admin" }),
+  );
+  assert.equal(visible.length, 4);
+  assert.deepEqual(
+    overflow.map((i) => i.labelKey),
+    ["nav.notifications", "nav.alerts", "nav.members", "nav.org"],
+  );
+  // The bar renders visible + the "More" cell = 5, regardless of total items.
+  assert.equal(visible.length + 1, 5);
 });
 
 test("Dashboard is exact-match so it only highlights on /app/dashboard", () => {
