@@ -121,6 +121,7 @@
     "moreNeedReview": "+ {count} precisam de revisão"
   },
   "feed": {
+    "title": "Atualização de alimentação",
     "wasColonyFed": "A colónia foi alimentada?",
     "fed": "✓ Alimentada",
     "notFed": "Não alimentada",
@@ -261,28 +262,31 @@
     "markReviewed": "Marcar como revisto"
   },
   "schedules": {
-    "newTitle": "Novo horário",
+    "backToColony": "← Colónia",
+    "addTitle": "Adicionar horário",
+    "addSubtitle": "Atribuir um alimentador a esta colónia",
     "editTitle": "Editar horário",
+    "noFeeders": "Ainda não há alimentadores ou cuidadores para atribuir. Convide primeiro um voluntário a partir de Membros.",
     "feeder": "Alimentador",
-    "selectFeeder": "Selecione um alimentador",
-    "repeats": "Repete",
-    "weekly": "Semanal",
-    "oneOff": "Data pontual",
-    "weekday": "Dia da semana",
+    "type": "Tipo",
+    "scheduleType": "Tipo de horário",
+    "weeklyToggle": "⟳ Semanal",
+    "oneOffToggle": "★ Pontual",
+    "weeklyLabel": "⟳ Semanal",
+    "oneOffLabel": "★ Pontual",
+    "repeatsOn": "Repete em",
     "date": "Data",
     "approxTime": "Hora aprox.",
-    "notesOptional": "Notas (opcional)",
-    "createSchedule": "Criar horário",
+    "optional": "opcional",
+    "notes": "Notas",
+    "notesPlaceholder": "ex.: Ração seca na taça azul",
     "saveSchedule": "Guardar horário",
-    "weekdays": {
-      "0": "Domingo",
-      "1": "Segunda-feira",
-      "2": "Terça-feira",
-      "3": "Quarta-feira",
-      "4": "Quinta-feira",
-      "5": "Sexta-feira",
-      "6": "Sábado"
-    }
+    "saveChanges": "Guardar alterações",
+    "saving": "A guardar…",
+    "cancel": "Cancelar",
+    "active": "Ativo",
+    "deleteSchedule": "Eliminar horário",
+    "removeConfirm": "Remover este horário?"
   },
   "incidents": {
     "title": "Incidentes",

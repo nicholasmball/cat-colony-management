@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { WEEKDAY_TOGGLES } from "@/lib/schedule";
 import { fieldLabel, input } from "@/lib/ui";
 
@@ -16,6 +17,7 @@ export function ScheduleFields({
   defaultType?: ScheduleType;
   defaultDate?: string;
 }) {
+  const t = useTranslations("schedules");
   const [type, setType] = useState<ScheduleType>(defaultType);
   const [days, setDays] = useState<Set<number>>(new Set());
 
@@ -36,11 +38,11 @@ export function ScheduleFields({
   return (
     <div className="flex flex-col gap-2">
       <span className={fieldLabel}>
-        <span>Type</span>
+        <span>{t("type")}</span>
       </span>
       <div
         role="group"
-        aria-label="Schedule type"
+        aria-label={t("scheduleType")}
         className="flex gap-1 rounded-lg border border-border p-1"
       >
         <button
@@ -49,7 +51,7 @@ export function ScheduleFields({
           onClick={() => setType("weekly")}
           className={`${segBase} ${type === "weekly" ? segOn : segOff}`}
         >
-          ⟳ Weekly
+          {t("weeklyToggle")}
         </button>
         <button
           type="button"
@@ -57,7 +59,7 @@ export function ScheduleFields({
           onClick={() => setType("one_off")}
           className={`${segBase} ${type === "one_off" ? segOn : segOff}`}
         >
-          ★ One-off
+          {t("oneOffToggle")}
         </button>
       </div>
       {/* Server action reads this to branch weekly vs one-off. */}
@@ -66,7 +68,7 @@ export function ScheduleFields({
       {type === "weekly" ? (
         <div className="mt-2 flex flex-col gap-1.5">
           <span id="weekday-label" className="text-sm font-medium">
-            Repeats on
+            {t("repeatsOn")}
           </span>
           <div
             role="group"
@@ -100,7 +102,7 @@ export function ScheduleFields({
         </div>
       ) : (
         <label className={`${fieldLabel} mt-2`}>
-          <span>Date</span>
+          <span>{t("date")}</span>
           <input
             type="date"
             name="specific_date"
