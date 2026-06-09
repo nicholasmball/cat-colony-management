@@ -9,6 +9,7 @@ import { AppNav } from "@/components/app-nav";
 import { AccountMenu } from "@/components/account-menu";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { OfflineSync } from "@/components/offline-sync";
+import { SyncIndicator } from "@/components/sync-indicator";
 import { signOut } from "./actions";
 
 // Responsive shell: left sidebar on desktop, top bar + bottom tab bar on mobile.
@@ -56,7 +57,12 @@ export default async function AppLayout({
           </Link>
         </div>
         <AppNav variant="sidebar" role={role} unreadCount={unreadCount} />
-        <div className="mt-auto border-t border-border p-3">
+        {/* Persistent sync indicator (Phase 4): connection + queue state, so
+            the user always knows whether their tap was saved. */}
+        <div className="mt-auto border-t border-border">
+          <SyncIndicator />
+        </div>
+        <div className="border-t border-border p-3">
           <p className="truncate px-2 text-xs text-muted" title={email}>
             {email}
           </p>
@@ -86,6 +92,11 @@ export default async function AppLayout({
           </Link>
           <AccountMenu email={email} locale={locale} />
         </header>
+
+        {/* Mobile sync indicator (desktop shows it in the sidebar). */}
+        <div className="border-b border-border bg-surface md:hidden">
+          <SyncIndicator />
+        </div>
 
         <main className="flex-1 pb-24 md:pb-10">{children}</main>
 

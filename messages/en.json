@@ -646,5 +646,34 @@
     "alertRepeatedRange": "Misses in a row must be a whole number between 1 and 10.",
     "alertMissedRange": "Hours after the feeding window must be a whole number between 1 and 72.",
     "alertSettingsNoLongerExist": "Those alert settings could not be saved."
+  },
+  "offline": {
+    "online": "Online",
+    "offline": "Offline",
+    "pending": "{count, plural, one {# waiting to sync} other {# waiting to sync}}",
+    "syncing": "Syncing…",
+    "synced": "Saved",
+    "allSynced": "All saved",
+    "failed": "{count, plural, one {# didn’t save} other {# didn’t save}}",
+    "retry": "Retry",
+    "announce": "{connection}. {queue}.",
+    "queueHeading": "Sync queue",
+    "emptyTitle": "All caught up",
+    "emptyBody": "Nothing is waiting to sync — every update has been saved.",
+    "savedWillSync": "Saved on this device — it’ll sync when you’re back online.",
+    "failedAuth": "Couldn’t save — sign in again, then retry.",
+    "failedValidation": "Couldn’t save — this update was rejected.",
+    "pendingNetwork": "Waiting for a connection to sync.",
+    "state": {
+      "pending": "Waiting",
+      "syncing": "Syncing",
+      "synced": "Saved",
+      "failed": "Didn’t save"
+    },
+    "kind": {
+      "feeding": "Feeding update",
+      "cat_report": "Cat report",
+      "incident": "Incident report"
+    }
   }
 }
