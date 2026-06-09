@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
@@ -53,6 +54,7 @@ function detailPath(id: string) {
 // ("managers update incidents"). Resolving requires a non-empty note.
 export async function transitionIncident(formData: FormData) {
   const org = await requireManagerOrg();
+  const t = await getTranslations("errors");
   const incidentId = String(formData.get("incident_id") ?? "");
   const target = String(formData.get("status") ?? "");
   const detail = detailPath(incidentId);
@@ -70,7 +72,7 @@ export async function transitionIncident(formData: FormData) {
     .eq("id", incidentId)
     .eq("organisation_id", org.organisation_id)
     .maybeSingle();
-  if (!incident) fail("That incident no longer exists.");
+  if (!incident) fail(t("incidentNoLongerExists"));
 
   const decision = canTransitionIncident({
     actorRole: org.role,
@@ -86,7 +88,7 @@ export async function transitionIncident(formData: FormData) {
   if (target === "resolved") {
     const note = String(formData.get("resolution_note") ?? "").trim();
     if (!note) {
-      fail("Add a short note on how this was resolved before closing it.");
+      fail(t("resolveNoteRequired"));
     }
     patch.resolution_note = note;
     patch.resolved_at = new Date().toISOString();
@@ -103,12 +105,7 @@ export async function transitionIncident(formData: FormData) {
     .eq("organisation_id", org.organisation_id)
     .select("id");
   if (isFailedWrite({ error, rows: data })) {
-    fail(
-      writeErrorMessage(
-        { error, rows: data },
-        "That incident no longer exists.",
-      ),
-    );
+    fail(writeErrorMessage({ error, rows: data }, t("incidentNoLongerExists")));
   }
 
   revalidatePath(detail);
@@ -121,6 +118,7 @@ export async function transitionIncident(formData: FormData) {
 // manager of the org. "Assign to me" passes the caller's own id.
 export async function assignIncident(formData: FormData) {
   const org = await requireManagerOrg();
+  const t = await getTranslations("errors");
   const incidentId = String(formData.get("incident_id") ?? "");
   const detail = detailPath(incidentId);
   function fail(message: string): never {
@@ -132,7 +130,7 @@ export async function assignIncident(formData: FormData) {
   let assignee: string | null = null;
   if (submitted) {
     if (!(await managerIsAssignable(org.organisation_id, submitted))) {
-      fail("You can only assign an incident to a caretaker or admin.");
+      fail(t("assignManagerOnly"));
     }
     assignee = submitted;
   }
@@ -145,12 +143,7 @@ export async function assignIncident(formData: FormData) {
     .eq("organisation_id", org.organisation_id)
     .select("id");
   if (isFailedWrite({ error, rows: data })) {
-    fail(
-      writeErrorMessage(
-        { error, rows: data },
-        "That incident no longer exists.",
-      ),
-    );
+    fail(writeErrorMessage({ error, rows: data }, t("incidentNoLongerExists")));
   }
 
   revalidatePath(detail);
@@ -166,6 +159,7 @@ export async function assignIncident(formData: FormData) {
 export async function addIncidentComment(formData: FormData) {
   const org = await getActiveOrg();
   if (!org) redirect("/app");
+  const t = await getTranslations("errors");
   const incidentId = String(formData.get("incident_id") ?? "");
   const detail = detailPath(incidentId);
   function fail(message: string): never {
@@ -173,7 +167,7 @@ export async function addIncidentComment(formData: FormData) {
   }
 
   const body = String(formData.get("body") ?? "").trim();
-  if (!body) fail("Write a note before posting.");
+  if (!body) fail(t("writeNoteFirst"));
 
   const supabase = await createClient();
   const {
@@ -189,7 +183,7 @@ export async function addIncidentComment(formData: FormData) {
     .eq("id", incidentId)
     .eq("organisation_id", org.organisation_id)
     .maybeSingle();
-  if (!incident) fail("That incident no longer exists.");
+  if (!incident) fail(t("incidentNoLongerExists"));
 
   const { error } = await supabase.from("incident_comments").insert({
     organisation_id: org.organisation_id,

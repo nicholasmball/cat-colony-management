@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { isKeyInOrg } from "@/lib/photo-key";
@@ -25,6 +26,7 @@ export async function createIncident(formData: FormData) {
   const org = await getActiveOrg();
   if (!org) redirect("/app");
 
+  const t = await getTranslations("errors");
   const newPath = `/app/colonies/${colonyId}/incidents/new`;
   function fail(message: string): never {
     redirect(`${newPath}?error=${encodeURIComponent(message)}`);
@@ -34,7 +36,7 @@ export async function createIncident(formData: FormData) {
   // value never reaches Postgres.
   const type = formData.get("type");
   if (!isValidIncidentType(type)) {
-    fail("Choose what's happening before you report.");
+    fail(t("chooseIncidentType"));
   }
 
   const supabase = await createClient();
@@ -60,7 +62,7 @@ export async function createIncident(formData: FormData) {
     levels.find((l) => l.id === submittedUrgency) ??
     defaultUrgencyLevel(levels);
   if (!chosen) {
-    fail("This organisation has no urgency levels configured yet.");
+    fail(t("noUrgencyConfigured"));
   }
 
   // Optional cat — only accept it if it really belongs to THIS colony (and the
@@ -98,7 +100,7 @@ export async function createIncident(formData: FormData) {
     .single();
 
   if (error || !incident) {
-    fail(error?.message ?? "Could not save the incident.");
+    fail(error?.message ?? t("couldNotSaveIncident"));
   }
 
   // Non-blocking photo: the incident is already saved. A failed attachment

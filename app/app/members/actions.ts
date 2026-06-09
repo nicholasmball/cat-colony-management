@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
@@ -44,16 +45,17 @@ function err(message: string): never {
 
 export async function inviteVolunteer(formData: FormData) {
   const org = await requireAdminOrg();
+  const t = await getTranslations("errors");
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
   const role = String(formData.get("role") ?? "");
 
   if (!email.includes("@") || email.length < 3) {
-    err("Enter a valid email address.");
+    err(t("validEmailRequired"));
   }
   if (role !== "caretaker" && role !== "feeder") {
-    err("Choose a role.");
+    err(t("roleRequired"));
   }
 
   // Block inviting someone who's already an active member of this org.
@@ -68,7 +70,7 @@ export async function inviteVolunteer(formData: FormData) {
       .eq("organisation_id", org.organisation_id)
       .is("deleted_at", null)
       .maybeSingle();
-    if (mem) err("That person is already a member.");
+    if (mem) err(t("alreadyMember"));
   }
 
   const supabase = await createClient();
@@ -82,11 +84,7 @@ export async function inviteVolunteer(formData: FormData) {
     invited_by: user?.id,
   });
   if (error) {
-    err(
-      error.code === "23505"
-        ? "That email already has a pending invite."
-        : error.message,
-    );
+    err(error.code === "23505" ? t("pendingInviteExists") : error.message);
   }
 
   const sent = await sendInviteEmail(email);
@@ -117,6 +115,7 @@ export async function revokeInvite(formData: FormData) {
 
 export async function deactivateMember(formData: FormData) {
   const org = await requireAdminOrg();
+  const t = await getTranslations("errors");
   const userId = String(formData.get("user_id") ?? "");
   const svc = createServiceClient();
 
@@ -129,7 +128,7 @@ export async function deactivateMember(formData: FormData) {
     .is("deleted_at", null);
   const targetIsAdmin = admins?.some((a) => a.user_id === userId);
   if (targetIsAdmin && (admins?.length ?? 0) <= 1) {
-    err("You can’t deactivate the last admin.");
+    err(t("cantDeactivateLastAdmin"));
   }
 
   await svc
@@ -156,6 +155,7 @@ export async function reactivateMember(formData: FormData) {
 
 export async function updateMemberRole(formData: FormData) {
   const org = await requireAdminOrg();
+  const t = await getTranslations("errors");
   const target = String(formData.get("user_id") ?? "");
   const newRole = String(formData.get("role") ?? "");
 
@@ -186,7 +186,7 @@ export async function updateMemberRole(formData: FormData) {
       .is("deleted_at", null),
   ]);
 
-  if (!targetRow) err("That member no longer exists.");
+  if (!targetRow) err(t("memberNoLongerExists"));
 
   // Defer every guardrail to the pure, unit-tested decision function.
   const decision = canChangeRole({
@@ -212,9 +212,7 @@ export async function updateMemberRole(formData: FormData) {
     .is("deleted_at", null)
     .select("user_id");
   if (isFailedWrite({ error, rows: data })) {
-    err(
-      writeErrorMessage({ error, rows: data }, "That member no longer exists."),
-    );
+    err(writeErrorMessage({ error, rows: data }, t("memberNoLongerExists")));
   }
 
   revalidatePath(MEMBERS);

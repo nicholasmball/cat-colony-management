@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { isValidTimeZone } from "@/lib/time";
@@ -14,17 +15,16 @@ export async function updateOrganisation(formData: FormData) {
   if (!org) redirect("/app");
   if (org.role !== "admin") redirect("/app");
 
+  const t = await getTranslations("errors");
   const name = String(formData.get("name") ?? "").trim();
   const notes = String(formData.get("notes") ?? "").trim() || null;
   const timezone = String(formData.get("timezone") ?? "").trim();
   if (!name) {
-    redirect(
-      `/app/org?error=${encodeURIComponent("Organisation name is required.")}`,
-    );
+    redirect(`/app/org?error=${encodeURIComponent(t("orgNameRequired"))}`);
   }
   // Reject anything that isn't a real IANA zone before it reaches day-math.
   if (!isValidTimeZone(timezone)) {
-    redirect(`/app/org?error=${encodeURIComponent("Pick a valid timezone.")}`);
+    redirect(`/app/org?error=${encodeURIComponent(t("validTimezone"))}`);
   }
 
   const supabase = await createClient();
@@ -39,7 +39,7 @@ export async function updateOrganisation(formData: FormData) {
   if (isFailedWrite({ error, rows: data })) {
     const message = writeErrorMessage(
       { error, rows: data },
-      "That organisation no longer exists.",
+      t("orgNoLongerExists"),
     );
     redirect(`/app/org?error=${encodeURIComponent(message)}`);
   }

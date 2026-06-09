@@ -413,10 +413,23 @@
     "resolveNoteRequired": "Add a short note on how this was resolved before closing it.",
     "assignManagerOnly": "You can only assign an incident to a caretaker or admin.",
     "writeNoteFirst": "Write a note before posting.",
-    "chooseIncidentType": "Choose an incident type.",
-    "writeComment": "Write a note before posting.",
-    "emailRequired": "Enter an email address.",
+    "chooseIncidentType": "Choose what's happening before you report.",
+    "noUrgencyConfigured": "This organisation has no urgency levels configured yet.",
+    "couldNotSaveIncident": "Could not save the incident.",
+    "addNameOrDescription": "Add a name or a short description so the cat can be identified.",
+    "catNotAwaitingReview": "This cat isn’t awaiting review anymore.",
+    "validEmailRequired": "Enter a valid email address.",
     "roleRequired": "Choose a role.",
-    "couldNotInvite": "Could not create the invite."
+    "alreadyMember": "That person is already a member.",
+    "pendingInviteExists": "That email already has a pending invite.",
+    "cantDeactivateLastAdmin": "You can’t deactivate the last admin.",
+    "memberNoLongerExists": "That member no longer exists.",
+    "orgNameRequired": "Organisation name is required.",
+    "validTimezone": "Pick a valid timezone.",
+    "orgNoLongerExists": "That organisation no longer exists.",
+    "chooseFeeder": "Choose a feeder for this colony.",
+    "pickOneOffDate": "Pick a date to save this one-off feed.",
+    "chooseWeekday": "Choose at least one weekday.",
+    "scheduleNoLongerExists": "That schedule no longer exists."
   }
 }

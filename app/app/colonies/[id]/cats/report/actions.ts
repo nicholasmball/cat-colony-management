@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
@@ -35,6 +36,7 @@ export async function reportCat(formData: FormData) {
   const org = await getActiveOrg();
   if (!org) redirect("/app");
 
+  const t = await getTranslations("errors");
   const reportPath = `/app/colonies/${colonyId}/cats/report`;
   function fail(message: string): never {
     redirect(`${reportPath}?error=${encodeURIComponent(message)}`);
@@ -43,7 +45,7 @@ export async function reportCat(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim() || null;
   const tempId = String(formData.get("temp_id") ?? "").trim() || null;
   if (!hasReportIdentifier({ name, temp_id: tempId })) {
-    fail("Add a name or a short description so the cat can be identified.");
+    fail(t("addNameOrDescription"));
   }
 
   const colour = String(formData.get("colour") ?? "").trim() || null;
@@ -84,7 +86,7 @@ export async function reportCat(formData: FormData) {
     .eq("organisation_id", org.organisation_id)
     .is("deleted_at", null)
     .maybeSingle();
-  if (!colony) fail("Colony not found.");
+  if (!colony) fail(t("colonyNotFound"));
 
   const { error } = await supabase.from("cats").insert({
     organisation_id: org.organisation_id,
@@ -121,6 +123,7 @@ export async function reportCat(formData: FormData) {
 // into a surfaced error instead of a false success.
 export async function confirmCat(formData: FormData) {
   const org = await requireManagerOrg();
+  const t = await getTranslations("errors");
   const colonyId = String(formData.get("colony_id"));
   const catId = String(formData.get("cat_id"));
   const detail = `/app/colonies/${colonyId}/cats/${catId}`;
@@ -151,12 +154,7 @@ export async function confirmCat(formData: FormData) {
     .select("id");
 
   if (isFailedWrite({ error, rows: data })) {
-    fail(
-      writeErrorMessage(
-        { error, rows: data },
-        "This cat isn’t awaiting review anymore.",
-      ),
-    );
+    fail(writeErrorMessage({ error, rows: data }, t("catNotAwaitingReview")));
   }
 
   revalidatePath(`/app/colonies/${colonyId}`);
@@ -171,6 +169,7 @@ export async function confirmCat(formData: FormData) {
 // Same trust boundary + status guard + isFailedWrite as confirmCat.
 export async function rejectCat(formData: FormData) {
   const org = await requireManagerOrg();
+  const t = await getTranslations("errors");
   const colonyId = String(formData.get("colony_id"));
   const catId = String(formData.get("cat_id"));
   const detail = `/app/colonies/${colonyId}/cats/${catId}`;
@@ -189,12 +188,7 @@ export async function rejectCat(formData: FormData) {
     .select("id");
 
   if (isFailedWrite({ error, rows: data })) {
-    fail(
-      writeErrorMessage(
-        { error, rows: data },
-        "This cat isn’t awaiting review anymore.",
-      ),
-    );
+    fail(writeErrorMessage({ error, rows: data }, t("catNotAwaitingReview")));
   }
 
   revalidatePath(`/app/colonies/${colonyId}`);
