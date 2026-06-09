@@ -540,6 +540,35 @@
     "notSeenDays": "Não visto há {count, plural, one {# dia} other {# dias}}",
     "repeatedNotSeen": "Não visto {count, plural, one {# vez} other {# vezes}} seguidas"
   },
+  "alerts": {
+    "feeding_missed": {
+      "title": "Alimentação em falta: {colonyName}",
+      "body": "Nenhuma alimentação registada hoje e o horário fechou há mais de {hours}h."
+    },
+    "incident_urgent": {
+      "title": "Urgente: {incidentType} em {colonyName}",
+      "body": "{reporterName} reportou agora mesmo. Abra o incidente para fazer a triagem."
+    },
+    "incident_routine": {
+      "title": "Novo incidente: {incidentType} em {colonyName}",
+      "body": "{reporterName} reportou. Não sinalizado como urgente — reveja quando puder."
+    },
+    "new_cat": {
+      "title": "Novo gato por confirmar em {colonyName}",
+      "body": "{reporterName} reportou “{catName}”. Confirme-o ou rejeite um duplicado."
+    },
+    "concern": {
+      "title": "Preocupação sinalizada: {catName}",
+      "body": "{reporterName} sinalizou uma preocupação em {colonyName}. Reveja quando puder."
+    },
+    "not_seen": {
+      "title": "Gato não visto: {catName}",
+      "body": {
+        "not_seen_days": "Não visto há {count, plural, one {# dia} other {# dias}} em {colonyName} — precisa de revisão.",
+        "repeated_not_seen": "Não visto {count, plural, one {# vez} other {# vezes}} seguidas em {colonyName} — precisa de revisão."
+      }
+    }
+  },
   "errors": {
     "notAllowed": "Não permitido.",
     "photoCouldNotBeSaved": "Não foi possível guardar essa foto.",
@@ -550,6 +579,7 @@
     "incidentNoLongerExists": "Esse incidente já não existe.",
     "nameOrDescription": "Introduza um nome ou uma descrição (pelo menos um).",
     "couldNotSaveFeeding": "Não foi possível guardar a atualização de alimentação.",
+    "couldNotSaveCat": "Não foi possível guardar o gato.",
     "passwordTooShort": "A palavra-passe deve ter pelo menos 8 caracteres.",
     "passwordsDontMatch": "As duas palavras-passe não coincidem.",
     "inviteInvalidOrUsed": "Este convite é inválido ou já foi utilizado.",
