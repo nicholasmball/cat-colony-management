@@ -42,6 +42,16 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Per-build revision exposed to app/sw.ts for versioning the runtime read-page
+  // cache (scot-read-pages-<rev>). On Vercel this is the short commit SHA so a new
+  // deploy gets a fresh cache + the SW's activate handler evicts the old one,
+  // preventing a previous build's RSC payloads from being served by the new shell.
+  // Date.now() is evaluated at build time (config eval), NOT inside a workflow
+  // script, so a dev/local build just gets a unique-per-build dev marker.
+  env: {
+    NEXT_PUBLIC_SW_BUILD_REV:
+      process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 8) ?? `dev-${Date.now()}`,
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

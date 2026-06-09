@@ -17,8 +17,9 @@
 //   • /app/** navigations + RSC  → NetworkFirst (never serve stale app JS/RSC
 //                                   that a fresh deploy invalidated; offline
 //                                   falls back to the cached shell).
-//   • last-viewed colony/cat GET → StaleWhileRevalidate (the LIMITED approved
-//                                   read-cache scope — NOT the whole org).
+//   • last-viewed colony/cat/feed → StaleWhileRevalidate (the LIMITED approved
+//     + Today GET pages           read-cache scope, A+D — NOT the whole org).
+//                                   Versioned per build + bounded 40/24h.
 //   • the 3 write routes         → NetworkOnly, NO SW queue. The Phase-2
 //                                   IndexedDB outbox owns offline writes + replay;
 //                                   a SW Background-Sync queue would DOUBLE-queue
@@ -36,6 +37,7 @@ import {
   NetworkFirst,
   NetworkOnly,
   StaleWhileRevalidate,
+  ExpirationPlugin,
   type PrecacheEntry,
   type SerwistGlobalConfig,
   type RouteMatchCallbackOptions,
@@ -54,6 +56,14 @@ declare global {
   }
 }
 declare const self: ServiceWorkerGlobalScope;
+
+// Per-build revision (injected by next.config.ts → env.NEXT_PUBLIC_SW_BUILD_REV;
+// the short commit SHA on Vercel, a dev marker locally). The read-page SWR cache
+// is namespaced by it so a fresh deploy starts with a CLEAN cache and the
+// activate handler below evicts the old revision — a previous build's RSC
+// payloads can never be served by the new shell.
+const BUILD_REV = process.env.NEXT_PUBLIC_SW_BUILD_REV ?? "dev";
+const READ_PAGES_CACHE = `scot-read-pages-${BUILD_REV}`;
 
 // Match helpers: classify by URL pathname using the PURE predicates. Method is
 // matched per-route below (Serwist routes can scope by HTTP method).
@@ -104,15 +114,28 @@ const serwist = new Serwist({
       handler: new NetworkOnly(),
     },
 
-    // 2) Last-viewed colony/cat GET pages: StaleWhileRevalidate — the limited,
-    //    approved read-cache scope. Small, time-bounded cache so we never hoard
-    //    the whole org and stale entries expire.
+    // 2) Last-viewed colony/cat GET pages + the per-colony feed page + Today
+    //    (A+D): StaleWhileRevalidate — the limited, approved read-cache scope.
+    //    These are the surfaces a feeder re-opens in the field, so caching them
+    //    on the online visit lets them re-render offline. (RSC ?_rsc= variants
+    //    match too — matchReadPage classifies on the query-stripped pathname.)
+    //    The cache is VERSIONED per build (READ_PAGES_CACHE) so a deploy gets a
+    //    fresh namespace + the activate handler evicts the prior revision, and
+    //    BOUNDED by ExpirationPlugin (40 entries / 24h) so it self-evicts and
+    //    never hoards the org. purgeOnQuotaError lets it drop under storage
+    //    pressure rather than wedging the SW.
     {
       matcher: matchReadPage,
       method: "GET",
       handler: new StaleWhileRevalidate({
-        cacheName: "scot-read-pages",
-        plugins: [],
+        cacheName: READ_PAGES_CACHE,
+        plugins: [
+          new ExpirationPlugin({
+            maxEntries: 40,
+            maxAgeSeconds: 86400,
+            purgeOnQuotaError: true,
+          }),
+        ],
       }),
     },
 
@@ -140,6 +163,28 @@ const serwist = new Serwist({
       },
     ],
   },
+});
+
+// OLD-REVISION CLEANUP: on activate, delete any prior read-page cache namespace
+// (scot-read-pages-*) that is NOT the current build's. The versioned cacheName
+// alone would leave stale-revision caches lingering until quota pressure; this
+// reclaims them immediately on the deploy that supersedes them. Scoped to the
+// read-pages prefix so it never touches the app-shell or precache, and registered
+// BEFORE addEventListeners() so it runs alongside Serwist's own activate logic.
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    (async () => {
+      const names = await caches.keys();
+      await Promise.all(
+        names
+          .filter(
+            (name) =>
+              name.includes("scot-read-pages-") && !name.endsWith(BUILD_REV),
+          )
+          .map((name) => caches.delete(name)),
+      );
+    })(),
+  );
 });
 
 serwist.addEventListeners();
