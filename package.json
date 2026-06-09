@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --test \"lib/**/*.test.ts\"",
+    "test": "node --test \"lib/**/*.test.ts\" \"i18n/**/*.test.ts\" \"messages/**/*.test.ts\"",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

@@ -11,24 +11,27 @@
 // the Dashboard are gated to managers. /app stays reachable as the landing
 // router but no longer has its own nav entry (Dashboard replaces "Home").
 
-export type NavItem = { href: string; label: string; exact: boolean };
+// labelKey is an i18n message key (namespace `nav`), NOT a display string — the
+// label is translated in components/app-nav.tsx. This keeps the lib pure and
+// React/next-intl-free so it stays trivially unit-testable.
+export type NavItem = { href: string; labelKey: string; exact: boolean };
 
 const dashboardItem: NavItem = {
   href: "/app/dashboard",
-  label: "Dashboard",
+  labelKey: "nav.dashboard",
   exact: true,
 };
 const coreItems: NavItem[] = [
-  { href: "/app/today", label: "Today", exact: false },
-  { href: "/app/colonies", label: "Colonies", exact: false },
+  { href: "/app/today", labelKey: "nav.today", exact: false },
+  { href: "/app/colonies", labelKey: "nav.colonies", exact: false },
 ];
 // Manager (admin + caretaker) items — they triage incidents.
 const managerItems: NavItem[] = [
-  { href: "/app/incidents", label: "Incidents", exact: false },
+  { href: "/app/incidents", labelKey: "nav.incidents", exact: false },
 ];
 const adminItems: NavItem[] = [
-  { href: "/app/members", label: "Members", exact: false },
-  { href: "/app/org", label: "Organisation", exact: false },
+  { href: "/app/members", labelKey: "nav.members", exact: false },
+  { href: "/app/org", labelKey: "nav.org", exact: false },
 ];
 
 export function navItemsFor({ role }: { role?: string | null }): NavItem[] {

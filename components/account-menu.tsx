@@ -1,8 +1,18 @@
+import { getTranslations } from "next-intl/server";
 import { signOut } from "@/app/app/actions";
+import { LocaleSwitcher } from "@/components/locale-switcher";
+import type { Locale } from "@/i18n/locale";
 
-// Mobile account menu: avatar → email + sign out. Uses a native <details> so it
-// needs no client JS and stays keyboard-accessible.
-export function AccountMenu({ email }: { email: string }) {
+// Mobile account menu: avatar → email + language + sign out. Uses a native
+// <details> so it needs no client JS and stays keyboard-accessible.
+export async function AccountMenu({
+  email,
+  locale,
+}: {
+  email: string;
+  locale: Locale;
+}) {
+  const t = await getTranslations();
   const initial = (email[0] ?? "?").toUpperCase();
   return (
     <details className="relative">
@@ -15,12 +25,16 @@ export function AccountMenu({ email }: { email: string }) {
         <p className="truncate px-2 py-1.5 text-xs text-muted" title={email}>
           {email}
         </p>
+        <div className="flex items-center justify-between gap-2 px-2 py-1.5">
+          <span className="text-sm text-muted">{t("locale.label")}</span>
+          <LocaleSwitcher locale={locale} size="compact" />
+        </div>
         <form action={signOut}>
           <button
             type="submit"
             className="w-full rounded-lg px-2 py-2 text-left text-sm text-foreground transition hover:bg-foreground/5"
           >
-            Sign out
+            {t("common.signOut")}
           </button>
         </form>
       </div>
