@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { defaultUrgencyLevel, type UrgencyLevel } from "@/lib/incident";
@@ -17,6 +18,7 @@ export default async function NewIncidentPage({
 }) {
   const { id } = await params;
   const { error } = await searchParams;
+  const t = await getTranslations("colonies");
   const org = await getActiveOrg();
   if (!org) redirect("/app");
 
@@ -52,7 +54,7 @@ export default async function NewIncidentPage({
       <Link href={`/app/colonies/${id}`} className="text-sm text-accent">
         ← {colony.name}
       </Link>
-      <h1 className="font-display text-3xl">Report an incident</h1>
+      <h1 className="font-display text-3xl">{t("reportIncident")}</h1>
       {error ? (
         <p role="alert" className={errorClass}>
           {error}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { createCat } from "../../../actions";
 import { SubmitButton } from "@/components/submit-button";
 import { btnPrimary, fieldLabel, input } from "@/lib/ui";
@@ -15,13 +16,14 @@ export default async function NewCat({
 }) {
   const { id } = await params;
   const { error } = await searchParams;
+  const t = await getTranslations("cats");
 
   return (
     <div className="flex max-w-xl flex-col gap-5 px-6 py-6 md:px-10">
       <Link href={`/app/colonies/${id}`} className="text-sm text-accent">
-        ← Colony
+        {t("backToColonyShort")}
       </Link>
-      <h1 className="font-display text-3xl">Add cat</h1>
+      <h1 className="font-display text-3xl">{t("addTitle")}</h1>
 
       {error ? (
         <p role="alert" className={errorClass}>
@@ -31,35 +33,38 @@ export default async function NewCat({
 
       <form action={createCat} className="flex flex-col gap-4">
         <input type="hidden" name="colony_id" value={id} />
-        <p className="text-sm text-muted">
-          Give the cat a name, or a short description if it has no name yet — at
-          least one. Everything else is optional.
-        </p>
+        <p className="text-sm text-muted">{t("addLede")}</p>
         <label className={fieldLabel}>
-          <span>Name</span>
-          <input name="name" placeholder="e.g. Ginger" className={input} />
-        </label>
-        <label className={fieldLabel}>
-          <span>
-            Description{" "}
-            <span className="font-normal text-muted">(if it has no name)</span>
-          </span>
+          <span>{t("name")}</span>
           <input
-            name="temp_id"
-            placeholder="e.g. ginger tom by the bins"
+            name="name"
+            placeholder={t("namePlaceholderManager")}
             className={input}
           />
         </label>
         <label className={fieldLabel}>
-          <span>Colour / markings</span>
+          <span>
+            {t("description")}{" "}
+            <span className="font-normal text-muted">
+              {t("descriptionIfNoName")}
+            </span>
+          </span>
+          <input
+            name="temp_id"
+            placeholder={t("descriptionPlaceholderManager")}
+            className={input}
+          />
+        </label>
+        <label className={fieldLabel}>
+          <span>{t("colourMarkings")}</span>
           <input name="colour" className={input} />
         </label>
         <label className={fieldLabel}>
-          <span>Notes</span>
+          <span>{t("notes")}</span>
           <textarea name="notes" rows={3} className={`${input} py-2`} />
         </label>
-        <SubmitButton pendingText="Adding…" className={btnPrimary}>
-          Add cat
+        <SubmitButton pendingText={t("adding")} className={btnPrimary}>
+          {t("addTitle")}
         </SubmitButton>
       </form>
     </div>
