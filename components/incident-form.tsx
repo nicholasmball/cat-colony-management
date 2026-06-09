@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { IncidentTypeIcon, PawIcon, WarningIcon } from "@/components/icons";
 import { INCIDENT_TYPES, type IncidentType } from "@/lib/incident";
+import { enqueue } from "@/lib/offline/outbox";
+import { getStore, isDefinitelyOffline } from "@/lib/offline/client";
 import { btnGhost, btnGhostDanger, btnPrimary, input } from "@/lib/ui";
 
 type Cat = { id: string; name: string | null; temp_id: string | null };
@@ -129,6 +131,24 @@ export function IncidentForm({
       photoKey: photoKey || null,
     };
 
+    // Phase 2 offline-first: if the browser KNOWS it's offline, queue without
+    // hitting the network. A queued report carries no photo (presign needs the
+    // network), which the form already tolerates; the client UUID PK makes the
+    // later replay idempotent. We use the locally-known `urgent` for the
+    // destination since the server's resolved value isn't available offline.
+    if (isDefinitelyOffline()) {
+      if (await queueOffline(body)) {
+        router.push(
+          `/app/colonies/${colonyId}?reported=${urgent ? "urgent" : "1"}`,
+        );
+        router.refresh();
+        return;
+      }
+      setSubmitError(t("form.submitFailed"));
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/incidents", {
         method: "POST",
@@ -142,6 +162,7 @@ export function IncidentForm({
         photoFailed?: boolean;
       };
       if (!res.ok || !json.ok) {
+        // Real server rejection → surface as before, NOT queued.
         setSubmitError(json.error || t("form.submitFailed"));
         setSubmitting(false);
         return;
@@ -156,8 +177,36 @@ export function IncidentForm({
       router.push(`/app/colonies/${colonyId}?${params.toString()}`);
       router.refresh();
     } catch {
+      // Network failure mid-submit → queue + proceed.
+      if (await queueOffline(body)) {
+        router.push(
+          `/app/colonies/${colonyId}?reported=${urgent ? "urgent" : "1"}`,
+        );
+        router.refresh();
+        return;
+      }
       setSubmitError(t("form.submitFailed"));
       setSubmitting(false);
+    }
+  }
+
+  // Enqueue the incident to the offline outbox; false only if no queue exists
+  // (no IndexedDB) or the write failed, so the caller can surface an error rather
+  // than silently dropping the report.
+  async function queueOffline(body: unknown): Promise<boolean> {
+    const store = getStore();
+    if (!store) return false;
+    try {
+      await enqueue(store, {
+        localId: (body as { id: string }).id,
+        kind: "incident",
+        url: "/api/incidents",
+        body,
+        createdAt: Date.now(),
+      });
+      return true;
+    } catch {
+      return false;
     }
   }
 

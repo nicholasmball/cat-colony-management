@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { enqueue } from "@/lib/offline/outbox";
+import { getStore, isDefinitelyOffline } from "@/lib/offline/client";
 import { btnPrimary, input } from "@/lib/ui";
 
 type Cat = { id: string; name: string | null; temp_id: string | null };
@@ -81,6 +83,21 @@ export function FeedForm({
         })),
     };
 
+    const destination = `/app/colonies/${colonyId}?updated=1`;
+
+    // Phase 2 offline-first: if the browser KNOWS it's offline, skip the network
+    // and queue immediately. The client UUID makes the later replay idempotent.
+    if (isDefinitelyOffline()) {
+      if (await queueOffline(body)) {
+        router.push(destination);
+        router.refresh();
+        return;
+      }
+      setError(t("submitFailed"));
+      setSubmitting(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/feedings", {
         method: "POST",
@@ -92,16 +109,46 @@ export function FeedForm({
         error?: string;
       };
       if (!res.ok || !json.ok) {
+        // A real server rejection (validation/auth) surfaces as before — NOT
+        // queued, since a blind replay wouldn't fix it.
         setError(json.error || t("submitFailed"));
         setSubmitting(false);
         return;
       }
       // Same destination the server action redirected to.
-      router.push(`/app/colonies/${colonyId}?updated=1`);
+      router.push(destination);
       router.refresh();
     } catch {
+      // The fetch threw → a network failure mid-submit. Queue + proceed as if it
+      // succeeded; the outbox flush will replay it on reconnect.
+      if (await queueOffline(body)) {
+        router.push(destination);
+        router.refresh();
+        return;
+      }
       setError(t("submitFailed"));
       setSubmitting(false);
+    }
+  }
+
+  // Enqueue the feeding write to the offline outbox. Returns false only if there
+  // is no queue available (no IndexedDB) or the write itself failed — in which
+  // case the caller surfaces the generic submit error rather than silently
+  // dropping the update.
+  async function queueOffline(body: unknown): Promise<boolean> {
+    const store = getStore();
+    if (!store) return false;
+    try {
+      await enqueue(store, {
+        localId: (body as { id: string }).id,
+        kind: "feeding",
+        url: "/api/feedings",
+        body,
+        createdAt: Date.now(),
+      });
+      return true;
+    } catch {
+      return false;
     }
   }
 

@@ -8,6 +8,7 @@ import { Logo } from "@/components/logo";
 import { AppNav } from "@/components/app-nav";
 import { AccountMenu } from "@/components/account-menu";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { OfflineSync } from "@/components/offline-sync";
 import { signOut } from "./actions";
 
 // Responsive shell: left sidebar on desktop, top bar + bottom tab bar on mobile.
@@ -45,6 +46,8 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-dvh flex-col md:flex-row">
+      {/* Flushes the offline write outbox on reconnect/foreground (Phase 2). */}
+      <OfflineSync />
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r border-border bg-surface md:flex">
         <div className="px-5 py-5">
