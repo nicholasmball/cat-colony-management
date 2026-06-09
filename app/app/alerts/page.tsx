@@ -33,7 +33,7 @@ export default async function AlertSettings({
   if (org.role !== "admin" && org.role !== "caretaker") redirect("/app/today");
 
   const { error, saved } = await searchParams;
-  const t = await getTranslations("alerts");
+  const t = await getTranslations("alertSettings");
 
   const supabase = await createClient();
   const { data } = await supabase
