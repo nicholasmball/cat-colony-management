@@ -510,7 +510,7 @@
     "saving": "Saving…",
     "saveChanges": "Save changes"
   },
-  "alerts": {
+  "alertSettings": {
     "title": "Alert thresholds",
     "subtitle": "Control when the app flags a problem. Applies to your whole organisation.",
     "notSeenLabel": "Days before a cat is flagged “not seen”",

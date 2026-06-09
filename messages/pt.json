@@ -510,7 +510,7 @@
     "saving": "A guardar…",
     "saveChanges": "Guardar alterações"
   },
-  "alerts": {
+  "alertSettings": {
     "title": "Limites de alerta",
     "subtitle": "Defina quando a app sinaliza um problema. Aplica-se a toda a organização.",
     "notSeenLabel": "Dias até um gato ser sinalizado como “não visto”",

@@ -1,7 +1,19 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import en from "./en.json" with { type: "json" };
 import pt from "./pt.json" with { type: "json" };
+
+// Top-level namespace keys, read from the RAW file text. JSON.parse (and the
+// `import … with {type:"json"}` above) silently keeps only the LAST of any
+// duplicate key, so a duplicate namespace shadows the earlier one without any
+// parsed-object test noticing — exactly the bug that hid the Alert-thresholds
+// page strings behind the notification-catalog `alerts` block. Prettier enforces
+// 2-space indentation, so root keys are the `  "name":` lines.
+function rawTopLevelKeys(file: string): string[] {
+  const text = readFileSync(new URL(file, import.meta.url), "utf8");
+  return [...text.matchAll(/^ {2}"([^"]+)":/gm)].map((m) => m[1]);
+}
 
 // Collect every leaf key path ("nav.dashboard", "feed.fed", …) from a nested
 // messages object. ICU placeholders live inside the string values, so leaves are
@@ -36,6 +48,57 @@ test("en.json and pt.json have identical key sets (no drift)", () => {
     [],
     `Keys present in pt.json but missing in en.json: ${missingInEn.join(", ")}`,
   );
+});
+
+test("no duplicate top-level namespaces (a dupe silently shadows the earlier one)", () => {
+  for (const file of ["./en.json", "./pt.json"]) {
+    const keys = rawTopLevelKeys(file);
+    const seen = new Set<string>();
+    const dupes = [
+      ...new Set(keys.filter((k) => seen.has(k) || (seen.add(k), false))),
+    ];
+    assert.deepEqual(
+      dupes,
+      [],
+      `Duplicate top-level keys in ${file}: ${dupes.join(", ")}`,
+    );
+  }
+});
+
+test("alertSettings namespace has the keys the /app/alerts page renders", () => {
+  // The page calls getTranslations("alertSettings") for exactly these. Guards
+  // against the page referencing keys that don't resolve (which renders as raw
+  // key text, e.g. "notSeenLabel", instead of throwing or failing the build).
+  const required = [
+    "title",
+    "subtitle",
+    "notSeenLabel",
+    "notSeenHint",
+    "unitDays",
+    "repeatedLabel",
+    "repeatedHint",
+    "unitVisits",
+    "missedLabel",
+    "missedHint",
+    "unitHours",
+    "usingDefault",
+    "savedToast",
+    "saving",
+    "save",
+  ];
+  for (const [name, cat] of [
+    ["en", en],
+    ["pt", pt],
+  ] as const) {
+    const ns = (cat as Record<string, Record<string, unknown>>).alertSettings;
+    assert.ok(ns, `${name}.json is missing the alertSettings namespace`);
+    const missing = required.filter((k) => !(k in ns));
+    assert.deepEqual(
+      missing,
+      [],
+      `${name}.alertSettings missing: ${missing.join(", ")}`,
+    );
+  }
 });
 
 test("no message value is left blank in either locale", () => {
