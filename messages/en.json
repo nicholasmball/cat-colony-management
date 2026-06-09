@@ -21,6 +21,7 @@
     "today": "Today",
     "colonies": "Colonies",
     "incidents": "Incidents",
+    "notifications": "Notifications",
     "members": "Members",
     "org": "Organisation"
   },
@@ -539,6 +540,21 @@
     "flagged": "Flagged: concern",
     "notSeenDays": "Not seen {count, plural, one {# day} other {# days}}",
     "repeatedNotSeen": "Not seen {count, plural, one {# time} other {# times}} in a row"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "subtitle": "Alerts across your colonies",
+    "markAllRead": "Mark all read",
+    "markRead": "Mark read",
+    "markReadAria": "Mark “{title}” as read",
+    "unreadBadgeAria": "{count, plural, one {# unread notification} other {# unread notifications}}",
+    "severityUrgent": "Urgent",
+    "severityRoutine": "Routine",
+    "unreadCount": "{count, plural, one {# unread} other {# unread}}",
+    "allReadTitle": "You’re all caught up",
+    "allReadBody": "No unread alerts. New alerts across your colonies will appear here.",
+    "emptyTitle": "No notifications yet",
+    "emptyBody": "Alerts about missed feeds, urgent incidents and cats needing review will land here."
   },
   "alerts": {
     "feeding_missed": {

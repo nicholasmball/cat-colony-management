@@ -25,9 +25,11 @@ const coreItems: NavItem[] = [
   { href: "/app/today", labelKey: "nav.today", exact: false },
   { href: "/app/colonies", labelKey: "nav.colonies", exact: false },
 ];
-// Manager (admin + caretaker) items — they triage incidents.
+// Manager (admin + caretaker) items — they triage incidents and are the only
+// alert recipients, so the Notifications centre is gated to them too.
 const managerItems: NavItem[] = [
   { href: "/app/incidents", labelKey: "nav.incidents", exact: false },
+  { href: "/app/notifications", labelKey: "nav.notifications", exact: false },
 ];
 const adminItems: NavItem[] = [
   { href: "/app/members", labelKey: "nav.members", exact: false },

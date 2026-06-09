@@ -24,6 +24,21 @@ export default async function AppLayout({
   const email = user.email ?? "";
   const org = await getActiveOrg();
   const role = org?.role;
+
+  // Unread notification count for the badge — only managers see the nav entry,
+  // so only fetch for them. RLS ("recipients read own") scopes the count to the
+  // caller; we add the active-org filter + read_at null. `head: true` returns
+  // only the count (no rows). 0 → no badge (the component hides it).
+  let unreadCount = 0;
+  if (org && (role === "admin" || role === "caretaker")) {
+    const { count } = await supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("organisation_id", org.organisation_id)
+      .is("read_at", null);
+    unreadCount = count ?? 0;
+  }
+
   const localeValue = await getLocale();
   const locale = isLocale(localeValue) ? localeValue : "pt";
   const t = await getTranslations();
@@ -37,7 +52,7 @@ export default async function AppLayout({
             <Logo width={132} />
           </Link>
         </div>
-        <AppNav variant="sidebar" role={role} />
+        <AppNav variant="sidebar" role={role} unreadCount={unreadCount} />
         <div className="mt-auto border-t border-border p-3">
           <p className="truncate px-2 text-xs text-muted" title={email}>
             {email}
@@ -72,7 +87,7 @@ export default async function AppLayout({
         <main className="flex-1 pb-24 md:pb-10">{children}</main>
 
         {/* Mobile bottom tab bar (hidden on desktop) */}
-        <AppNav variant="tabbar" role={role} />
+        <AppNav variant="tabbar" role={role} unreadCount={unreadCount} />
       </div>
     </div>
   );
