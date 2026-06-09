@@ -24,6 +24,12 @@
 //                                   a SW Background-Sync queue would DOUBLE-queue
 //                                   them. Background Sync is intentionally
 //                                   DEFERRED (see note at the write rule below).
+//
+// OFFLINE FALLBACK: when a document (top-level navigation) request can't be
+// satisfied — offline AND not in any cache — Serwist serves the precached
+// /public/offline.html as a last resort (the `fallbacks` block below). The
+// matcher is scoped to `request.destination === "document"` ONLY, so online
+// 4xx/5xx responses and non-document requests are NOT masked by the fallback.
 
 import {
   Serwist,
@@ -121,6 +127,19 @@ const serwist = new Serwist({
       }),
     },
   ],
+
+  // OFFLINE FALLBACK: last-resort document response when the network fails and
+  // nothing is cached. Document-only matcher so online errors and sub-resource
+  // requests are never masked. offline.html is precached via the public/**
+  // manifest glob (no extra precacheEntries needed).
+  fallbacks: {
+    entries: [
+      {
+        url: "/offline.html",
+        matcher: ({ request }) => request.destination === "document",
+      },
+    ],
+  },
 });
 
 serwist.addEventListeners();
