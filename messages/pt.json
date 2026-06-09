@@ -45,7 +45,8 @@
     "unassigned": "Sem atribuição",
     "unknown": "desconhecido",
     "colony": "Colónia",
-    "you": "Tu"
+    "you": "Tu",
+    "unnamedCat": "Gato sem nome"
   },
   "auth": {
     "signInToYourAccount": "Inicie sessão na sua conta",
@@ -99,6 +100,11 @@
     "feedsEmptyTitle": "Ainda não há colónias para alimentar",
     "feedsEmptyBody": "Quando uma colónia for adicionada a esta organização, aparecerá aqui para o dia.",
     "feedStatus": "{count} {status}",
+    "feedStatusWord": {
+      "fed": "alimentadas",
+      "pending": "pendentes",
+      "missed": "em falta"
+    },
     "missedFeeds": "Alimentações em falta",
     "missedEmptyTitle": "Todas as alimentações em dia",
     "missedEmptyBody": "Nenhuma colónia ultrapassou o seu horário de alimentação hoje.",
@@ -315,7 +321,7 @@
     "resolvedBy": "✓ Resolvido por {email}",
     "resolved": "✓ Resolvido",
     "manageIncident": "Gerir incidente",
-    "assignedTo": "Atribuído a {email}",
+    "assignedTo": "Atribuído a <strong>{email}</strong>",
     "noOneYet": "Ainda ninguém está a tratar disto.",
     "start": "▷ Iniciar",
     "reopen": "↺ Reabrir",

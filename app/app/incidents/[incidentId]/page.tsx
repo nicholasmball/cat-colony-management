@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
 import { photoSrc } from "@/lib/photo";
-import { incidentTypeLabel } from "@/lib/incident";
 import {
   IncidentStatusPill,
   UrgentBadge,
@@ -53,6 +53,11 @@ export default async function IncidentDetailPage({
 }) {
   const { incidentId } = await params;
   const { error } = await searchParams;
+  const t = await getTranslations("incidents");
+  const tType = await getTranslations("incidents.type");
+  const tc = await getTranslations("common");
+  const locale = await getLocale();
+  const displayLocale = locale === "pt" ? "pt-PT" : "en-GB";
   const org = await getActiveOrg();
   if (!org) redirect("/app");
 
@@ -111,9 +116,9 @@ export default async function IncidentDetailPage({
         .order("created_at", { ascending: true }),
     ]);
 
-  const colonyName = colonyRes.data?.name ?? "Colony";
+  const colonyName = colonyRes.data?.name ?? tc("colony");
   const catLabel = catRes.data
-    ? (catRes.data.name ?? catRes.data.temp_id ?? "Unnamed cat")
+    ? (catRes.data.name ?? catRes.data.temp_id ?? tc("unnamedCat"))
     : null;
   const urgent = urgencyRes.data?.alerts_immediately === true;
   const comments = (commentRes.data ?? []) as Comment[];
@@ -171,7 +176,7 @@ export default async function IncidentDetailPage({
     ? (emails.get(incident.assigned_to) ?? "unknown")
     : null;
 
-  const dateTimeFmt = new Intl.DateTimeFormat(undefined, {
+  const dateTimeFmt = new Intl.DateTimeFormat(displayLocale, {
     timeZone: org.timezone,
     day: "numeric",
     month: "short",
@@ -185,14 +190,15 @@ export default async function IncidentDetailPage({
     <div className="flex max-w-2xl flex-col gap-5 px-6 py-6 md:px-10">
       {isManager ? (
         <Link href="/app/incidents" className="text-sm text-accent">
-          ← Incidents
+          {t("backToIncidents")}
         </Link>
       ) : (
         <Link
           href={`/app/colonies/${incident.colony_id}`}
           className="text-sm text-accent"
         >
-          ← {colonyName}
+          {"← "}
+          {colonyName}
         </Link>
       )}
 
@@ -204,18 +210,20 @@ export default async function IncidentDetailPage({
           </span>
           <div className="min-w-0">
             <h1 className="flex flex-wrap items-center gap-2 font-display text-2xl">
-              {incidentTypeLabel(incident.type)}
+              {tType(incident.type)}
               {urgent ? <UrgentBadge /> : null}
               <IncidentStatusPill status={incident.status} />
             </h1>
             <p className="text-sm text-muted">
               {colonyName}
-              {catLabel ? <> · cat {catLabel}</> : null}
+              {catLabel ? <> · {t("catPrefix", { name: catLabel })}</> : null}
             </p>
           </div>
         </div>
         <p className="text-xs text-muted">
-          {reporterEmail ? <>Reported by {reporterEmail} · </> : null}
+          {reporterEmail ? (
+            <>{t("reportedBy", { email: reporterEmail })} · </>
+          ) : null}
           {dateTimeFmt.format(new Date(incident.occurred_at))}
         </p>
         {incident.notes ? (
@@ -225,7 +233,7 @@ export default async function IncidentDetailPage({
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={photo}
-            alt="Incident photo"
+            alt={t("incidentPhotoAlt")}
             className="max-h-72 w-full rounded-xl border border-border object-cover"
           />
         ) : null}
@@ -244,8 +252,9 @@ export default async function IncidentDetailPage({
           className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200"
         >
           <p className="font-medium">
-            ✓ Resolved
-            {assigneeEmail ? <> by {assigneeEmail}</> : null}
+            {assigneeEmail
+              ? t("resolvedBy", { email: assigneeEmail })
+              : t("resolved")}
             {incident.resolved_at ? (
               <> · {dateTimeFmt.format(new Date(incident.resolved_at))}</>
             ) : null}
@@ -258,7 +267,7 @@ export default async function IncidentDetailPage({
       {isManager ? (
         <section className={`${card} flex flex-col gap-4 p-4`}>
           <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Manage incident
+            {t("manageIncident")}
           </h2>
 
           {/* Assignee */}
@@ -266,13 +275,16 @@ export default async function IncidentDetailPage({
             <p className="text-sm">
               {assigneeEmail ? (
                 <>
-                  Assigned to <strong>{assigneeEmail}</strong>
+                  {t.rich("assignedTo", {
+                    email: assigneeEmail,
+                    strong: (chunks) => <strong>{chunks}</strong>,
+                  })}
                   {incident.assigned_to === user?.id ? (
-                    <span className={`ml-2 ${pill}`}>You</span>
+                    <span className={`ml-2 ${pill}`}>{tc("you")}</span>
                   ) : null}
                 </>
               ) : (
-                <span className="text-muted">No one is on this yet.</span>
+                <span className="text-muted">{t("noOneYet")}</span>
               )}
             </p>
             <IncidentAssignForm
@@ -294,7 +306,7 @@ export default async function IncidentDetailPage({
                     pendingText="…"
                     className={`${btnGhost} min-h-11 text-sm`}
                   >
-                    ▷ Start
+                    {t("start")}
                   </SubmitButton>
                 </form>
                 <IncidentResolveForm incidentId={incident.id} />
@@ -314,13 +326,10 @@ export default async function IncidentDetailPage({
                     pendingText="…"
                     className={`${btnGhost} min-h-11 text-sm`}
                   >
-                    ↺ Reopen
+                    {t("reopen")}
                   </SubmitButton>
                 </form>
-                <p className="text-xs text-muted">
-                  Reopen sends it back to the queue if something recurs. The
-                  resolution note stays in the history.
-                </p>
+                <p className="text-xs text-muted">{t("reopenHint")}</p>
               </div>
             ) : null}
           </div>
@@ -330,10 +339,10 @@ export default async function IncidentDetailPage({
       {/* ── Comment thread — ALL roles read; ALL roles (incl. feeders) post. ── */}
       <section className="flex flex-col gap-3">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-          Notes ({comments.length})
+          {t("notesHeading", { count: comments.length })}
         </h2>
         {comments.length === 0 ? (
-          <p className="text-sm text-muted">No notes yet.</p>
+          <p className="text-sm text-muted">{t("noNotesYet")}</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {comments.map((c) => (
@@ -341,8 +350,8 @@ export default async function IncidentDetailPage({
                 <p className="flex flex-wrap items-center gap-2 text-xs text-muted">
                   <strong className="text-foreground">
                     {c.author_id
-                      ? (emails.get(c.author_id) ?? "unknown")
-                      : "Someone"}
+                      ? (emails.get(c.author_id) ?? tc("unknown"))
+                      : t("someone")}
                   </strong>
                   <span>{dateTimeFmt.format(new Date(c.created_at))}</span>
                 </p>
@@ -356,20 +365,20 @@ export default async function IncidentDetailPage({
         <form action={addIncidentComment} className="flex flex-col gap-2">
           <input type="hidden" name="incident_id" value={incident.id} />
           <label className="flex flex-col gap-1.5 text-sm font-medium">
-            <span className="sr-only">Add a note</span>
+            <span className="sr-only">{t("addANote")}</span>
             <textarea
               name="body"
               rows={2}
               required
-              placeholder="Add a note…"
+              placeholder={t("addNotePlaceholder")}
               className={`${input} py-2`}
             />
           </label>
           <SubmitButton
-            pendingText="Posting…"
+            pendingText={t("posting")}
             className={`${btnPrimary} min-h-11 self-start text-sm`}
           >
-            Post note
+            {t("postNote")}
           </SubmitButton>
         </form>
       </section>
