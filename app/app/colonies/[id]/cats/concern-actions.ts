@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
@@ -57,7 +58,10 @@ async function resolveTarget(formData: FormData) {
     .eq("organisation_id", org.organisation_id)
     .is("deleted_at", null)
     .maybeSingle();
-  if (!cat) fail("Cat not found.");
+  if (!cat) {
+    const t = await getTranslations("errors");
+    fail(t("catNotFound"));
+  }
 
   return { org, colonyId, catId, detail, fail, userId: user?.id ?? null };
 }

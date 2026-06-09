@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { createOrganisation, switchOrg } from "./actions";
 import { SubmitButton } from "@/components/submit-button";
@@ -25,6 +26,8 @@ export default async function AppHome({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
+  const t = await getTranslations("appHome");
+  const tRole = await getTranslations("members.role");
   const supabase = await createClient();
 
   const {
@@ -65,31 +68,27 @@ export default async function AppHome({
           </p>
         ) : null}
         <div className="space-y-1">
-          <h1 className="font-display text-3xl">Welcome</h1>
-          <p className="text-sm text-muted">
-            Let&rsquo;s set up your organisation to get started.
-          </p>
+          <h1 className="font-display text-3xl">{t("welcome")}</h1>
+          <p className="text-sm text-muted">{t("setupLede")}</p>
         </div>
         <form
           action={createOrganisation}
           className={`${card} flex flex-col gap-3 p-5`}
         >
           <label className="text-sm font-medium" htmlFor="org-name">
-            Organisation name
+            {t("orgName")}
           </label>
           <input
             id="org-name"
             name="name"
             required
-            placeholder="e.g. Street Cats of Tavira"
+            placeholder={t("orgNamePlaceholder")}
             className={input}
           />
-          <SubmitButton pendingText="Creating…" className={btnPrimary}>
-            Create organisation
+          <SubmitButton pendingText={t("creating")} className={btnPrimary}>
+            {t("createOrg")}
           </SubmitButton>
-          <p className="text-xs text-muted">
-            You&rsquo;ll become its administrator.
-          </p>
+          <p className="text-xs text-muted">{t("becomeAdmin")}</p>
         </form>
       </div>
     );
@@ -99,7 +98,7 @@ export default async function AppHome({
   // Active org honours the switcher cookie (falls back to earliest membership).
   const active = await getActiveOrg();
   const canManage = active?.role === "admin" || active?.role === "caretaker";
-  const orgName = active?.name ?? "your colony";
+  const orgName = active?.name ?? t("organisationFallback");
 
   let colonyCount = 0;
   let catCount = 0;
@@ -135,20 +134,20 @@ export default async function AppHome({
   if (active && step !== "done") {
     const steps = [
       {
-        label: "Add your first colony",
+        label: t("stepAddColony"),
         state: step === "colony" ? "now" : "done",
       },
       {
-        label: "Add a cat to it",
+        label: t("stepAddCat"),
         state: step === "cat" ? "now" : step === "colony" ? "todo" : "done",
       },
-      { label: "Set a feeding schedule", state: "soon" as const },
+      { label: t("stepSetSchedule"), state: "soon" as const },
     ];
     const ctaHref =
       step === "colony"
         ? "/app/colonies/new"
         : `/app/colonies/${firstColonyId}/cats/new`;
-    const ctaLabel = step === "colony" ? "Add your first colony" : "Add a cat";
+    const ctaLabel = step === "colony" ? t("addFirstColony") : t("addCat");
 
     return (
       <div className="mx-auto flex max-w-md flex-col gap-5 px-6 py-8">
@@ -158,11 +157,11 @@ export default async function AppHome({
           </p>
         ) : null}
         <div className="space-y-1">
-          <h1 className="font-display text-3xl">Welcome to {orgName} 🐾</h1>
+          <h1 className="font-display text-3xl">
+            {t("welcomeToOrg", { org: orgName })}
+          </h1>
           <p className="text-sm text-muted">
-            {canManage
-              ? "Let’s get set up — a couple of quick steps."
-              : "Your colony is being set up."}
+            {canManage ? t("setupSteps") : t("colonyBeingSetUp")}
           </p>
         </div>
 
@@ -190,7 +189,7 @@ export default async function AppHome({
                   </span>
                   {s.state === "soon" ? (
                     <span className="ml-auto rounded bg-foreground/5 px-1.5 py-0.5 text-[0.65rem] text-muted">
-                      soon
+                      {t("soon")}
                     </span>
                   ) : null}
                 </li>
@@ -203,8 +202,8 @@ export default async function AppHome({
         ) : (
           <EmptyState
             icon={<PawIcon className="h-7 w-7" />}
-            title="Nothing here yet"
-            body="Your caretaker will set up colonies and assign you feeds. Check back soon."
+            title={t("nothingYetTitle")}
+            body={t("nothingYetBody")}
           />
         )}
       </div>
@@ -230,11 +229,13 @@ export default async function AppHome({
         </p>
       ) : null}
 
-      <h1 className="font-display text-3xl">Welcome back</h1>
+      <h1 className="font-display text-3xl">{t("welcomeBack")}</h1>
 
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-          {memberships.length > 1 ? "Your organisations" : "Your organisation"}
+          {memberships.length > 1
+            ? t("yourOrganisations")
+            : t("yourOrganisation")}
         </h2>
         <ul className="flex flex-col gap-2">
           {memberships.map((m) => {
@@ -257,11 +258,11 @@ export default async function AppHome({
                       </span>
                       <span>
                         <span className="block font-medium">
-                          {m.organisations?.name ?? "Organisation"}
+                          {m.organisations?.name ?? t("organisationFallback")}
                         </span>
                         <span className="block text-xs capitalize text-muted">
-                          {m.role}
-                          {isActive ? " · active" : ""}
+                          {tRole(m.role)}
+                          {isActive ? t("activeSuffix") : ""}
                         </span>
                       </span>
                     </span>
@@ -276,31 +277,31 @@ export default async function AppHome({
 
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-          Quick links
+          {t("quickLinks")}
         </h2>
         <Link
           href="/app/colonies"
           className={`${card} flex items-center gap-3 px-4 py-3.5 transition hover:border-accent/50`}
         >
           <PawIcon className="h-5 w-5 text-accent" />
-          <span className="text-sm font-medium">Colonies</span>
+          <span className="text-sm font-medium">{t("colonies")}</span>
           <ChevronIcon className="ml-auto h-5 w-5 text-muted" />
         </Link>
       </section>
 
       <details className="text-sm text-muted">
         <summary className="cursor-pointer select-none font-medium hover:text-foreground">
-          + New organisation
+          {t("newOrganisation")}
         </summary>
         <form action={createOrganisation} className="mt-3 flex gap-2">
           <input
             name="name"
             required
-            placeholder="Organisation name"
+            placeholder={t("organisationNamePlaceholder")}
             className={`${input} flex-1`}
           />
-          <SubmitButton pendingText="Creating…" className={btnPrimary}>
-            Create
+          <SubmitButton pendingText={t("creating")} className={btnPrimary}>
+            {t("create")}
           </SubmitButton>
         </form>
       </details>

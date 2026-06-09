@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { getLocale, getTranslations } from "next-intl/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { photoSrc } from "@/lib/photo";
 import { catLabel, formatStatus, statusTone } from "@/lib/cat-display";
@@ -12,7 +13,7 @@ import {
 } from "@/lib/cat-report";
 import {
   concernCandidate,
-  concernReasonText,
+  concernReasonKey,
   type ConcernSighting,
   type ConcernReview,
 } from "@/lib/cat-concern";
@@ -38,11 +39,14 @@ import {
 // Relative-ish, locale-independent "when" for the report line. Keeps it simple:
 // the date + time the report was created (records have no separate reporter
 // column — see PR notes).
-function reportedWhen(iso: string | null): string | null {
+function reportedWhen(
+  iso: string | null,
+  displayLocale: string,
+): string | null {
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleString("en-GB", {
+  return d.toLocaleString(displayLocale, {
     day: "numeric",
     month: "short",
     hour: "2-digit",
@@ -84,6 +88,15 @@ export default async function CatDetail({
 }) {
   const { id, catId } = await params;
   const { error, ignored, monitoring, missing, found } = await searchParams;
+  const t = await getTranslations("cats");
+  const tc = await getTranslations("common");
+  const tConcern = await getTranslations();
+  const locale = await getLocale();
+  const displayLocale = locale === "pt" ? "pt-PT" : "en-GB";
+  const concernText = (flag: {
+    reason: "concern" | "not_seen_days" | "repeated_not_seen";
+    count: number;
+  }) => tConcern(concernReasonKey(flag.reason), { count: flag.count });
   const org = await getActiveOrg();
   const supabase = await createClient();
 
@@ -113,7 +126,7 @@ export default async function CatDetail({
   // Confirm/Reject show only for a manager AND only while the cat is still
   // awaiting review — gated in the UI here and re-checked in the server action.
   const canReview = canManage && canReviewCat(cat);
-  const when = reportedWhen(cat.created_at as string | null);
+  const when = reportedWhen(cat.created_at as string | null, displayLocale);
   const label = catLabel(cat);
 
   // ── Concern review block ───────────────────────────────────────────────────
@@ -197,7 +210,7 @@ export default async function CatDetail({
 
   // Same Intl.DateTimeFormat (org timezone) used on the incident page. Falls
   // back to UTC if there's no active org so a render never throws.
-  const dateTimeFmt = new Intl.DateTimeFormat(undefined, {
+  const dateTimeFmt = new Intl.DateTimeFormat(displayLocale, {
     timeZone: org?.timezone ?? "UTC",
     day: "numeric",
     month: "short",
@@ -209,21 +222,22 @@ export default async function CatDetail({
   // same event. Formatted via the org-timezone formatter for the attribution
   // line; the existing review note keeps using `when`.
   const reportedAt = cat.created_at as string | null;
+  const neuteredText = (v: boolean) =>
+    v ? t("neutered_yes") : t("neutered_no");
   const sex =
     cat.sex && cat.neutered != null
-      ? `${cat.sex} · ${cat.neutered ? "neutered" : "not neutered"}`
+      ? `${cat.sex} · ${neuteredText(cat.neutered as boolean)}`
       : cat.sex
-        ? cat.sex
+        ? (cat.sex as string)
         : cat.neutered != null
-          ? cat.neutered
-            ? "neutered"
-            : "not neutered"
+          ? neuteredText(cat.neutered as boolean)
           : null;
 
   return (
     <div className="flex max-w-3xl flex-col gap-6 px-6 py-6 md:px-10">
       <Link href={`/app/colonies/${id}`} className="text-sm text-accent">
-        ← {colony?.name ?? "Colony"}
+        {"← "}
+        {colony?.name ?? tc("colony")}
       </Link>
 
       {error ? (
@@ -240,12 +254,10 @@ export default async function CatDetail({
           role="status"
           className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
         >
-          {ignored ? "✓ Marked as reviewed — no action needed for now." : null}
-          {monitoring ? "✓ Now monitoring this cat." : null}
-          {missing
-            ? "✓ Marked missing. You can mark it found if it returns."
-            : null}
-          {found ? "✓ Marked found and back to active." : null}
+          {ignored ? t("toastReviewed") : null}
+          {monitoring ? t("toastMonitoring") : null}
+          {missing ? t("toastMissing") : null}
+          {found ? t("toastFound") : null}
         </p>
       ) : null}
 
@@ -256,7 +268,7 @@ export default async function CatDetail({
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={photo}
-              alt={`Photo of ${label}`}
+              alt={t("photoOfAlt", { label })}
               className="h-full w-full object-cover"
             />
           ) : (
@@ -274,7 +286,9 @@ export default async function CatDetail({
                 } ${toneClass[statusTone(cat.status)]}`}
               >
                 {unconfirmed ? "★ " : ""}
-                {formatStatus(cat.status)}
+                {unconfirmed
+                  ? t("status.newUnconfirmed")
+                  : formatStatus(cat.status)}
               </span>
             </div>
             {canManage ? (
@@ -282,7 +296,7 @@ export default async function CatDetail({
                 href={`/app/colonies/${id}/cats/${catId}/edit`}
                 className={`${btnGhost} text-sm`}
               >
-                Edit
+                {tc("edit")}
               </Link>
             ) : null}
           </div>
@@ -299,19 +313,20 @@ export default async function CatDetail({
             <p className="text-xs text-muted [overflow-wrap:anywhere]">
               {reporterEmail ? (
                 <>
-                  Reported by <span title={reporterEmail}>{reporterEmail}</span>{" "}
-                  ·{" "}
+                  {t("reportedByLine")}{" "}
+                  <span title={reporterEmail}>{reporterEmail}</span> ·{" "}
                 </>
               ) : (
-                <>Reported </>
+                <>{t("reportedLine")} </>
               )}
               {dateTimeFmt.format(new Date(reportedAt))}
             </p>
           ) : null}
           {confirmerEmail && cat.confirmed_at ? (
             <p className="text-xs text-muted [overflow-wrap:anywhere]">
-              Confirmed by <span title={confirmerEmail}>{confirmerEmail}</span>{" "}
-              · {dateTimeFmt.format(new Date(cat.confirmed_at as string))}
+              {t("confirmedByLine")}{" "}
+              <span title={confirmerEmail}>{confirmerEmail}</span> ·{" "}
+              {dateTimeFmt.format(new Date(cat.confirmed_at as string))}
             </p>
           ) : null}
 
@@ -320,23 +335,21 @@ export default async function CatDetail({
               set the right expectation by role. */}
           {unconfirmed ? (
             <p role="note" className={`${card} px-3 py-2 text-sm text-muted`}>
-              {when ? `Reported ${when}. ` : ""}
-              {canReview
-                ? "Confirm to add it to the colony, or reject if it’s a duplicate or mistake."
-                : "Waiting for a caretaker to review."}
+              {when ? t("reportedWhen", { when }) : ""}
+              {canReview ? t("reviewConfirmHint") : t("reviewWaitHint")}
             </p>
           ) : null}
 
           <div className="grid grid-cols-2 gap-2">
-            <Fact label="Colour" value={cat.colour} />
-            <Fact label="Markings" value={cat.markings} />
-            <Fact label="Sex" value={sex} />
-            <Fact label="Approx. age" value={cat.approx_age} />
+            <Fact label={t("factColour")} value={cat.colour} />
+            <Fact label={t("factMarkings")} value={cat.markings} />
+            <Fact label={t("factSex")} value={sex} />
+            <Fact label={t("factApproxAge")} value={cat.approx_age} />
           </div>
           {cat.notes ? (
             <div className={`${card} p-3`}>
               <p className="text-xs uppercase tracking-wide text-muted">
-                Notes
+                {t("notesLabel")}
               </p>
               <p className="whitespace-pre-wrap text-sm">{cat.notes}</p>
             </div>
@@ -352,21 +365,21 @@ export default async function CatDetail({
                 <input type="hidden" name="colony_id" value={id} />
                 <input type="hidden" name="cat_id" value={catId} />
                 <SubmitButton
-                  pendingText="Confirming…"
+                  pendingText={t("confirming")}
                   className={`${btnPrimary} w-full min-h-12`}
                 >
-                  Confirm cat
+                  {t("confirmCat")}
                 </SubmitButton>
               </form>
               <form action={rejectCat} className="flex-1">
                 <input type="hidden" name="colony_id" value={id} />
                 <input type="hidden" name="cat_id" value={catId} />
                 <ConfirmButton
-                  confirm="Reject this reported cat? It will be removed from the colony. You can’t undo this."
-                  confirmLabel="Reject"
+                  confirm={t("rejectConfirm")}
+                  confirmLabel={t("rejectLabel")}
                   className={`${btnGhostDanger} w-full min-h-12`}
                 >
-                  Reject…
+                  {t("rejectEllipsis")}
                 </ConfirmButton>
               </form>
             </div>
@@ -385,13 +398,14 @@ export default async function CatDetail({
                   className="h-5 w-5 shrink-0 text-amber-500"
                   aria-hidden
                 />
-                {concernReasonText(concernFlag!)}
+                {concernText(concernFlag!)}
                 {concernFlag!.monitoring ? (
                   <span className="text-xs font-normal text-muted">
-                    · monitoring
                     {monitoringSince
-                      ? ` since ${dateTimeFmt.format(new Date(monitoringSince))}`
-                      : ""}
+                      ? t("monitoringSince", {
+                          date: dateTimeFmt.format(new Date(monitoringSince)),
+                        })
+                      : t("monitoringLabel")}
                   </span>
                 ) : null}
               </p>
@@ -405,12 +419,12 @@ export default async function CatDetail({
                     <input type="hidden" name="colony_id" value={id} />
                     <input type="hidden" name="cat_id" value={catId} />
                     <label className={`${fieldLabel} text-xs`}>
-                      Note (optional)
+                      {t("noteOptional")}
                       <textarea
                         name="note"
                         rows={2}
                         className={`${input} py-2`}
-                        placeholder="Add a short note for the team"
+                        placeholder={t("notePlaceholder")}
                       />
                     </label>
                     <div className="flex flex-wrap gap-2">
@@ -419,14 +433,14 @@ export default async function CatDetail({
                         formAction={monitorConcern}
                         className={`${btnPrimary} min-h-11 px-4`}
                       >
-                        Monitor
+                        {t("monitor")}
                       </button>
                       <button
                         type="submit"
                         formAction={ignoreConcern}
                         className={`${btnGhost} min-h-11 px-4`}
                       >
-                        Ignore
+                        {t("ignore")}
                       </button>
                     </div>
                   </form>
@@ -434,18 +448,16 @@ export default async function CatDetail({
                     <input type="hidden" name="colony_id" value={id} />
                     <input type="hidden" name="cat_id" value={catId} />
                     <ConfirmButton
-                      confirm="Mark this cat as missing? It moves out of the active list. This is reversible — you can mark it found if it returns."
-                      confirmLabel="Mark missing"
+                      confirm={t("markMissingConfirm")}
+                      confirmLabel={t("markMissingLabel")}
                       className={`${btnGhostDanger} min-h-11 px-4`}
                     >
-                      Mark missing…
+                      {t("markMissing")}
                     </ConfirmButton>
                   </form>
                 </>
               ) : (
-                <p className="text-xs text-muted">
-                  A caretaker will review this cat.
-                </p>
+                <p className="text-xs text-muted">{t("caretakerWillReview")}</p>
               )}
             </div>
           ) : null}
@@ -453,19 +465,16 @@ export default async function CatDetail({
           {/* Missing cat → offer the approved Mark-found reversal. */}
           {isMissing && canManage ? (
             <div className={`${card} flex flex-col gap-3 p-4`}>
-              <p className="text-sm text-muted">
-                This cat is marked missing. If it’s been seen again, mark it
-                found to return it to the active list.
-              </p>
+              <p className="text-sm text-muted">{t("missingHint")}</p>
               <form action={markCatFound}>
                 <input type="hidden" name="colony_id" value={id} />
                 <input type="hidden" name="cat_id" value={catId} />
                 <ConfirmButton
-                  confirm="Mark this cat as found? It returns to the active list."
-                  confirmLabel="Mark found"
+                  confirm={t("markFoundConfirm")}
+                  confirmLabel={t("markFoundLabel")}
                   className={`${btnPrimary} min-h-11 px-4`}
                 >
-                  Mark found → Active
+                  {t("markFound")}
                 </ConfirmButton>
               </form>
             </div>

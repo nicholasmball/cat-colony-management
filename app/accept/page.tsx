@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { getTranslations } from "next-intl/server";
 import { getPendingInvite } from "@/lib/pending-invite";
 import { Logo } from "@/components/logo";
 import { SubmitButton } from "@/components/submit-button";
@@ -37,6 +38,7 @@ export default async function AcceptPage({
   searchParams: Promise<{ token?: string; error?: string }>;
 }) {
   const { token, error } = await searchParams;
+  const t = await getTranslations("auth");
 
   const supabase = await createClient();
   const {
@@ -61,22 +63,24 @@ export default async function AcceptPage({
   const orgRel = inv?.organisations;
   const orgName =
     (Array.isArray(orgRel) ? orgRel[0]?.name : orgRel?.name) ??
-    "the organisation";
+    t("theOrganisation");
 
   if (!inv || inv.accepted_at) {
     return (
       <Shell>
-        <h1 className="font-display text-2xl">Invite not available</h1>
+        <h1 className="font-display text-2xl">
+          {t("inviteNotAvailableTitle")}
+        </h1>
         <p className="text-sm text-muted">
           {user
-            ? "There’s no pending invite for your account. If you already joined, just open the app."
-            : "This invite link is missing, invalid, or already used. Ask whoever invited you to send it again."}
+            ? t("inviteNotAvailableSignedIn")
+            : t("inviteNotAvailableSignedOut")}
         </p>
         <Link
           href={user ? "/app" : "/login"}
           className={`${btnPrimary} justify-center`}
         >
-          {user ? "Open the app" : "Go to sign in"}
+          {user ? t("openTheApp") : t("goToSignIn")}
         </Link>
       </Shell>
     );
@@ -86,13 +90,16 @@ export default async function AcceptPage({
   if (user && user.email?.toLowerCase() !== inv.email.toLowerCase()) {
     return (
       <Shell>
-        <h1 className="font-display text-2xl">Wrong account</h1>
+        <h1 className="font-display text-2xl">{t("wrongAccountTitle")}</h1>
         <p className="text-sm text-muted">
-          This invite is for <strong>{inv.email}</strong>, but you’re signed in
-          as <strong>{user.email}</strong>. Sign out, then open the link again.
+          {t.rich("wrongAccount", {
+            inviteEmail: inv.email,
+            userEmail: user.email ?? "",
+            strong: (chunks) => <strong>{chunks}</strong>,
+          })}
         </p>
         <Link href="/login" className="text-sm text-accent">
-          Go to sign in
+          {t("goToSignIn")}
         </Link>
       </Shell>
     );
@@ -100,10 +107,15 @@ export default async function AcceptPage({
 
   return (
     <Shell>
-      <h1 className="font-display text-2xl">Welcome to {orgName} 🐾</h1>
+      <h1 className="font-display text-2xl">
+        {t("welcomeToOrg", { orgName })}
+      </h1>
       <p className="text-sm text-muted">
-        You’ve been invited as a <strong>{inv.role}</strong> ({inv.email}).
-        Choose a password to set up your account.
+        {t.rich("invitedAs", {
+          role: inv.role,
+          email: inv.email,
+          strong: (chunks) => <strong>{chunks}</strong>,
+        })}
       </p>
 
       {error ? <p className={errorClass}>{error}</p> : null}
@@ -111,7 +123,7 @@ export default async function AcceptPage({
       <form action={completeAccept} className="flex flex-col gap-3">
         {token ? <input type="hidden" name="token" value={token} /> : null}
         <label className={fieldLabel}>
-          <span>Password</span>
+          <span>{t("password")}</span>
           <input
             name="password"
             type="password"
@@ -122,7 +134,7 @@ export default async function AcceptPage({
           />
         </label>
         <label className={fieldLabel}>
-          <span>Confirm password</span>
+          <span>{t("confirmPassword")}</span>
           <input
             name="confirm"
             type="password"
@@ -132,12 +144,12 @@ export default async function AcceptPage({
             className={input}
           />
         </label>
-        <p className="-mt-1 text-xs text-muted">At least 8 characters.</p>
+        <p className="-mt-1 text-xs text-muted">{t("atLeast8")}</p>
         <SubmitButton
-          pendingText="Setting up…"
+          pendingText={t("settingUp")}
           className={`${btnPrimary} w-full`}
         >
-          Set password &amp; join
+          {t("setPasswordAndJoin")}
         </SubmitButton>
       </form>
     </Shell>

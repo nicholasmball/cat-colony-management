@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { updateCat } from "../../../../actions";
 import { createClient } from "@/lib/supabase/server";
+import { getTranslations } from "next-intl/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { photoSrc } from "@/lib/photo";
 import { SubmitButton } from "@/components/submit-button";
@@ -20,6 +21,7 @@ export default async function EditCat({
 }) {
   const { id, catId } = await params;
   const { error } = await searchParams;
+  const t = await getTranslations("cats");
 
   const org = await getActiveOrg();
   // Edit is a manager action; Feeders report new cats but don't edit records.
@@ -48,10 +50,10 @@ export default async function EditCat({
   return (
     <div className="flex max-w-xl flex-col gap-5 px-6 py-6 md:px-10">
       <Link href={`/app/colonies/${id}`} className="text-sm text-accent">
-        ← Colony
+        {t("backToColonyShort")}
       </Link>
       <h1 className="font-display text-3xl">
-        Edit {cat.name ?? cat.temp_id ?? "cat"}
+        {t("editName", { name: cat.name ?? cat.temp_id ?? t("catFallback") })}
       </h1>
 
       {error ? (
@@ -63,36 +65,35 @@ export default async function EditCat({
       <ImageUpload
         catId={catId}
         initialSrc={photo}
-        label={cat.name ?? cat.temp_id ?? "cat"}
+        label={cat.name ?? cat.temp_id ?? t("catFallback")}
       />
 
       <form action={updateCat} className="flex flex-col gap-4">
         <input type="hidden" name="cat_id" value={catId} />
         <input type="hidden" name="colony_id" value={id} />
 
-        <p className="text-sm text-muted">
-          Keep a name, or a short description if it has no name yet — at least
-          one. Everything else is optional; fill in what you know.
-        </p>
+        <p className="text-sm text-muted">{t("editLede")}</p>
         <label className={fieldLabel}>
-          <span>Name</span>
+          <span>{t("name")}</span>
           <input name="name" defaultValue={cat.name ?? ""} className={input} />
         </label>
         <label className={fieldLabel}>
           <span>
-            Description{" "}
-            <span className="font-normal text-muted">(if it has no name)</span>
+            {t("description")}{" "}
+            <span className="font-normal text-muted">
+              {t("descriptionIfNoName")}
+            </span>
           </span>
           <input
             name="temp_id"
             defaultValue={cat.temp_id ?? ""}
-            placeholder="e.g. ginger tom by the bins"
+            placeholder={t("descriptionPlaceholderManager")}
             className={input}
           />
         </label>
 
         <label className={fieldLabel}>
-          <span>Colour</span>
+          <span>{t("colour")}</span>
           <input
             name="colour"
             defaultValue={cat.colour ?? ""}
@@ -100,7 +101,7 @@ export default async function EditCat({
           />
         </label>
         <label className={fieldLabel}>
-          <span>Markings</span>
+          <span>{t("markings")}</span>
           <input
             name="markings"
             defaultValue={cat.markings ?? ""}
@@ -110,38 +111,38 @@ export default async function EditCat({
 
         <div className="grid grid-cols-2 gap-4">
           <label className={fieldLabel}>
-            <span>Sex</span>
+            <span>{t("sex")}</span>
             <select name="sex" defaultValue={cat.sex ?? ""} className={input}>
-              <option value="">Unknown</option>
-              <option value="female">Female</option>
-              <option value="male">Male</option>
+              <option value="">{t("sexUnknown")}</option>
+              <option value="female">{t("sexFemale")}</option>
+              <option value="male">{t("sexMale")}</option>
             </select>
           </label>
           <label className={fieldLabel}>
-            <span>Neutered</span>
+            <span>{t("neutered")}</span>
             <select
               name="neutered"
               defaultValue={neuteredValue}
               className={input}
             >
-              <option value="">Unknown</option>
-              <option value="yes">Yes</option>
-              <option value="no">No</option>
+              <option value="">{t("neuteredUnknown")}</option>
+              <option value="yes">{t("neuteredYes")}</option>
+              <option value="no">{t("neuteredNo")}</option>
             </select>
           </label>
         </div>
 
         <label className={fieldLabel}>
-          <span>Approx. age</span>
+          <span>{t("approxAge")}</span>
           <input
             name="approx_age"
             defaultValue={cat.approx_age ?? ""}
-            placeholder="e.g. ~2 years, kitten"
+            placeholder={t("approxAgePlaceholder")}
             className={input}
           />
         </label>
         <label className={fieldLabel}>
-          <span>Notes</span>
+          <span>{t("notes")}</span>
           <textarea
             name="notes"
             rows={3}
@@ -150,8 +151,8 @@ export default async function EditCat({
           />
         </label>
 
-        <SubmitButton pendingText="Saving…" className={btnPrimary}>
-          Save changes
+        <SubmitButton pendingText={t("saving")} className={btnPrimary}>
+          {t("saveChanges")}
         </SubmitButton>
       </form>
     </div>
