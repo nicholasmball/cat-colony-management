@@ -1,9 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { SubmitButton } from "@/components/submit-button";
-import { createIncident } from "@/app/app/colonies/[id]/incidents/actions";
 import { IncidentTypeIcon, PawIcon, WarningIcon } from "@/components/icons";
 import { INCIDENT_TYPES, type IncidentType } from "@/lib/incident";
 import { btnGhost, btnGhostDanger, btnPrimary, input } from "@/lib/ui";
@@ -72,12 +71,18 @@ export function IncidentForm({
 }) {
   const t = useTranslations("incidents");
   const tType = useTranslations("incidents.type");
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const typeGroupRef = useRef<HTMLDivElement>(null);
   const [type, setType] = useState<IncidentType | "">("");
   const [urgencyId, setUrgencyId] = useState<string>(defaultUrgencyId ?? "");
   const [catId, setCatId] = useState<string>(""); // "" = no specific cat
   const [typeError, setTypeError] = useState(false);
+  // Drives the submit button's pending state and an inline submit error,
+  // replacing useFormStatus now that we POST via fetch. Same disabled-while-
+  // submitting behaviour as before.
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Photo state mirrors image-upload.tsx: presign → PUT to R2, then stash the
   // returned key in a hidden field so the action attaches it after the incident
@@ -91,13 +96,68 @@ export function IncidentForm({
   const urgent =
     urgencyLevels.find((l) => l.id === urgencyId)?.alerts_immediately ?? false;
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     if (!type) {
-      e.preventDefault();
       setTypeError(true);
       typeGroupRef.current
         ?.querySelector<HTMLButtonElement>('[role="radio"]')
         ?.focus();
+      return;
+    }
+    if (submitting) return;
+    setSubmitting(true);
+    setSubmitError(null);
+
+    const form = e.currentTarget;
+    const notes =
+      (
+        form.elements.namedItem("notes") as HTMLTextAreaElement
+      )?.value?.trim() || null;
+
+    // Phase 1 transport: a client UUID becomes the incident's PK so a replay is
+    // idempotent (the route upserts onConflict:"id"). Urgency/cat are re-resolved
+    // and re-validated server-side; the photo presign→PUT already ran on pick
+    // (online-only, unchanged) and we just pass the key.
+    const body = {
+      id: crypto.randomUUID(),
+      colonyId,
+      type,
+      urgencyLevelId: urgencyId || null,
+      catId: catId || null,
+      notes,
+      photoKey: photoKey || null,
+    };
+
+    try {
+      const res = await fetch("/api/incidents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        urgent?: boolean;
+        photoFailed?: boolean;
+      };
+      if (!res.ok || !json.ok) {
+        setSubmitError(json.error || t("form.submitFailed"));
+        setSubmitting(false);
+        return;
+      }
+      // Same success navigation the server action built: ?reported carries the
+      // urgency so the colony page says "Flagged as urgent…" vs the routine copy,
+      // preserving the non-blocking &photo=failed contract.
+      const params = new URLSearchParams({
+        reported: json.urgent ? "urgent" : "1",
+      });
+      if (json.photoFailed) params.set("photo", "failed");
+      router.push(`/app/colonies/${colonyId}?${params.toString()}`);
+      router.refresh();
+    } catch {
+      setSubmitError(t("form.submitFailed"));
+      setSubmitting(false);
     }
   }
 
@@ -161,17 +221,17 @@ export function IncidentForm({
   }
 
   return (
-    <form
-      ref={formRef}
-      action={createIncident}
-      onSubmit={onSubmit}
-      className="flex flex-col gap-6"
-    >
-      <input type="hidden" name="colony_id" value={colonyId} />
-      <input type="hidden" name="type" value={type} />
-      <input type="hidden" name="urgency_level_id" value={urgencyId} />
-      <input type="hidden" name="cat_id" value={catId} />
-      <input type="hidden" name="photo_key" value={photoKey} />
+    <form ref={formRef} onSubmit={onSubmit} className="flex flex-col gap-6">
+      {/* type/urgency/cat/photo are read from component state in onSubmit now,
+          so no hidden mirror fields are needed (the form POSTs JSON via fetch). */}
+      {submitError ? (
+        <p
+          role="alert"
+          className="rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700 dark:bg-red-950/60 dark:text-red-300"
+        >
+          {submitError}
+        </p>
+      ) : null}
 
       {/* ── Type (required) ── */}
       <section className="flex flex-col gap-2">
@@ -424,13 +484,17 @@ export function IncidentForm({
         </div>
       </section>
 
-      <SubmitButton
-        pendingText={t("form.reporting")}
+      <button
+        type="submit"
+        disabled={submitting}
+        aria-busy={submitting}
         className={`sticky bottom-4 min-h-13 ${
           urgent ? "bg-red-600 text-white hover:bg-red-700" : btnPrimary
-        } inline-flex items-center justify-center gap-2 rounded-lg px-4 font-semibold`}
+        } inline-flex items-center justify-center gap-2 rounded-lg px-4 font-semibold disabled:cursor-not-allowed disabled:opacity-60`}
       >
-        {urgent ? (
+        {submitting ? (
+          t("form.reporting")
+        ) : urgent ? (
           <>
             <WarningIcon className="h-4 w-4" aria-hidden />{" "}
             {t("form.reportUrgent")}
@@ -438,7 +502,7 @@ export function IncidentForm({
         ) : (
           t("form.reportIncident")
         )}
-      </SubmitButton>
+      </button>
     </form>
   );
 }

@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { SubmitButton } from "@/components/submit-button";
-import { submitFeeding } from "@/app/app/colonies/actions";
 import { btnPrimary, input } from "@/lib/ui";
 
 type Cat = { id: string; name: string | null; temp_id: string | null };
@@ -40,22 +39,82 @@ export function FeedForm({
   cats: Cat[];
 }) {
   const t = useTranslations("feed");
+  const router = useRouter();
   const [fed, setFed] = useState(true);
   const [flags, setFlags] = useState<Record<string, boolean>>({});
   const [sightings, setSightings] = useState<Record<string, string>>({});
+  // Replaces useFormStatus (which only works inside a server-action <form>): we
+  // now drive the disabled/pending state ourselves around the fetch, preserving
+  // the exact same "can't double-submit" behaviour the SubmitButton gave.
+  const [submitting, setSubmitting] = useState(false);
+  // Inline error mirrors the feed page's server-rendered ?error= banner: same
+  // copy source (localized) + same alert styling, shown without a round-trip.
+  const [error, setError] = useState<string | null>(null);
+
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
+    setError(null);
+
+    // Phase 1 transport: mint a client UUID for the feeding event and one per
+    // marked cat sighting, then POST JSON to the route. The client UUIDs make a
+    // replay idempotent (Phase 2's offline outbox relies on this); the route
+    // upserts onConflict:"id". Only cats the feeder actually marked are sent.
+    const body = {
+      id: crypto.randomUUID(),
+      colonyId,
+      fed,
+      problem: !!flags.problem,
+      foodIssue: !!flags.food_issue,
+      danger: !!flags.danger,
+      notes:
+        (
+          e.currentTarget.elements.namedItem("notes") as HTMLTextAreaElement
+        )?.value?.trim() || null,
+      sightings: Object.entries(sightings)
+        .filter(([, status]) => status)
+        .map(([catId, status]) => ({
+          id: crypto.randomUUID(),
+          catId,
+          status,
+        })),
+    };
+
+    try {
+      const res = await fetch("/api/feedings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+      };
+      if (!res.ok || !json.ok) {
+        setError(json.error || t("submitFailed"));
+        setSubmitting(false);
+        return;
+      }
+      // Same destination the server action redirected to.
+      router.push(`/app/colonies/${colonyId}?updated=1`);
+      router.refresh();
+    } catch {
+      setError(t("submitFailed"));
+      setSubmitting(false);
+    }
+  }
 
   return (
-    <form action={submitFeeding} className="flex flex-col gap-6">
-      <input type="hidden" name="colony_id" value={colonyId} />
-      <input type="hidden" name="fed" value={fed ? "1" : "0"} />
-      {colonyFlags.map((f) => (
-        <input
-          key={f.key}
-          type="hidden"
-          name={f.key}
-          value={flags[f.key] ? "1" : "0"}
-        />
-      ))}
+    <form onSubmit={onSubmit} className="flex flex-col gap-6">
+      {error ? (
+        <p
+          role="alert"
+          className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/60 dark:text-red-300"
+        >
+          {error}
+        </p>
+      ) : null}
 
       <section className="flex flex-col gap-3">
         <div className="flex flex-col gap-2">
@@ -141,7 +200,6 @@ export function FeedForm({
                   key={c.id}
                   className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-3"
                 >
-                  <input type="hidden" name={`cat:${c.id}`} value={sel} />
                   <span className="text-sm font-medium">
                     {c.name ?? c.temp_id ?? t("unnamedCat")}
                   </span>
@@ -180,12 +238,14 @@ export function FeedForm({
         <textarea name="notes" rows={2} className={`${input} py-2`} />
       </label>
 
-      <SubmitButton
-        pendingText={t("savingUpdate")}
-        className={`${btnPrimary} sticky bottom-4 min-h-13`}
+      <button
+        type="submit"
+        disabled={submitting}
+        aria-busy={submitting}
+        className={`${btnPrimary} sticky bottom-4 min-h-13 disabled:cursor-not-allowed disabled:opacity-60`}
       >
-        {t("saveUpdate")}
-      </SubmitButton>
+        {submitting ? t("savingUpdate") : t("saveUpdate")}
+      </button>
     </form>
   );
 }
