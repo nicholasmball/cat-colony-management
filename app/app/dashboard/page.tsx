@@ -18,11 +18,7 @@ import {
 import { DEFAULT_FEEDING_MISSED_HOURS } from "@/lib/alert-settings";
 import { UNCONFIRMED_STATUS } from "@/lib/cat-report";
 import { catLabel } from "@/lib/cat-display";
-import {
-  capRowsPerKey,
-  summariseTodayFeeds,
-  isDashboardAllClear,
-} from "@/lib/dashboard";
+import { summariseTodayFeeds, isDashboardAllClear } from "@/lib/dashboard";
 import {
   CalendarIcon,
   ChevronIcon,
@@ -372,65 +368,56 @@ export default async function DashboardPage() {
   const repeatedNotSeen =
     (settingsResult.data?.repeated_not_seen as number | null) ?? null;
 
-  // CONDITION 1 (load-bearing — per-cat-safe, NO migration): we fetch sightings
-  // and reviews ordered (cat_id, observed_at/created_at desc) with a GENEROUS
-  // overall .limit() as a pure backstop, then bound them PER CAT in memory via
-  // capRowsPerKey (keep the most-recent K per cat_id). A single global .limit()
-  // would let one busy colony's chatter exhaust the budget and STARVE a quieter
-  // cat's older-but-still-relevant not-seen run — silently hiding it. The
-  // per-cat cap guarantees each cat keeps its own recent run (K=10 ≫ the
-  // 3-consecutive rule and enough to anchor the not-seen window). The Postgres
-  // alternative (row_number() OVER (PARTITION BY cat_id)) needs an RPC/view and
-  // thus a migration, which is out of scope — capRowsPerKey is the simplest
-  // correct read-only approach. The .order() makes "most recent" well-defined
-  // before capping; the .limit() only caps the absolute rows scanned.
+  // CONDITION 1 (load-bearing — per-cat-safe): read the per-cat "most recent K"
+  // views (migration 0010), NOT the raw tables. Each view applies
+  // row_number() over (partition by cat_id order by <time> desc) <= K in
+  // Postgres, so the per-cat bound (K = PER_CAT_SIGHTING_CAP, 10) happens at the
+  // source. The OLD approach paged the raw tables with a single GLOBAL
+  // .limit(5000) then capped per cat in memory via capRowsPerKey — but that
+  // global ceiling truncated by cat_id UUID order, so once an org passed ~5000
+  // sighting rows a high-UUID cat's not-seen rows could be cut before the
+  // per-cat cap ever saw them, silently dropping a quiet cat from the roll-up.
+  // The views remove that ceiling entirely while preserving org-scoping
+  // (security_invoker = on → the caller's base-table RLS still applies). We keep
+  // the explicit .in(catIds) + .order() so "most recent" stays well-defined and
+  // the partitioning indexes are used. capRowsPerKey is now redundant (the view
+  // already bounds per cat) and is dropped here. concernCandidate is unchanged.
   const sightingsByCat = new Map<string, ConcernSighting[]>();
   const reviewsByCat = new Map<string, ConcernReview[]>();
   if (catIds.length > 0) {
     const [{ data: sightingData }, { data: reviewData }] = await Promise.all([
       supabase
-        .from("cat_sightings")
+        .from("cat_recent_sightings")
         .select("cat_id, status, observed_at")
+        .eq("organisation_id", org.organisation_id)
         .in("cat_id", catIds)
-        .order("cat_id", { ascending: true })
-        .order("observed_at", { ascending: false })
-        .limit(5000),
+        .order("observed_at", { ascending: false }),
       supabase
-        .from("cat_concern_reviews")
+        .from("cat_recent_concern_reviews")
         .select("cat_id, outcome, created_at")
+        .eq("organisation_id", org.organisation_id)
         .in("cat_id", catIds)
-        .order("cat_id", { ascending: true })
-        .order("created_at", { ascending: false })
-        .limit(5000),
+        .order("created_at", { ascending: false }),
     ]);
-    // Per-cat bound: keep the most-recent K rows for EACH cat_id (not a global
-    // cap). Rows already arrive newest-first within each cat thanks to .order().
-    const cappedSightings = capRowsPerKey(
-      sightingData ?? [],
-      (r) => r.cat_id as string,
-    );
-    for (const [catId, list] of cappedSightings) {
-      sightingsByCat.set(
-        catId,
-        list.map((s) => ({
-          status: s.status as ConcernSighting["status"],
-          observed_at: s.observed_at as string,
-        })),
-      );
+    for (const s of sightingData ?? []) {
+      const catId = s.cat_id as string;
+      const list = sightingsByCat.get(catId);
+      const row: ConcernSighting = {
+        status: s.status as ConcernSighting["status"],
+        observed_at: s.observed_at as string,
+      };
+      if (list) list.push(row);
+      else sightingsByCat.set(catId, [row]);
     }
-    // Reviews are few per cat; cap them too for symmetry / the same safety.
-    const cappedReviews = capRowsPerKey(
-      reviewData ?? [],
-      (r) => r.cat_id as string,
-    );
-    for (const [catId, list] of cappedReviews) {
-      reviewsByCat.set(
-        catId,
-        list.map((r) => ({
-          outcome: r.outcome as ConcernReview["outcome"],
-          created_at: r.created_at as string,
-        })),
-      );
+    for (const r of reviewData ?? []) {
+      const catId = r.cat_id as string;
+      const list = reviewsByCat.get(catId);
+      const row: ConcernReview = {
+        outcome: r.outcome as ConcernReview["outcome"],
+        created_at: r.created_at as string,
+      };
+      if (list) list.push(row);
+      else reviewsByCat.set(catId, [row]);
     }
   }
   const concernCats = cats
