@@ -30,6 +30,9 @@ const coreItems: NavItem[] = [
 const managerItems: NavItem[] = [
   { href: "/app/incidents", labelKey: "nav.incidents", exact: false },
   { href: "/app/notifications", labelKey: "nav.notifications", exact: false },
+  // Alert thresholds live in managerItems (admin + caretaker), NOT adminItems:
+  // both manager roles tune the org's not-seen / missed-feed thresholds.
+  { href: "/app/alerts", labelKey: "nav.alerts", exact: false },
 ];
 const adminItems: NavItem[] = [
   { href: "/app/members", labelKey: "nav.members", exact: false },

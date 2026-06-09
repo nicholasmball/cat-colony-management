@@ -18,7 +18,7 @@ test("feeder omits Dashboard and Incidents, leading with Today", () => {
   assert.ok(!ls.includes("nav.incidents"));
 });
 
-test("caretaker leads with Dashboard and gets Incidents + Notifications but no admin items", () => {
+test("caretaker leads with Dashboard and gets Incidents + Notifications + Alerts but no admin items", () => {
   const ls = keys("caretaker");
   assert.deepEqual(ls, [
     "nav.dashboard",
@@ -26,19 +26,21 @@ test("caretaker leads with Dashboard and gets Incidents + Notifications but no a
     "nav.colonies",
     "nav.incidents",
     "nav.notifications",
+    "nav.alerts",
   ]);
   // Dashboard replaces the old Home item and is first for managers.
   assert.equal(ls[0], "nav.dashboard");
   assert.ok(!ls.includes("nav.home"));
-  // Incidents + Notifications are manager items (admin + caretaker), unlike
-  // admin-only Members.
+  // Incidents + Notifications + Alerts are manager items (admin + caretaker),
+  // unlike admin-only Members.
   assert.ok(ls.includes("nav.incidents"));
   assert.ok(ls.includes("nav.notifications"));
+  assert.ok(ls.includes("nav.alerts"));
   assert.ok(!ls.includes("nav.members"));
   assert.ok(!ls.includes("nav.org"));
 });
 
-test("admin leads with Dashboard and gets Incidents + Notifications + Members + Organisation", () => {
+test("admin leads with Dashboard and gets Incidents + Notifications + Alerts + Members + Organisation", () => {
   const ls = keys("admin");
   assert.deepEqual(ls, [
     "nav.dashboard",
@@ -46,13 +48,15 @@ test("admin leads with Dashboard and gets Incidents + Notifications + Members + 
     "nav.colonies",
     "nav.incidents",
     "nav.notifications",
+    "nav.alerts",
     "nav.members",
     "nav.org",
   ]);
 });
 
-test("feeders never see the manager-only Notifications centre", () => {
+test("feeders never see the manager-only Notifications or Alerts items", () => {
   assert.ok(!keys("feeder").includes("nav.notifications"));
+  assert.ok(!keys("feeder").includes("nav.alerts"));
 });
 
 test("unknown/undefined role is treated as a feeder (no Dashboard, no Incidents)", () => {

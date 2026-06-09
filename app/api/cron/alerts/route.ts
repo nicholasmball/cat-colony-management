@@ -10,6 +10,7 @@ import {
   type NotSeenCat,
 } from "@/lib/alert-engine";
 import { persistAlerts } from "@/lib/alert-persist";
+import { DEFAULT_FEEDING_MISSED_HOURS } from "@/lib/alert-settings";
 import { PER_CAT_SIGHTING_CAP, capRowsPerKey } from "@/lib/dashboard";
 import type { ConcernSighting, ConcernReview } from "@/lib/cat-concern";
 
@@ -82,7 +83,9 @@ export async function POST(req: Request) {
       // Per-org concern thresholds (defaults applied inside concernCandidate).
       svc
         .from("alert_settings")
-        .select("organisation_id, not_seen_days, repeated_not_seen")
+        .select(
+          "organisation_id, not_seen_days, repeated_not_seen, feeding_missed_hours",
+        )
         .in("organisation_id", orgIds),
       // Every active cat across all orgs — basis for not_seen detection.
       svc
@@ -145,12 +148,17 @@ export async function POST(req: Request) {
 
   const settingsByOrg = new Map<
     string,
-    { not_seen_days: number | null; repeated_not_seen: number | null }
+    {
+      not_seen_days: number | null;
+      repeated_not_seen: number | null;
+      feeding_missed_hours: number | null;
+    }
   >();
   for (const s of settingsRes.data ?? []) {
     settingsByOrg.set(s.organisation_id as string, {
       not_seen_days: (s.not_seen_days as number | null) ?? null,
       repeated_not_seen: (s.repeated_not_seen as number | null) ?? null,
+      feeding_missed_hours: (s.feeding_missed_hours as number | null) ?? null,
     });
   }
 
@@ -260,7 +268,11 @@ export async function POST(req: Request) {
     const settings = settingsByOrg.get(org.id) ?? {
       not_seen_days: null,
       repeated_not_seen: null,
+      feeding_missed_hours: null,
     };
+    // Effective feeding-missed threshold: the org row, else the engine default.
+    const feedingMissedHours =
+      settings.feeding_missed_hours ?? DEFAULT_FEEDING_MISSED_HOURS;
 
     // feeding_missed: per colony, today's events vs the org-local window close.
     const feedingColonies: FeedingMissedColony[] = orgColonies.map((c) => ({
@@ -269,9 +281,8 @@ export async function POST(req: Request) {
       minutesAfterClose: c.feeding_window_end
         ? minutesAfterWindow(c.feeding_window_end, tz, now)
         : null,
-      // Human-facing threshold only (12 default); detection uses the fixed
-      // MISSED_AFTER_MIN inside feedingStatus.
-      thresholdHours: 12,
+      // Drives both the message body AND detection (×60 inside feedingStatus).
+      thresholdHours: feedingMissedHours,
     }));
     const feedingSpecs = planFeedingMissedAlerts(
       {

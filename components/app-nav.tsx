@@ -13,6 +13,7 @@ import {
   CalendarIcon,
   WarningIcon,
   BellIcon,
+  SlidersIcon,
 } from "./icons";
 import { navItemsFor } from "@/lib/nav-items";
 import { unreadBadge } from "@/lib/notifications";
@@ -26,6 +27,7 @@ const iconByHref: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
   "/app/colonies": PawIcon,
   "/app/incidents": WarningIcon,
   "/app/notifications": BellIcon,
+  "/app/alerts": SlidersIcon,
   "/app/members": UsersIcon,
   "/app/org": CogIcon,
 };
