@@ -540,6 +540,35 @@
     "notSeenDays": "Not seen {count, plural, one {# day} other {# days}}",
     "repeatedNotSeen": "Not seen {count, plural, one {# time} other {# times}} in a row"
   },
+  "alerts": {
+    "feeding_missed": {
+      "title": "Feeding missed: {colonyName}",
+      "body": "No feeding recorded today and the window closed over {hours}h ago."
+    },
+    "incident_urgent": {
+      "title": "Urgent: {incidentType} at {colonyName}",
+      "body": "{reporterName} reported it just now. Open the incident to triage."
+    },
+    "incident_routine": {
+      "title": "New incident: {incidentType} at {colonyName}",
+      "body": "{reporterName} reported it. Not flagged urgent — review when you can."
+    },
+    "new_cat": {
+      "title": "New cat to confirm at {colonyName}",
+      "body": "{reporterName} reported “{catName}”. Confirm it or reject a duplicate."
+    },
+    "concern": {
+      "title": "Concern flagged: {catName}",
+      "body": "{reporterName} flagged a concern at {colonyName}. Review when you can."
+    },
+    "not_seen": {
+      "title": "Cat not seen: {catName}",
+      "body": {
+        "not_seen_days": "Not seen for {count, plural, one {# day} other {# days}} at {colonyName} — needs review.",
+        "repeated_not_seen": "Not seen {count, plural, one {# time} other {# times}} in a row at {colonyName} — needs review."
+      }
+    }
+  },
   "errors": {
     "notAllowed": "Not allowed.",
     "photoCouldNotBeSaved": "That photo couldn’t be saved.",
@@ -550,6 +579,7 @@
     "incidentNoLongerExists": "That incident no longer exists.",
     "nameOrDescription": "Enter a name or a description (at least one).",
     "couldNotSaveFeeding": "Could not save the feeding update.",
+    "couldNotSaveCat": "Could not save the cat.",
     "passwordTooShort": "Password must be at least 8 characters.",
     "passwordsDontMatch": "The two passwords don’t match.",
     "inviteInvalidOrUsed": "This invite is invalid or already used.",
