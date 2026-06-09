@@ -19,6 +19,13 @@ export const metadata: Metadata = {
     "Manage feral cat colonies, feeding operations and incidents for Street Cats of Tavira.",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: "SCoT", statusBarStyle: "default" },
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
