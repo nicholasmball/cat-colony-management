@@ -9,6 +9,7 @@
 // CLIENT-SUPPLIED UUID (for idempotent replay), so the ids are validated here.
 
 import { isUuid } from "./uuid.ts";
+import { parseFieldTimestamp } from "./field-time.ts";
 
 // The cat_sighting statuses the form's per-cat segmented control can emit. Same
 // three the feed form offers (components/feed-form.tsx sightingOptions). A
@@ -38,6 +39,11 @@ export type FeedingInput = {
   foodIssue: boolean;
   danger: boolean;
   notes: string | null;
+  // Client-captured field-observation time (ISO). undefined → the route omits
+  // the column and Postgres stamps observed_at with now() (pre-fix behaviour /
+  // old queued items). Present → the route applies it to the feeding_events row
+  // AND every cat_sightings row so an offline write keeps its true field time.
+  observedAt: string | undefined;
   sightings: FeedingSightingInput[];
 };
 
@@ -106,6 +112,7 @@ export function parseFeedingInput(body: unknown): ParseResult<FeedingInput> {
       foodIssue: asBool(b.foodIssue),
       danger: asBool(b.danger),
       notes: asTrimmedOrNull(b.notes),
+      observedAt: parseFieldTimestamp(b.observedAt),
       sightings,
     },
   };

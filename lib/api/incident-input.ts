@@ -7,6 +7,7 @@
 // is a CLIENT-SUPPLIED UUID `id` for the incident row (idempotent replay).
 
 import { isUuid } from "./uuid.ts";
+import { parseFieldTimestamp } from "./field-time.ts";
 import { isValidIncidentType, type IncidentType } from "../incident.ts";
 import type { ParseResult } from "./feeding-input.ts";
 
@@ -24,6 +25,11 @@ export type IncidentInput = {
   notes: string | null;
   photoKey: string | null;
   photoFailed: boolean;
+  // Client-captured field time (ISO) for when the incident actually occurred.
+  // undefined → the route omits the column and Postgres stamps occurred_at with
+  // now() (pre-fix behaviour / old queued items). Present → the route writes it
+  // so an offline-reported incident keeps its true field time after syncing.
+  occurredAt: string | undefined;
 };
 
 function asTrimmedOrNull(v: unknown): string | null {
@@ -61,6 +67,7 @@ export function parseIncidentInput(body: unknown): ParseResult<IncidentInput> {
       notes: asTrimmedOrNull(b.notes),
       photoKey: asTrimmedOrNull(b.photoKey),
       photoFailed: b.photoFailed === true || b.photoFailed === "1",
+      occurredAt: parseFieldTimestamp(b.occurredAt),
     },
   };
 }

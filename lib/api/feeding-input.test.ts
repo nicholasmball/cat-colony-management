@@ -122,3 +122,44 @@ test("parseFeedingInput: rejects a non-object body", () => {
   assert.equal(parseFeedingInput(null).ok, false);
   assert.equal(parseFeedingInput("x").ok, false);
 });
+
+test("parseFeedingInput: a valid observedAt passes through (normalised ISO)", () => {
+  const r = parseFeedingInput({
+    id: ID,
+    colonyId: COLONY,
+    observedAt: "2020-01-02T03:04:05.000Z",
+  });
+  assert.equal(r.ok, true);
+  if (!r.ok) return;
+  assert.equal(r.value.observedAt, "2020-01-02T03:04:05.000Z");
+});
+
+test("parseFeedingInput: absent observedAt → undefined (route falls back to now())", () => {
+  const r = parseFeedingInput({ id: ID, colonyId: COLONY });
+  assert.equal(r.ok, true);
+  if (!r.ok) return;
+  assert.equal(r.value.observedAt, undefined);
+});
+
+test("parseFeedingInput: unparseable observedAt → undefined (fallback, not a reject)", () => {
+  const r = parseFeedingInput({
+    id: ID,
+    colonyId: COLONY,
+    observedAt: "yesterday",
+  });
+  assert.equal(r.ok, true);
+  if (!r.ok) return;
+  assert.equal(r.value.observedAt, undefined);
+});
+
+test("parseFeedingInput: far-future observedAt → undefined (skew-guard fallback)", () => {
+  const future = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  const r = parseFeedingInput({
+    id: ID,
+    colonyId: COLONY,
+    observedAt: future,
+  });
+  assert.equal(r.ok, true);
+  if (!r.ok) return;
+  assert.equal(r.value.observedAt, undefined);
+});
