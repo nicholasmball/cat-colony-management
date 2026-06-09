@@ -152,3 +152,24 @@ export async function deleteUser(
 export function storageStatePath(role: Role): string {
   return join(AUTH_DIR, `${role}.json`);
 }
+
+// Create an EXTRA throwaway member of the test org for a single spec (e.g. a
+// volunteer to deactivate / re-role without disturbing the shared admin/
+// caretaker/feeder sessions), and APPEND it to the run-state so teardown deletes
+// the auth user too (the org cascade only covers the membership row, not the
+// auth.users record). Returns the created user. Safe + isolated: the user only
+// ever belongs to this run's org.
+export async function createExtraMember(
+  svc: SupabaseClient,
+  role: Role,
+): Promise<CreatedUser> {
+  const state = readRunState();
+  if (!state.orgId) {
+    throw new Error("createExtraMember: no test org in run-state");
+  }
+  const user = await createTestUser(svc, role);
+  await addMembership(svc, state.orgId, user.id, role);
+  state.users.push(user);
+  writeRunState(state);
+  return user;
+}
