@@ -112,6 +112,22 @@ export async function inviteVolunteer(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Re-issue, don't fail: a prior invitation row for (org, lower(email)) —
+  // whether ACCEPTED (the person has since been removed/erased) or a stale
+  // pending one — would otherwise 23505 against invitations_org_email_key and
+  // silently block the re-invite. Delete any existing row for this org+email
+  // (case-insensitive; the stored email may be mixed-case while `email` here is
+  // lowercased), then insert a fresh row with a new default token. The RLS
+  // admin INSERT + DELETE policies cover both halves (there is no UPDATE policy,
+  // so delete-then-insert is the RLS-safe way to re-issue). The 23505 branch
+  // below now only guards a genuine concurrent-insert race.
+  await supabase
+    .from("invitations")
+    .delete()
+    .eq("organisation_id", org.organisation_id)
+    .ilike("email", email);
+
   const { data: inserted, error } = await supabase
     .from("invitations")
     .insert({
@@ -360,6 +376,29 @@ export async function eraseMember(formData: FormData) {
     targetActive: !!targetRow && targetRow.deleted_at === null,
   });
   if (!decision.ok) err(t(decision.reason));
+
+  // GDPR: an invitation row stores the invitee's email — personal data. Erasing
+  // the person must also clear their invitation(s) in THIS org (scoped to the
+  // acting admin's org, never cross-org), which both removes the lingering email
+  // and unblocks any future re-invite of that address. Best-effort: we look up
+  // the email off the auth user (the membership row doesn't carry it) and delete
+  // the matching invitation rows BEFORE the destructive auth delete, while the
+  // user still exists. A failure here must NOT abort the erase — log and proceed.
+  const { data: targetUser } = await svc.auth.admin.getUserById(targetUserId);
+  const targetEmail = targetUser.user?.email;
+  if (targetEmail) {
+    const { error: inviteCleanupError } = await svc
+      .from("invitations")
+      .delete()
+      .eq("organisation_id", org.organisation_id)
+      .ilike("email", targetEmail);
+    if (inviteCleanupError) {
+      console.error(
+        "eraseMember: invitation cleanup failed (continuing erase)",
+        inviteCleanupError,
+      );
+    }
+  }
 
   // The destructive call. Check the returned error — on failure, surface it as
   // a visible error (NEVER redirect with a success flag on a failed delete).

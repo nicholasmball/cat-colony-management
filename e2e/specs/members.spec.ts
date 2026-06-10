@@ -45,6 +45,76 @@ test("admin invites a volunteer; an invitation row + link appear", async ({
   expect(data![0].token).toBeTruthy();
 });
 
+test("re-inviting an email with a prior accepted invitation succeeds (re-issue)", async ({
+  page,
+}) => {
+  // Regression for the prod bug: re-inviting an email that already has an
+  // invitations row (e.g. someone who accepted then was erased/removed) hit the
+  // (organisation_id, lower(email)) unique index → 23505 → "pending invite
+  // already exists", so NO fresh pending invite + NO email. The fix re-issues
+  // (delete-then-insert), so the re-invite must succeed with a fresh pending row.
+  const email = `e2e+reinvite-${randomUUID().slice(0, 8)}@scot-e2e.invalid`;
+  const { orgId } = readRunState();
+  const svc = serviceClient();
+
+  // Seed a STALE ACCEPTED invitation for this email (the orphaned-after-erase
+  // shape): accepted_at set, so it never appears in the pending list but still
+  // occupies the unique index slot that used to block the re-invite. Mixed-case
+  // stored email proves the case-insensitive (ilike) re-issue match.
+  const { error: seedError } = await svc.from("invitations").insert({
+    organisation_id: orgId!,
+    email: email.toUpperCase(),
+    role: "feeder",
+    accepted_at: new Date().toISOString(),
+  });
+  expect(seedError).toBeNull();
+
+  await page.goto("/app/members");
+  await page.getByLabel("Email").fill(email);
+  await page.getByRole("button", { name: "Send invite" }).click();
+
+  // Success: redirected with the invited toast, NOT the "pending invite already
+  // exists" error.
+  await page.waitForURL(/\/app\/members\?invited=/);
+  await expect(
+    page.getByText("That email already has a pending invite."),
+  ).toHaveCount(0);
+
+  // A fresh PENDING invite (accepted_at null) for this email now exists — the
+  // stale accepted row was replaced, so exactly one row remains.
+  await expect
+    .poll(async () => {
+      const { data } = await svc
+        .from("invitations")
+        .select("accepted_at")
+        .eq("organisation_id", orgId!)
+        .ilike("email", email);
+      return data ?? [];
+    })
+    .toEqual([{ accepted_at: null }]);
+
+  // And it surfaces in the Pending invites list in the UI.
+  await expect(page.getByText(email).first()).toBeVisible();
+});
+
+test("re-inviting a CURRENT active member is still blocked (alreadyMember)", async ({
+  page,
+}) => {
+  // The re-issue fix must NOT loosen the alreadyMember guard: an email belonging
+  // to a current ACTIVE member of this org can't be re-invited.
+  const svc = serviceClient();
+  const member = await createExtraMember(svc, "feeder");
+
+  await page.goto("/app/members");
+  await page.getByLabel("Email").fill(member.email);
+  await page.getByRole("button", { name: "Send invite" }).click();
+
+  await page.waitForURL(/\/app\/members\?error=/);
+  await expect(
+    page.getByText("That person is already a member."),
+  ).toBeVisible();
+});
+
 test("admin changes a member's role then deactivates them", async ({
   page,
 }) => {
