@@ -42,15 +42,23 @@ test("admin moves a cat from one colony to another", async ({ page }) => {
   const bId = b.url.split("/app/colonies/")[1]?.split(/[?#]/)[0];
   expect(page.url()).toContain(`/app/colonies/${bId}/cats/`);
 
-  // It now appears under colony B…
-  await page.goto(b.url);
-  await expect(
-    page.getByRole("link", { name: new RegExp(catName) }),
-  ).toBeVisible();
+  // It now appears under colony B, and is gone from colony A. Colony detail
+  // pages are stale-while-revalidate-cached by the service worker (the
+  // offline-nav caching), so re-reading colony A — which was viewed BEFORE the
+  // move — can serve a stale cached page until the SW revalidates. Re-navigate
+  // until the cache catches up. (The move itself is already proven above: the
+  // submit redirected to the cat under colony B with the moved toast.)
+  await expect(async () => {
+    await page.goto(b.url);
+    expect(
+      await page.getByRole("link", { name: new RegExp(catName) }).count(),
+    ).toBe(1);
+  }).toPass({ timeout: 20000 });
 
-  // …and is gone from colony A.
-  await page.goto(a.url);
-  await expect(
-    page.getByRole("link", { name: new RegExp(catName) }),
-  ).toHaveCount(0);
+  await expect(async () => {
+    await page.goto(a.url);
+    expect(
+      await page.getByRole("link", { name: new RegExp(catName) }).count(),
+    ).toBe(0);
+  }).toPass({ timeout: 20000 });
 });
