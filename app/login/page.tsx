@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { login } from "./actions";
 import { SubmitButton } from "@/components/submit-button";
@@ -64,7 +65,12 @@ export default async function LoginPage({
           </SubmitButton>
         </form>
 
-        <p className="text-center text-xs text-muted">{t("noAccount")}</p>
+        <div className="flex flex-col items-center gap-2 text-center text-xs">
+          <Link href="/forgot-password" className="text-accent">
+            {t("forgotPassword")}
+          </Link>
+          <p className="text-muted">{t("noAccount")}</p>
+        </div>
       </main>
     </div>
   );
