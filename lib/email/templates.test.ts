@@ -17,6 +17,28 @@ test("invite renders subject/html/text with the org name + accept url", () => {
   assert.ok(!out.text.includes("<"), "text part has no markup");
 });
 
+test("emails carry the canonical SCoT chrome (logo, kicker, indigo button, footer)", () => {
+  const out = renderInvite("en", {
+    acceptUrl: "https://app.example.org/accept?token=xyz",
+    orgName: "Street Cats of Tavira",
+    role: "caretaker",
+  });
+  assert.ok(
+    out.html.includes("https://cat-colony-management.vercel.app/icon-192.png"),
+    "logo present",
+  );
+  assert.ok(
+    out.html.includes("text-transform:uppercase"),
+    "uppercase brand kicker present",
+  );
+  assert.ok(out.html.includes("background:#4f46e5"), "indigo button present");
+  assert.ok(out.html.includes("background:#f7f4f2"), "cream backdrop present");
+  assert.ok(
+    out.html.includes("Street Cats of Tavira · gestão de colónias 🐾"),
+    "footer tagline present",
+  );
+});
+
 test("invite renders in Portuguese when locale is pt", () => {
   const en = renderInvite("en", {
     acceptUrl: "https://x",
