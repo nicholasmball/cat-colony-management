@@ -72,7 +72,36 @@
     "atLeast8": "At least 8 characters.",
     "setPasswordAndJoin": "Set password & join",
     "settingUp": "Setting up…",
-    "theOrganisation": "the organisation"
+    "theOrganisation": "the organisation",
+    "forgotPassword": "Forgot password?",
+    "resetTitle": "Reset your password",
+    "resetSubtitle": "Enter your email and we’ll send you a link to set a new password.",
+    "sendResetLink": "Send reset link",
+    "sendingResetLink": "Sending…",
+    "resetLinkSent": "If that email exists, we’ve sent a link to reset your password. Check your inbox.",
+    "backToSignIn": "Back to sign in",
+    "newPasswordTitle": "Choose a new password",
+    "newPasswordSubtitle": "Enter a new password for your account.",
+    "newPassword": "New password",
+    "updatePassword": "Update password",
+    "updatingPassword": "Updating…",
+    "passwordUpdated": "Your password has been updated. You can now sign in.",
+    "resetLinkInvalid": "This reset link is missing, invalid, or has expired. Request a new one."
+  },
+  "email": {
+    "invite": {
+      "subject": "You’re invited to {orgName}",
+      "heading": "Welcome to {orgName} 🐾",
+      "body": "You’ve been invited to help look after the cats at {orgName} as a {role}. Tap the button below to choose a password and join.",
+      "cta": "Accept invitation"
+    },
+    "digest": {
+      "subject": "{orgName}: {count} alerts to review",
+      "heading": "Your daily summary for {orgName}",
+      "summary": "There are {count} alerts waiting for you to review.",
+      "cta": "Open the app",
+      "footer": "You’re receiving this because you help manage colonies at {orgName}. Open the app to see the full details and mark alerts as read."
+    }
   },
   "today": {
     "title": "Today",

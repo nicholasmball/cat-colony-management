@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { passwordError } from "@/lib/password";
 
 // Set a password and join. Handles both arrival paths:
 //  - via the invite EMAIL  → user is already signed in (no password yet)
@@ -16,14 +17,10 @@ export async function completeAccept(formData: FormData) {
   const back = token ? `/accept?token=${encodeURIComponent(token)}` : "/accept";
   const t = await getTranslations("errors");
 
-  if (password.length < 8) {
+  const validation = passwordError(password, confirm);
+  if (validation) {
     redirect(
-      `${back}${token ? "&" : "?"}error=${encodeURIComponent(t("passwordTooShort"))}`,
-    );
-  }
-  if (password !== confirm) {
-    redirect(
-      `${back}${token ? "&" : "?"}error=${encodeURIComponent(t("passwordsDontMatch"))}`,
+      `${back}${token ? "&" : "?"}error=${encodeURIComponent(t(validation))}`,
     );
   }
 

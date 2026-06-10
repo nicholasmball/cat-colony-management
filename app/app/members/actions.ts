@@ -2,13 +2,17 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
 import { isFailedWrite, writeErrorMessage } from "@/lib/mutation-result";
 import { canChangeRole, type AppRole } from "@/lib/member-role";
+import { emailModeFromEnv } from "@/lib/email/flags";
+import { inviteEmailPath } from "@/lib/email/invite-plan";
+import { send } from "@/lib/email";
+import { isLocale, type Locale } from "@/i18n/locale";
 
 const MEMBERS = "/app/members";
 
@@ -17,10 +21,40 @@ async function siteOrigin() {
   return `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
 }
 
-// Best-effort: auto-send the invite email via Supabase. If email isn't
-// configured yet, this is a no-op for onboarding — the admin can still copy the
-// invite link from the pending list. Returns false if the email couldn't be sent.
-async function sendInviteEmail(email: string): Promise<boolean> {
+// The inviting admin's current locale (the invitee has no account yet, so we
+// brand the email in the admin's language; fallback PT — SCoT's primary
+// audience). Read from the same locale cookie the app's i18n pipeline uses.
+async function adminLocale(): Promise<Locale> {
+  const value = (await cookies()).get("locale")?.value;
+  return isLocale(value) ? value : "pt";
+}
+
+// Auto-send the invite. Two paths, chosen by whether the email layer is ARMED:
+//   * armed (EMAIL_ENABLED + RESEND_API_KEY) → send the BRANDED invite via
+//     lib/email, linking the copy-link accept URL. Returns true on a real send.
+//   * off (default) → TODAY'S behaviour exactly: best-effort Supabase
+//     inviteUserByEmail; the admin can always copy the invite link regardless.
+// This flow must NEVER break or depend on Resend — a failure just means the
+// admin uses the copy-link path (sent=0).
+async function sendInviteEmail(
+  email: string,
+  opts: { acceptUrl?: string; orgName?: string; role?: string } = {},
+): Promise<boolean> {
+  if (inviteEmailPath(emailModeFromEnv(), opts.acceptUrl) === "branded") {
+    const result = await send({
+      to: email,
+      locale: await adminLocale(),
+      template: "invite",
+      params: {
+        acceptUrl: opts.acceptUrl!,
+        orgName: opts.orgName ?? "",
+        role: opts.role ?? "",
+      },
+    });
+    return result.skipped === false && result.ok === true;
+  }
+
+  // Off path — unchanged: Supabase best-effort, copy-link fallback always works.
   const svc = createServiceClient();
   const origin = await siteOrigin();
   const { error } = await svc.auth.admin.inviteUserByEmail(email, {
@@ -77,17 +111,28 @@ export async function inviteVolunteer(formData: FormData) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { error } = await supabase.from("invitations").insert({
-    organisation_id: org.organisation_id,
-    email,
-    role,
-    invited_by: user?.id,
-  });
+  const { data: inserted, error } = await supabase
+    .from("invitations")
+    .insert({
+      organisation_id: org.organisation_id,
+      email,
+      role,
+      invited_by: user?.id,
+    })
+    .select("token")
+    .maybeSingle();
   if (error) {
     err(error.code === "23505" ? t("pendingInviteExists") : error.message);
   }
 
-  const sent = await sendInviteEmail(email);
+  const origin = await siteOrigin();
+  const sent = await sendInviteEmail(email, {
+    acceptUrl: inserted?.token
+      ? `${origin}/accept?token=${inserted.token}`
+      : undefined,
+    orgName: org.name,
+    role,
+  });
   revalidatePath(MEMBERS);
   redirect(
     `${MEMBERS}?invited=${encodeURIComponent(email)}&sent=${sent ? 1 : 0}`,
@@ -95,11 +140,28 @@ export async function inviteVolunteer(formData: FormData) {
 }
 
 export async function resendInvite(formData: FormData) {
-  await requireAdminOrg();
+  const org = await requireAdminOrg();
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
-  if (email) await sendInviteEmail(email);
+  if (email) {
+    // For the branded (armed) path, look up this org's pending invite so we can
+    // rebuild the copy-link accept URL + role. The off path ignores these.
+    const svc = createServiceClient();
+    const { data: inv } = await svc
+      .from("invitations")
+      .select("token, role")
+      .eq("organisation_id", org.organisation_id)
+      .ilike("email", email)
+      .is("accepted_at", null)
+      .maybeSingle();
+    const origin = await siteOrigin();
+    await sendInviteEmail(email, {
+      acceptUrl: inv?.token ? `${origin}/accept?token=${inv.token}` : undefined,
+      orgName: org.name,
+      role: inv?.role,
+    });
+  }
   revalidatePath(MEMBERS);
   redirect(`${MEMBERS}?invited=${encodeURIComponent(email)}&sent=1`);
 }

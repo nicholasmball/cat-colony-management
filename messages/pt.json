@@ -72,7 +72,36 @@
     "atLeast8": "Pelo menos 8 caracteres.",
     "setPasswordAndJoin": "Definir palavra-passe e aderir",
     "settingUp": "A configurar…",
-    "theOrganisation": "a organização"
+    "theOrganisation": "a organização",
+    "forgotPassword": "Esqueceu-se da palavra-passe?",
+    "resetTitle": "Repor a palavra-passe",
+    "resetSubtitle": "Introduza o seu email e enviaremos um link para definir uma nova palavra-passe.",
+    "sendResetLink": "Enviar link de reposição",
+    "sendingResetLink": "A enviar…",
+    "resetLinkSent": "Se esse email existir, enviámos um link para repor a sua palavra-passe. Verifique a sua caixa de entrada.",
+    "backToSignIn": "Voltar ao início de sessão",
+    "newPasswordTitle": "Escolha uma nova palavra-passe",
+    "newPasswordSubtitle": "Introduza uma nova palavra-passe para a sua conta.",
+    "newPassword": "Nova palavra-passe",
+    "updatePassword": "Atualizar palavra-passe",
+    "updatingPassword": "A atualizar…",
+    "passwordUpdated": "A sua palavra-passe foi atualizada. Já pode iniciar sessão.",
+    "resetLinkInvalid": "Este link de reposição está em falta, é inválido ou expirou. Solicite um novo."
+  },
+  "email": {
+    "invite": {
+      "subject": "Foi convidado para {orgName}",
+      "heading": "Bem-vindo a {orgName} 🐾",
+      "body": "Foi convidado para ajudar a cuidar dos gatos em {orgName} como {role}. Toque no botão abaixo para escolher uma palavra-passe e aderir.",
+      "cta": "Aceitar convite"
+    },
+    "digest": {
+      "subject": "{orgName}: {count} alertas para rever",
+      "heading": "O seu resumo diário de {orgName}",
+      "summary": "Há {count} alertas à espera de revisão.",
+      "cta": "Abrir a aplicação",
+      "footer": "Está a receber isto porque ajuda a gerir colónias em {orgName}. Abra a aplicação para ver os detalhes completos e marcar os alertas como lidos."
+    }
   },
   "today": {
     "title": "Hoje",
