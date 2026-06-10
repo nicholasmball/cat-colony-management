@@ -30,7 +30,13 @@ test("admin permanently erases an extra member; auth user + membership are gone"
   const row = page.locator("li").filter({ hasText: member.email });
   await expect(row).toBeVisible();
 
-  await row.getByRole("button", { name: "Delete account" }).click();
+  // The erase button's accessible name is its aria-label ("Permanently delete
+  // the account for <email>"), NOT the visible "Delete account" text — match
+  // that. (Same locator is used below to PROVE the button is absent on the
+  // self/last-admin rows, so the absence assertions are meaningful, not vacuous.)
+  await row
+    .getByRole("button", { name: /permanently delete the account/i })
+    .click();
   await page
     .getByRole("alertdialog")
     .getByRole("button", { name: "Delete permanently" })
@@ -69,7 +75,7 @@ test("admin cannot erase their own account (no delete control on self row)", asy
   const selfRow = page.locator("li").filter({ hasText: "You" }).first();
   await expect(selfRow).toBeVisible();
   await expect(
-    selfRow.getByRole("button", { name: "Delete account" }),
+    selfRow.getByRole("button", { name: /permanently delete the account/i }),
   ).toHaveCount(0);
 });
 
@@ -96,7 +102,7 @@ test("the sole admin (last admin) has no delete control and stays intact", async
   const selfRow = page.locator("li").filter({ hasText: "You" }).first();
   await expect(selfRow).toBeVisible();
   await expect(
-    selfRow.getByRole("button", { name: "Delete account" }),
+    selfRow.getByRole("button", { name: /permanently delete the account/i }),
   ).toHaveCount(0);
 
   // The sole admin is still present (the unit matrix proves the server-side
