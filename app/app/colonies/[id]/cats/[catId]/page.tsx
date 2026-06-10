@@ -27,6 +27,7 @@ import {
   markCatMissing,
   markCatFound,
 } from "../concern-actions";
+import { moveCatToColony } from "../../../actions";
 import {
   btnGhost,
   btnGhostDanger,
@@ -84,10 +85,12 @@ export default async function CatDetail({
     monitoring?: string;
     missing?: string;
     found?: string;
+    moved?: string;
   }>;
 }) {
   const { id, catId } = await params;
-  const { error, ignored, monitoring, missing, found } = await searchParams;
+  const { error, ignored, monitoring, missing, found, moved } =
+    await searchParams;
   const t = await getTranslations("cats");
   const tc = await getTranslations("common");
   const tConcern = await getTranslations();
@@ -122,6 +125,23 @@ export default async function CatDetail({
     org?.organisation_id ?? "",
   );
   const canManage = org?.role === "admin" || org?.role === "caretaker";
+
+  // Move-to-colony picker options: the org's other live colonies (same query
+  // shape as the colonies list — org-scoped, not soft-deleted, by name), minus
+  // the one the cat is already in. Managers only.
+  let moveTargets: { id: string; name: string }[] = [];
+  if (canManage && org) {
+    const { data: colonyOptions } = await supabase
+      .from("colonies")
+      .select("id, name")
+      .eq("organisation_id", org.organisation_id)
+      .is("deleted_at", null)
+      .order("name");
+    moveTargets = (
+      (colonyOptions ?? []) as { id: string; name: string }[]
+    ).filter((c) => c.id !== id);
+  }
+
   const unconfirmed = cat.status === UNCONFIRMED_STATUS;
   // Confirm/Reject show only for a manager AND only while the cat is still
   // awaiting review — gated in the UI here and re-checked in the server action.
@@ -249,7 +269,7 @@ export default async function CatDetail({
         </p>
       ) : null}
 
-      {ignored || monitoring || missing || found ? (
+      {ignored || monitoring || missing || found || moved ? (
         <p
           role="status"
           className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
@@ -258,6 +278,7 @@ export default async function CatDetail({
           {monitoring ? t("toastMonitoring") : null}
           {missing ? t("toastMissing") : null}
           {found ? t("toastFound") : null}
+          {moved ? t("toastMoved") : null}
         </p>
       ) : null}
 
@@ -382,6 +403,52 @@ export default async function CatDetail({
                   {t("rejectEllipsis")}
                 </ConfirmButton>
               </form>
+            </div>
+          ) : null}
+
+          {/* Move to colony — caretaker/admin only. Single-cat move; the picker
+              lists the org's OTHER live colonies (current + deleted excluded).
+              The server action re-checks role + same-org target, so this UI gate
+              is convenience, not the trust boundary. With no other colonies we
+              show a hint instead of an empty picker. */}
+          {canManage ? (
+            <div className={`${card} flex flex-col gap-3 p-4`}>
+              <p className="text-sm font-medium">{t("moveColony")}</p>
+              {moveTargets.length === 0 ? (
+                <p className="text-xs text-muted">{t("noOtherColonies")}</p>
+              ) : (
+                <form
+                  action={moveCatToColony}
+                  className="flex flex-col gap-3 sm:flex-row sm:items-end"
+                >
+                  <input type="hidden" name="catId" value={catId} />
+                  <input type="hidden" name="colonyId" value={id} />
+                  <label className={`${fieldLabel} flex-1 text-xs`}>
+                    {t("moveToColony")}
+                    <select
+                      name="targetColonyId"
+                      defaultValue=""
+                      required
+                      className={`${input} py-2`}
+                    >
+                      <option value="" disabled>
+                        {t("selectColony")}
+                      </option>
+                      {moveTargets.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <SubmitButton
+                    pendingText={t("moving")}
+                    className={`${btnGhost} min-h-11 px-4`}
+                  >
+                    {t("move")}
+                  </SubmitButton>
+                </form>
+              )}
             </div>
           ) : null}
 

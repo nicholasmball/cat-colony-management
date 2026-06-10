@@ -306,7 +306,14 @@
     "missingHint": "Este gato está marcado como desaparecido. Se foi visto novamente, marque-o como encontrado para o devolver à lista de ativos.",
     "markFound": "Marcar encontrado → Ativo",
     "markFoundLabel": "Marcar encontrado",
-    "markFoundConfirm": "Marcar este gato como encontrado? Regressa à lista de ativos."
+    "markFoundConfirm": "Marcar este gato como encontrado? Regressa à lista de ativos.",
+    "moveColony": "Mover para colónia",
+    "moveToColony": "Mover este gato para",
+    "selectColony": "Selecione uma colónia…",
+    "move": "Mover",
+    "moving": "A mover…",
+    "noOtherColonies": "Ainda não há outras colónias para onde mover este gato.",
+    "toastMoved": "✓ Movido para a nova colónia."
   },
   "schedules": {
     "backToColony": "← Colónia",
@@ -615,6 +622,8 @@
     "catNoLongerExists": "Esse gato já não existe.",
     "colonyNotFound": "Colónia não encontrada.",
     "colonyNoLongerExists": "Essa colónia já não existe.",
+    "sameColony": "Esse gato já está nesta colónia.",
+    "chooseColony": "Escolha uma colónia para onde mover este gato.",
     "incidentNoLongerExists": "Esse incidente já não existe.",
     "nameOrDescription": "Introduza um nome ou uma descrição (pelo menos um).",
     "couldNotSaveFeeding": "Não foi possível guardar a atualização de alimentação.",
