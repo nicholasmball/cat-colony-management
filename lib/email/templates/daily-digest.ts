@@ -30,36 +30,48 @@ export function renderDailyDigest(
   params: DigestParams,
 ): EmailContent {
   const t = emailTranslator(locale, "email.digest");
+  const brand = emailTranslator(locale, "email");
   const count = params.itemTitles.length;
   const subject = t("subject", { orgName: params.orgName, count });
   const heading = t("heading", { orgName: params.orgName });
   const summary = t("summary", { count });
   const cta = t("cta");
-  const footer = t("footer");
+  const note = t("footer");
+  const kicker = brand("kicker");
+  const tagline = brand("tagline");
 
   const items = params.itemTitles
-    .map((title) => `<li style="margin:6px 0;">${escapeHtml(title)}</li>`)
+    .map(
+      (title) =>
+        `<li style="margin:6px 0;font-size:15px;line-height:1.6;color:#3a3a3a;">${escapeHtml(
+          title,
+        )}</li>`,
+    )
     .join("\n");
 
   const html = wrapHtml({
     locale,
     title: subject,
-    bodyHtml: `<h1 style="font-size:22px;margin:0 0 12px;">${escapeHtml(
+    kicker,
+    footer: tagline,
+    bodyHtml: `<h1 style="margin:0 0 12px;font-size:21px;line-height:1.3;color:#2a2a2a;">${escapeHtml(
       heading,
     )}</h1>
-<p style="margin:0 0 8px;">${escapeHtml(summary)}</p>
+<p style="margin:0 0 8px;font-size:15px;line-height:1.6;color:#3a3a3a;">${escapeHtml(
+      summary,
+    )}</p>
 <ul style="margin:0 0 8px;padding-left:20px;">
 ${items}
 </ul>
 ${ctaButton(cta, params.appUrl)}
-<p style="margin:16px 0 0;color:#57534e;font-size:13px;">${escapeHtml(
-      footer,
+<p style="margin:16px 0 0;font-size:13px;line-height:1.6;color:#6b6259;">${escapeHtml(
+      note,
     )}</p>`,
   });
 
   const text = `${heading}\n\n${summary}\n\n${params.itemTitles
     .map((title) => `- ${title}`)
-    .join("\n")}\n\n${cta}: ${params.appUrl}\n\n${footer}\n`;
+    .join("\n")}\n\n${cta}: ${params.appUrl}\n\n${note}\n`;
 
   return { subject, html, text };
 }

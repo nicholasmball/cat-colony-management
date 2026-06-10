@@ -89,6 +89,8 @@
     "resetLinkInvalid": "This reset link is missing, invalid, or has expired. Request a new one."
   },
   "email": {
+    "kicker": "Street Cats of Tavira",
+    "tagline": "Street Cats of Tavira · gestão de colónias 🐾",
     "invite": {
       "subject": "You’re invited to {orgName}",
       "heading": "Welcome to {orgName} 🐾",

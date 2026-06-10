@@ -23,22 +23,29 @@ export function renderInvite(
   params: InviteParams,
 ): EmailContent {
   const t = emailTranslator(locale, "email.invite");
+  const brand = emailTranslator(locale, "email");
   const subject = t("subject", { orgName: params.orgName });
   const heading = t("heading", { orgName: params.orgName });
   const body = t("body", { orgName: params.orgName, role: params.role });
   const cta = t("cta");
+  const kicker = brand("kicker");
+  const footer = brand("tagline");
 
   const html = wrapHtml({
     locale,
     title: subject,
-    bodyHtml: `<h1 style="font-size:22px;margin:0 0 12px;">${escapeHtml(
+    kicker,
+    footer,
+    bodyHtml: `<h1 style="margin:0 0 12px;font-size:21px;line-height:1.3;color:#2a2a2a;">${escapeHtml(
       heading,
     )}</h1>
-<p style="margin:0 0 8px;">${escapeHtml(body)}</p>
+<p style="margin:0 0 8px;font-size:15px;line-height:1.6;color:#3a3a3a;">${escapeHtml(
+      body,
+    )}</p>
 ${ctaButton(cta, params.acceptUrl)}
-<p style="margin:8px 0;color:#57534e;font-size:13px;">${escapeHtml(
+<p style="margin:8px 0 0;font-size:12px;line-height:1.5;word-break:break-all;color:#8a7f73;"><a href="${escapeHtml(
       params.acceptUrl,
-    )}</p>`,
+    )}" style="color:#4f46e5;">${escapeHtml(params.acceptUrl)}</a></p>`,
   });
 
   const text = `${heading}\n\n${body}\n\n${cta}: ${params.acceptUrl}\n`;

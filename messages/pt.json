@@ -89,6 +89,8 @@
     "resetLinkInvalid": "Este link de reposição está em falta, é inválido ou expirou. Solicite um novo."
   },
   "email": {
+    "kicker": "Street Cats of Tavira",
+    "tagline": "Street Cats of Tavira · gestão de colónias 🐾",
     "invite": {
       "subject": "Foi convidado para {orgName}",
       "heading": "Bem-vindo a {orgName} 🐾",
