@@ -1,11 +1,20 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { photoSrc } from "@/lib/photo";
 import { catLabel, formatStatus, statusTone } from "@/lib/cat-display";
 import { UNCONFIRMED_STATUS, compareCatsForList } from "@/lib/cat-report";
+import {
+  collectUserIds,
+  buildFeedingSection,
+  buildIncidentSection,
+  lastFedFromRows,
+  type RawFeedingEvent,
+  type RawIncident,
+  type FeedingFlag,
+} from "@/lib/colony-history";
 import {
   concernCandidate,
   concernReasonKey,
@@ -83,7 +92,10 @@ export default async function ColonyDetail({
   const tc = await getTranslations("common");
   const tCat = await getTranslations("cats");
   const tType = await getTranslations("incidents.type");
+  const tFeed = await getTranslations("feed");
   const tConcern = await getTranslations();
+  const locale = await getLocale();
+  const displayLocale = locale === "pt" ? "pt-PT" : "en-GB";
   const org = await getActiveOrg();
   const supabase = await createClient();
   // Translate a concern flag (reason + count) via the pure key mapper.
@@ -218,25 +230,34 @@ export default async function ColonyDetail({
     .order("specific_date", { nullsFirst: false });
   const schedules = (scheduleData ?? []) as Schedule[];
 
-  // Open incidents for this colony (all roles read). One query; urgency badged
-  // from the org's alerts_immediately levels. Links to the flat detail route.
-  const { data: openIncidentData } = await supabase
-    .from("incidents")
-    .select("id, type, status, cat_id, urgency_level_id, occurred_at")
-    .eq("colony_id", id)
-    .in("status", ["open", "in_progress"])
-    .order("occurred_at", { ascending: false });
-  const openIncidents = (openIncidentData ?? []) as {
-    id: string;
-    type: string;
-    status: string;
-    cat_id: string | null;
-    urgency_level_id: string | null;
-    occurred_at: string;
-  }[];
+  // ── Two bounded history reads (RLS client, members-read-in-org) ────────────
+  // Recent feeding updates + ALL-status incidents for this colony, newest-first.
+  // LIMIT 11 so the pure helpers flag "older not shown" without a count query.
+  // The incidents read intentionally drops the open/in_progress filter (the old
+  // "open incidents" section) so the timeline shows resolved/closed too; we add
+  // reported_by for the (GDPR-silent) attribution line.
+  const [{ data: feedingData }, { data: incidentData }] = await Promise.all([
+    supabase
+      .from("feeding_events")
+      .select("fed, problem, food_issue, danger, notes, feeder_id, observed_at")
+      .eq("colony_id", id)
+      .order("observed_at", { ascending: false })
+      .limit(11),
+    supabase
+      .from("incidents")
+      .select(
+        "id, type, status, cat_id, urgency_level_id, reported_by, occurred_at",
+      )
+      .eq("colony_id", id)
+      .order("occurred_at", { ascending: false })
+      .limit(11),
+  ]);
+  const rawFeedings = (feedingData ?? []) as RawFeedingEvent[];
+  const rawIncidents = (incidentData ?? []) as RawIncident[];
 
+  // Urgency badge: which of the org's levels alert immediately. One read.
   const urgentLevelIds = new Set<string>();
-  if (openIncidents.length > 0 && org) {
+  if (rawIncidents.length > 0 && org) {
     const { data: levelData } = await supabase
       .from("incident_urgency_levels")
       .select("id, alerts_immediately")
@@ -247,22 +268,50 @@ export default async function ColonyDetail({
   }
   const catNameById = new Map(cats.map((c) => [c.id, catLabel(c)]));
 
-  // Resolve feeder emails once for the distinct feeder ids (no per-row call).
-  const feederEmails = new Map<string, string>();
-  const feederIds = [
-    ...new Set(
-      schedules.map((s) => s.feeder_id).filter((v): v is string => !!v),
-    ),
-  ];
-  if (feederIds.length > 0) {
+  // ── Batched who-resolution (no N+1) ────────────────────────────────────────
+  // One id-set across schedules (which keep their "unknown" fallback) AND the
+  // two history lists (feeder_id + reported_by). Still ONE getUserById per
+  // DISTINCT id via the service client; history rows just join the same batch.
+  const userEmails = new Map<string, string>();
+  const scheduleFeederIds = new Set(
+    schedules.map((s) => s.feeder_id).filter((v): v is string => !!v),
+  );
+  const allUserIds = new Set<string>([
+    ...scheduleFeederIds,
+    ...collectUserIds(rawFeedings, rawIncidents),
+  ]);
+  if (allUserIds.size > 0) {
     const svc = createServiceClient();
     await Promise.all(
-      feederIds.map(async (uid) => {
+      [...allUserIds].map(async (uid) => {
         const { data } = await svc.auth.admin.getUserById(uid);
-        feederEmails.set(uid, data.user?.email ?? "unknown");
+        // Only record a real email — a missing/deleted account leaves the id
+        // unmapped so history attributionEmail() degrades to NO name (silent,
+        // GDPR-safe), while schedules apply their own "unknown" fallback below.
+        if (data.user?.email) userEmails.set(uid, data.user.email);
       }),
     );
   }
+
+  // Shape the two history sections + last-fed off the email map (pure helpers).
+  const feedingSection = buildFeedingSection(rawFeedings, userEmails);
+  const incidentSection = buildIncidentSection(rawIncidents, userEmails);
+  const lastFed = lastFedFromRows(rawFeedings);
+
+  // org.timezone — there is NO colonies.timezone column. Mirrors the incident
+  // page formatter; falls back to UTC so a render never throws.
+  const dateTimeFmt = new Intl.DateTimeFormat(displayLocale, {
+    timeZone: org?.timezone ?? "UTC",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  const feedingFlagLabel: Record<FeedingFlag, string> = {
+    problem: tFeed("flagProblem"),
+    food_issue: tFeed("flagFoodIssue"),
+    danger: tFeed("flagDanger"),
+  };
 
   return (
     <div className="flex max-w-3xl flex-col gap-6 px-6 py-6 md:px-10">
@@ -278,6 +327,13 @@ export default async function ColonyDetail({
               ? t("feedsAt", { time: `${start}${end ? `–${end}` : ""}` })
               : t("noFeedingWindow")}
             {!colony.is_active ? ` · ${tc("inactive")}` : ""}
+          </p>
+          <p className="mt-0.5 text-sm font-medium">
+            {lastFed.fedAt
+              ? t("lastFed", {
+                  when: dateTimeFmt.format(new Date(lastFed.fedAt)),
+                })
+              : t("notFedYet")}
           </p>
         </div>
         {canManage ? (
@@ -538,51 +594,132 @@ export default async function ColonyDetail({
         )}
       </section>
 
+      {/* ── Recent feeding updates (read-only, all roles) ────────────────────
+          Newest-first, ≤10, then a quiet "older not shown" line. Static rows
+          (no detail page): fed/not-fed pill (icon+word, never colour-alone) +
+          org-tz time + flag badges only when set + feeder email when it
+          resolves + the note. Name-less rows are normal. */}
       <section className="flex flex-col gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-          {t("incidentsHeading", { count: openIncidents.length })}
+          {t("recentFeedingHeading")}
         </h2>
-        {openIncidents.length === 0 ? (
-          <p className={`${card} p-4 text-sm text-muted`}>
-            {t("noOpenIncidents")}
-          </p>
+        {feedingSection.rows.length === 0 ? (
+          <EmptyState
+            icon={<PawIcon className="h-7 w-7" />}
+            title={t("noFeedingUpdatesTitle")}
+            body={t("noFeedingUpdatesBody")}
+          />
         ) : (
-          <ul className="flex flex-col gap-2">
-            {openIncidents.map((i) => {
-              const urgent =
-                !!i.urgency_level_id && urgentLevelIds.has(i.urgency_level_id);
-              return (
-                <li key={i.id}>
-                  <Link
-                    href={`/app/incidents/${i.id}`}
-                    className={`${card} flex min-h-[56px] items-center gap-3 px-4 py-3 transition hover:bg-foreground/5 ${
-                      urgent && i.status === "open"
-                        ? "border-l-4 border-l-red-500"
-                        : ""
-                    }`}
-                  >
-                    <IncidentTypeIcon
-                      type={i.type}
-                      className="h-5 w-5 shrink-0 text-muted"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium">
-                        <span className="truncate">{tType(i.type)}</span>
-                        {urgent ? <UrgentBadge /> : null}
-                        <IncidentStatusPill status={i.status} />
-                      </p>
-                      {i.cat_id && catNameById.get(i.cat_id) ? (
-                        <p className="mt-0.5 truncate text-xs text-muted">
-                          {catNameById.get(i.cat_id)}
-                        </p>
-                      ) : null}
-                    </div>
-                    <ChevronIcon className="h-4 w-4 shrink-0 text-muted" />
-                  </Link>
+          <>
+            <ol className="flex flex-col divide-y divide-border">
+              {feedingSection.rows.map((row, i) => (
+                <li
+                  key={`${row.observedAt}-${i}`}
+                  className="flex flex-col gap-1 py-3"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${toneClass[row.tone]}`}
+                    >
+                      {row.fed ? (
+                        <PawIcon className="h-3.5 w-3.5" aria-hidden />
+                      ) : (
+                        <WarningIcon className="h-3.5 w-3.5" aria-hidden />
+                      )}
+                      {row.fed ? tFeed("outcomeFed") : tFeed("outcomeNotFed")}
+                    </span>
+                    {row.flags.map((flag) => (
+                      <span
+                        key={flag}
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${toneClass.warn}`}
+                      >
+                        <WarningIcon className="h-3 w-3" aria-hidden />
+                        {feedingFlagLabel[flag]}
+                      </span>
+                    ))}
+                    <span className="ml-auto text-xs text-muted">
+                      {dateTimeFmt.format(new Date(row.observedAt))}
+                    </span>
+                  </div>
+                  {row.who ? (
+                    <p className="text-xs text-muted [overflow-wrap:anywhere]">
+                      {row.who}
+                    </p>
+                  ) : null}
+                  {row.notes ? (
+                    <p className="whitespace-pre-wrap text-sm">{row.notes}</p>
+                  ) : null}
                 </li>
-              );
-            })}
-          </ul>
+              ))}
+            </ol>
+            {feedingSection.hasMore ? (
+              <p className="text-xs text-muted">{t("olderUpdatesNotShown")}</p>
+            ) : null}
+          </>
+        )}
+      </section>
+
+      {/* ── Recent incidents (read-only, all roles) ──────────────────────────
+          ALL statuses now (resolved/closed included), newest-first, ≤10. Each
+          row is a full-width link (≥44px) to the flat incident detail route;
+          urgent open items get the red rail. Reporter attribution is silent. */}
+      <section className="flex flex-col gap-2">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
+          {t("recentIncidentsHeading")}
+        </h2>
+        {incidentSection.rows.length === 0 ? (
+          <EmptyState
+            icon={<WarningIcon className="h-7 w-7" />}
+            title={t("noIncidentsTitle")}
+            body={t("noIncidentsBody")}
+          />
+        ) : (
+          <>
+            <ul className="flex flex-col gap-2">
+              {incidentSection.rows.map((i) => {
+                const urgent =
+                  !!i.urgencyLevelId && urgentLevelIds.has(i.urgencyLevelId);
+                return (
+                  <li key={i.id}>
+                    <Link
+                      href={`/app/incidents/${i.id}`}
+                      className={`${card} flex min-h-[56px] items-center gap-3 px-4 py-3 transition hover:bg-foreground/5 ${
+                        urgent && i.status === "open"
+                          ? "border-l-4 border-l-red-500"
+                          : ""
+                      }`}
+                    >
+                      <IncidentTypeIcon
+                        type={i.type}
+                        className="h-5 w-5 shrink-0 text-muted"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium">
+                          <span className="truncate">{tType(i.type)}</span>
+                          {urgent ? <UrgentBadge /> : null}
+                          <IncidentStatusPill status={i.status} />
+                        </p>
+                        <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                          {i.catId && catNameById.get(i.catId) ? (
+                            <span className="truncate">
+                              {catNameById.get(i.catId)}
+                            </span>
+                          ) : null}
+                          <span>
+                            {dateTimeFmt.format(new Date(i.occurredAt))}
+                          </span>
+                        </p>
+                      </div>
+                      <ChevronIcon className="h-4 w-4 shrink-0 text-muted" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+            {incidentSection.hasMore ? (
+              <p className="text-xs text-muted">{t("olderUpdatesNotShown")}</p>
+            ) : null}
+          </>
         )}
       </section>
 
@@ -619,7 +756,7 @@ export default async function ColonyDetail({
           <ul className="flex flex-col gap-2">
             {schedules.map((s) => {
               const email = s.feeder_id
-                ? (feederEmails.get(s.feeder_id) ?? tc("unknown"))
+                ? (userEmails.get(s.feeder_id) ?? tc("unknown"))
                 : tc("unassigned");
               const time = hhmm(s.approx_time);
               const isOneOff = !!s.specific_date;
