@@ -10,6 +10,7 @@ import { deleteObject } from "@/lib/storage/r2";
 import { isFailedWrite, writeErrorMessage } from "@/lib/mutation-result";
 import { isKeyInOrg } from "@/lib/photo-key";
 import { parseNeutered } from "@/lib/cat-report";
+import { canMoveCat } from "@/lib/move-cat";
 import { planConcernSightingAlert } from "@/lib/alert-engine";
 import { alertRecipients } from "@/lib/alert-recipients";
 import { persistAlerts } from "@/lib/alert-persist";
@@ -314,6 +315,72 @@ export async function updateCat(formData: FormData) {
   }
   revalidatePath(`/app/colonies/${colonyId}`);
   redirect(`/app/colonies/${colonyId}`);
+}
+
+// Move a single cat to another colony in the same org. Manager-only (the RLS
+// "managers update cats" policy already permits a colony_id change and checks
+// org only — no migration). No move history is kept (confirmed scope).
+export async function moveCatToColony(formData: FormData) {
+  const catId = String(formData.get("catId"));
+  const colonyId = String(formData.get("colonyId"));
+  const targetColonyId = String(formData.get("targetColonyId") ?? "").trim();
+
+  const org = await getActiveOrg();
+  if (!org) redirect("/app");
+  // Manager-only trust boundary in app code (the UI hides it but the server
+  // must not trust that) — mirrors updateColony/archiveColony.
+  if (org.role !== "admin" && org.role !== "caretaker") {
+    redirect(`/app/colonies/${colonyId}/cats/${catId}`);
+  }
+
+  const t = await getTranslations("errors");
+  const catPath = `/app/colonies/${colonyId}/cats/${catId}`;
+  const supabase = await createClient();
+
+  // The org's live colonies are the cross-org + existence guard: the pure
+  // canMoveCat() only accepts a target that is present, ≠ current, and one of
+  // these. (Same query shape as the colonies list/picker.)
+  const { data: colonyData } = await supabase
+    .from("colonies")
+    .select("id")
+    .eq("organisation_id", org.organisation_id)
+    .is("deleted_at", null);
+  const check = canMoveCat(
+    targetColonyId,
+    colonyId,
+    (colonyData ?? []) as { id: string }[],
+  );
+  if (!check.ok) {
+    const message =
+      check.reason === "same"
+        ? t("sameColony")
+        : check.reason === "missing"
+          ? t("chooseColony")
+          : t("colonyNotFound");
+    redirect(`${catPath}?error=${encodeURIComponent(message)}`);
+  }
+
+  // RLS scopes this to the caller's org + Caretaker/Admin role — the only authz
+  // here. .select("id") + isFailedWrite turns an RLS-filtered 0-row match (e.g.
+  // the cat was deleted/moved out of reach) into a surfaced error.
+  const { data, error } = await supabase
+    .from("cats")
+    .update({ colony_id: targetColonyId })
+    .eq("id", catId)
+    .is("deleted_at", null)
+    .select("id");
+
+  if (isFailedWrite({ error, rows: data })) {
+    const message = writeErrorMessage(
+      { error, rows: data },
+      t("catNoLongerExists"),
+    );
+    redirect(`${catPath}?error=${encodeURIComponent(message)}`);
+  }
+
+  revalidatePath(`/app/colonies/${colonyId}`);
+  revalidatePath(`/app/colonies/${targetColonyId}`);
+  redirect(`/app/colonies/${targetColonyId}/cats/${catId}?moved=1`);
 }
 
 // The 30-second feeding update: one append-only feeding_event for the colony,

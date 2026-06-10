@@ -306,7 +306,14 @@
     "missingHint": "This cat is marked missing. If it’s been seen again, mark it found to return it to the active list.",
     "markFound": "Mark found → Active",
     "markFoundLabel": "Mark found",
-    "markFoundConfirm": "Mark this cat as found? It returns to the active list."
+    "markFoundConfirm": "Mark this cat as found? It returns to the active list.",
+    "moveColony": "Move to colony",
+    "moveToColony": "Move this cat to",
+    "selectColony": "Select a colony…",
+    "move": "Move",
+    "moving": "Moving…",
+    "noOtherColonies": "There are no other colonies to move this cat to yet.",
+    "toastMoved": "✓ Moved to its new colony."
   },
   "schedules": {
     "backToColony": "← Colony",
@@ -615,6 +622,8 @@
     "catNoLongerExists": "That cat no longer exists.",
     "colonyNotFound": "Colony not found.",
     "colonyNoLongerExists": "That colony no longer exists.",
+    "sameColony": "That cat is already in this colony.",
+    "chooseColony": "Choose a colony to move this cat to.",
     "incidentNoLongerExists": "That incident no longer exists.",
     "nameOrDescription": "Enter a name or a description (at least one).",
     "couldNotSaveFeeding": "Could not save the feeding update.",
