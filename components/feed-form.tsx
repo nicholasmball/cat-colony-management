@@ -5,9 +5,39 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { enqueue } from "@/lib/offline/outbox";
 import { getStore, isDefinitelyOffline } from "@/lib/offline/client";
+import { PawIcon } from "@/components/icons";
 import { btnPrimary, input } from "@/lib/ui";
 
-type Cat = { id: string; name: string | null; temp_id: string | null };
+type Cat = {
+  id: string;
+  name: string | null;
+  temp_id: string | null;
+  photoSrc: string | null;
+};
+
+// Decorative 40px round avatar to the LEFT of the cat name. Reuses the colony-
+// detail avatar markup; additive here are lazy loading + a row-local onError
+// fallback to the paw, both inside a fixed h-10 w-10 box so there's no layout
+// shift. The name remains the sole text label, so alt="" (decorative).
+function CatAvatar({ src }: { src: string | null }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-surface">
+      {src && !failed ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt=""
+          loading="lazy"
+          onError={() => setFailed(true)}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <PawIcon className="h-5 w-5 text-muted" aria-hidden />
+      )}
+    </span>
+  );
+}
 
 const sightingOptions = [
   {
@@ -253,33 +283,36 @@ export function FeedForm({
               return (
                 <li
                   key={c.id}
-                  className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-3"
+                  className="flex items-start gap-3 rounded-xl border border-border bg-surface p-3"
                 >
-                  <span className="text-sm font-medium">
-                    {c.name ?? c.temp_id ?? t("unnamedCat")}
-                  </span>
-                  <div className="grid grid-cols-3 gap-2">
-                    {sightingOptions.map((s) => {
-                      const on = sel === s.key;
-                      return (
-                        <button
-                          key={s.key}
-                          type="button"
-                          aria-pressed={on}
-                          onClick={() =>
-                            setSightings((m) => ({
-                              ...m,
-                              [c.id]: m[c.id] === s.key ? "" : s.key,
-                            }))
-                          }
-                          className={`min-h-11 rounded-lg border text-sm font-medium transition ${
-                            on ? s.on : "border-border text-foreground"
-                          }`}
-                        >
-                          {t(s.labelKey)}
-                        </button>
-                      );
-                    })}
+                  <CatAvatar src={c.photoSrc} />
+                  <div className="flex min-w-0 flex-1 flex-col gap-2">
+                    <span className="truncate text-sm font-medium">
+                      {c.name ?? c.temp_id ?? t("unnamedCat")}
+                    </span>
+                    <div className="grid grid-cols-3 gap-2">
+                      {sightingOptions.map((s) => {
+                        const on = sel === s.key;
+                        return (
+                          <button
+                            key={s.key}
+                            type="button"
+                            aria-pressed={on}
+                            onClick={() =>
+                              setSightings((m) => ({
+                                ...m,
+                                [c.id]: m[c.id] === s.key ? "" : s.key,
+                              }))
+                            }
+                            className={`min-h-11 rounded-lg border text-sm font-medium transition ${
+                              on ? s.on : "border-border text-foreground"
+                            }`}
+                          >
+                            {t(s.labelKey)}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </li>
               );
