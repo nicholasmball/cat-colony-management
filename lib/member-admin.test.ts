@@ -5,8 +5,8 @@ import { canEraseMember } from "./member-admin.ts";
 const ACTOR = "actor-1";
 const TARGET = "target-1";
 
-// A valid base input: a non-admin target who belongs to the org, plenty of
-// admins around. Individual cases override exactly the field under test.
+// A valid base input: a non-admin target who belongs to the org and is ACTIVE,
+// plenty of admins around. Individual cases override exactly the field under test.
 function base(overrides = {}) {
   return {
     actingUserId: ACTOR,
@@ -14,6 +14,7 @@ function base(overrides = {}) {
     targetRole: "feeder" as const,
     adminCount: 2,
     targetInOrg: true,
+    targetActive: true,
     ...overrides,
   };
 }
@@ -42,10 +43,30 @@ test("canEraseMember: blocked — cannot erase self", () => {
   });
 });
 
-test("canEraseMember: blocked — cannot erase the last admin", () => {
+test("canEraseMember: blocked — cannot erase the ACTIVE sole admin", () => {
   assert.deepEqual(
-    canEraseMember(base({ targetRole: "admin", adminCount: 1 })),
+    canEraseMember(
+      base({ targetRole: "admin", targetActive: true, adminCount: 1 }),
+    ),
     { ok: false, reason: "cannotEraseLastAdmin" },
+  );
+});
+
+test("canEraseMember: a DEACTIVATED admin is erasable even when adminCount<=1", () => {
+  // adminCount counts ACTIVE admins only, so a deactivated admin isn't in that
+  // pool — erasing them can't orphan the org, so the last-admin rail must NOT fire.
+  assert.deepEqual(
+    canEraseMember(
+      base({ targetRole: "admin", targetActive: false, adminCount: 1 }),
+    ),
+    { ok: true },
+  );
+});
+
+test("canEraseMember: a DEACTIVATED feeder is erasable", () => {
+  assert.deepEqual(
+    canEraseMember(base({ targetRole: "feeder", targetActive: false })),
+    { ok: true },
   );
 });
 

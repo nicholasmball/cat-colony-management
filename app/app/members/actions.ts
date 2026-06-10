@@ -331,13 +331,16 @@ export async function eraseMember(formData: FormData) {
   // One bounded read for the target's membership in THIS org, one for the
   // org's active admins (reuses deactivateMember's count query). No fan-out.
   const [{ data: targetRow }, { data: admins }] = await Promise.all([
+    // Target read is deleted_at-AGNOSTIC: a DEACTIVATED member (deleted_at set)
+    // is still erasable, so we must find them. We select deleted_at to tell the
+    // decision function whether the target is active (drives the last-admin rail).
     svc
       .from("memberships")
-      .select("user_id, role")
+      .select("user_id, role, deleted_at")
       .eq("user_id", targetUserId)
       .eq("organisation_id", org.organisation_id)
-      .is("deleted_at", null)
       .maybeSingle(),
+    // Admin-count read STAYS active-only: the last-admin rail counts ACTIVE admins.
     svc
       .from("memberships")
       .select("user_id")
@@ -354,6 +357,7 @@ export async function eraseMember(formData: FormData) {
     targetRole: (targetRow?.role ?? "feeder") as AppRole,
     adminCount: admins?.length ?? 0,
     targetInOrg: !!targetRow,
+    targetActive: !!targetRow && targetRow.deleted_at === null,
   });
   if (!decision.ok) err(t(decision.reason));
 
