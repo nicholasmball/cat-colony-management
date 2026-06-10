@@ -9,6 +9,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
 import { isFailedWrite, writeErrorMessage } from "@/lib/mutation-result";
 import { canChangeRole, type AppRole } from "@/lib/member-role";
+import { canEraseMember } from "@/lib/member-admin";
 import { emailModeFromEnv } from "@/lib/email/flags";
 import { inviteEmailPath } from "@/lib/email/invite-plan";
 import { send } from "@/lib/email";
@@ -293,4 +294,76 @@ export async function updateMemberRole(formData: FormData) {
 
   revalidatePath(MEMBERS);
   redirect(`${MEMBERS}?updated=${encodeURIComponent(target)}&role=${newRole}`);
+}
+
+// Permanently ERASE a member's account — the GDPR right-to-be-forgotten action.
+// This is DESTRUCTIVE and IRREVERSIBLE, and deliberately separate from the
+// reversible deactivateMember/reactivateMember (which only soft-delete the
+// membership). We delete the auth.users record itself, which:
+//   • CASCADES their membership rows + notifications away, and
+//   • NULLs every attribution FK (cats.reported_by/confirmed_by,
+//     cat_status_history.changed_by, feeding_events/cat_sightings.feeder_id,
+//     incidents.reported_by/assigned_to, incident_comments.author_id,
+//     cat_concern_reviews.reviewed_by, attachments.uploaded_by,
+//     invitations.invited_by, audit_log.actor_id — all ON DELETE SET NULL),
+// so their past activity is anonymised rather than deleted (history stays
+// intact, attribution lines degrade to no-name via attributionEmail).
+//
+// NOTE: deleting the auth user is GLOBAL — it removes them from ALL orgs and
+// cascades everywhere. That is correct for GDPR erasure. The org-membership
+// check below is the AUTHORISATION gate: an admin may only initiate erasure for
+// someone who is currently a member of THIS org.
+export async function eraseMember(formData: FormData) {
+  const org = await requireAdminOrg();
+  const t = await getTranslations("errors");
+  const targetUserId = String(formData.get("user_id") ?? "");
+
+  // Who's acting — needed for the never-erase-self guard. The org id always
+  // comes from the server-trusted active org, never from formData.
+  const supabase = await createClient();
+  const {
+    data: { user: actor },
+  } = await supabase.auth.getUser();
+  if (!actor) redirect("/app");
+
+  const svc = createServiceClient();
+
+  // One bounded read for the target's membership in THIS org, one for the
+  // org's active admins (reuses deactivateMember's count query). No fan-out.
+  const [{ data: targetRow }, { data: admins }] = await Promise.all([
+    svc
+      .from("memberships")
+      .select("user_id, role")
+      .eq("user_id", targetUserId)
+      .eq("organisation_id", org.organisation_id)
+      .is("deleted_at", null)
+      .maybeSingle(),
+    svc
+      .from("memberships")
+      .select("user_id")
+      .eq("organisation_id", org.organisation_id)
+      .eq("role", "admin")
+      .is("deleted_at", null),
+  ]);
+
+  // Defer every rail to the pure, unit-tested decision function. The reason it
+  // returns is an i18n key in the `errors` namespace.
+  const decision = canEraseMember({
+    actingUserId: actor.id,
+    targetUserId,
+    targetRole: (targetRow?.role ?? "feeder") as AppRole,
+    adminCount: admins?.length ?? 0,
+    targetInOrg: !!targetRow,
+  });
+  if (!decision.ok) err(t(decision.reason));
+
+  // The destructive call. Check the returned error — on failure, surface it as
+  // a visible error (NEVER redirect with a success flag on a failed delete).
+  const { error } = await svc.auth.admin.deleteUser(targetUserId);
+  if (error) {
+    err(writeErrorMessage({ error, rows: [{}] }, t("memberNoLongerExists")));
+  }
+
+  revalidatePath(MEMBERS);
+  redirect(`${MEMBERS}?ok=erased`);
 }
