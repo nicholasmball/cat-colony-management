@@ -313,7 +313,19 @@
     "move": "Move",
     "moving": "Moving…",
     "noOtherColonies": "There are no other colonies to move this cat to yet.",
-    "toastMoved": "✓ Moved to its new colony."
+    "toastMoved": "✓ Moved to its new colony.",
+    "sightingTimelineTitle": "Sighting timeline",
+    "statusHistoryTitle": "Status history",
+    "historyNewestFirst": "Most recent first · last 10",
+    "olderNotShown": "Older entries not shown",
+    "noSightingsTitle": "No sightings recorded yet",
+    "noSightingsBody": "Feeders’ updates for this cat will appear here, newest first.",
+    "noStatusChangesTitle": "No status changes yet",
+    "noStatusChangesBody": "When this cat is confirmed or marked missing, the change shows here.",
+    "outcomeSeen": "Seen",
+    "outcomeNotSeen": "Not seen",
+    "outcomeConcern": "Concern",
+    "statusSetTo": "Set to {status}"
   },
   "schedules": {
     "backToColony": "← Colony",
