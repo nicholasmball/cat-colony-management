@@ -66,6 +66,60 @@ test("admin permanently erases an extra member; auth user + membership are gone"
   expect(gone.user).toBeNull();
 });
 
+test("admin permanently erases a DEACTIVATED member; auth user + membership are gone", async ({
+  page,
+}) => {
+  const svc = serviceClient();
+  const member = await createExtraMember(svc, "feeder");
+  const { orgId } = readRunState();
+
+  // Soft-delete the membership first (deleted_at set) — the prod bug was that a
+  // deactivated member couldn't be erased because the target lookup filtered to
+  // active rows only. This proves the fix end-to-end.
+  await svc
+    .from("memberships")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("organisation_id", orgId!)
+    .eq("user_id", member.id);
+
+  await page.goto("/app/members");
+  const row = page.locator("li").filter({ hasText: member.email });
+  await expect(row).toBeVisible();
+  // The row is marked deactivated, yet still offers the erase control.
+  await expect(row.getByText(/deactivated/i)).toBeVisible();
+
+  await row
+    .getByRole("button", { name: /permanently delete the account/i })
+    .click();
+  await page
+    .getByRole("alertdialog")
+    .getByRole("button", { name: "Delete permanently" })
+    .click();
+
+  // Redirect back with the success flag; the deactivated member's row is gone.
+  await page.waitForURL(/\/app\/members\?ok=erased/);
+  await expect(page.getByText("Account permanently deleted")).toBeVisible();
+  await expect(
+    page.locator("li").filter({ hasText: member.email }),
+  ).toHaveCount(0);
+
+  // The membership row cascaded away with the auth user.
+  await expect
+    .poll(async () => {
+      const { data } = await svc
+        .from("memberships")
+        .select("user_id")
+        .eq("organisation_id", orgId!)
+        .eq("user_id", member.id);
+      return data?.length ?? 0;
+    })
+    .toBe(0);
+
+  // The auth user itself is gone.
+  const { data: gone } = await svc.auth.admin.getUserById(member.id);
+  expect(gone.user).toBeNull();
+});
+
 test("admin cannot erase their own account (no delete control on self row)", async ({
   page,
 }) => {

@@ -31,7 +31,12 @@ export type EraseMemberInput = {
   // Does the target currently belong to THIS org? The org-membership check is
   // the authorisation gate: an admin may only initiate erasure for someone in
   // their own org (even though the erase itself is global — see eraseMember).
+  // A DEACTIVATED member (deleted_at set) still counts as in-org and erasable.
   targetInOrg: boolean;
+  // Is the target an ACTIVE member (deleted_at === null)? The last-admin rail
+  // only fires for an active admin: adminCount counts ACTIVE admins, so a
+  // deactivated admin isn't in that pool and erasing them can't orphan the org.
+  targetActive: boolean;
 };
 
 export type EraseMemberResult =
@@ -48,6 +53,7 @@ export function canEraseMember({
   targetRole,
   adminCount,
   targetInOrg,
+  targetActive,
 }: EraseMemberInput): EraseMemberResult {
   if (!targetInOrg) {
     return { ok: false, reason: "memberNoLongerExists" };
@@ -55,7 +61,10 @@ export function canEraseMember({
   if (actingUserId === targetUserId) {
     return { ok: false, reason: "cannotEraseSelf" };
   }
-  if (targetRole === "admin" && adminCount <= 1) {
+  // Last-admin rail is ACTIVE-aware: only an active admin counts toward the
+  // active-admin pool (adminCount). A deactivated admin is already outside it,
+  // so erasing them can never drop active admins to zero → allowed.
+  if (targetRole === "admin" && targetActive && adminCount <= 1) {
     return { ok: false, reason: "cannotEraseLastAdmin" };
   }
   return { ok: true };
