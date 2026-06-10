@@ -702,7 +702,7 @@ export default async function CatDetail({
                         ) : (
                           <span className="flex flex-wrap items-center gap-1.5">
                             <span
-                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${toneClass[statusTone(row.oldStatus ?? "")]}`}
+                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${toneClass[statusTone(row.oldStatus ?? "")]}`}
                             >
                               {formatStatus(row.oldStatus ?? "")}
                             </span>
@@ -710,7 +710,7 @@ export default async function CatDetail({
                               {"→"}
                             </span>
                             <span
-                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${toneClass[statusTone(row.newStatus)]}`}
+                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${toneClass[statusTone(row.newStatus)]}`}
                             >
                               {formatStatus(row.newStatus)}
                             </span>

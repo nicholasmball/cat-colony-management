@@ -33,7 +33,8 @@ test("cat detail renders the sighting timeline and status history sections", asy
   const catUrl = page.url().split(/[?#]/)[0];
 
   await page.getByRole("button", { name: "Confirm cat" }).click();
-  // Confirm redirects back to the cat detail; re-open to be safe.
+  // confirmCat redirects to the COLONY page (?confirmed=cat), not the cat
+  // detail — so we explicitly re-open the cat URL to land on the detail page.
   await page.goto(catUrl);
 
   // Both section headings render.
@@ -49,9 +50,9 @@ test("cat detail renders the sighting timeline and status history sections", asy
   const statusHistory = page
     .getByRole("heading", { name: "Status history" })
     .locator("xpath=..");
-  await expect(
-    statusHistory.getByText("Active", { exact: true }),
-  ).toBeVisible();
+  // The pill is visually capitalized via CSS (capitalize), but the DOM text is
+  // the lowercase formatStatus output ("active"), so match case-insensitively.
+  await expect(statusHistory.getByText(/^active$/i)).toBeVisible();
   await expect(statusHistory.getByText("New · unconfirmed")).toBeVisible();
 
   // Sighting timeline renders its section — empty state here (no sighting yet).
