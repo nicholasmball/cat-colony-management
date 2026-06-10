@@ -45,24 +45,6 @@ import {
   input,
 } from "@/lib/ui";
 
-// Relative-ish, locale-independent "when" for the report line. Keeps it simple:
-// the date + time the report was created (records have no separate reporter
-// column — see PR notes).
-function reportedWhen(
-  iso: string | null,
-  displayLocale: string,
-): string | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleString(displayLocale, {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 const toneClass: Record<string, string> = {
   good: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300",
   warn: "bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300",
@@ -154,7 +136,6 @@ export default async function CatDetail({
   // Confirm/Reject show only for a manager AND only while the cat is still
   // awaiting review — gated in the UI here and re-checked in the server action.
   const canReview = canManage && canReviewCat(cat);
-  const when = reportedWhen(cat.created_at as string | null, displayLocale);
   const label = catLabel(cat);
 
   // ── Concern review block ───────────────────────────────────────────────────
@@ -291,10 +272,9 @@ export default async function CatDetail({
     hour: "2-digit",
     minute: "2-digit",
   });
-  // ONE timestamp for the report event: reuse the cat's created_at (the same
-  // source reportedWhen() uses) so we never show two different times for the
-  // same event. Formatted via the org-timezone formatter for the attribution
-  // line; the existing review note keeps using `when`.
+  // ONE timestamp for the report event: the cat's created_at, formatted via the
+  // org-timezone formatter (dateTimeFmt) for BOTH the attribution line and the
+  // review note, so we never show two different times for the same event.
   const reportedAt = cat.created_at as string | null;
   const neuteredText = (v: boolean) =>
     v ? t("neutered_yes") : t("neutered_no");
@@ -383,7 +363,8 @@ export default async function CatDetail({
               "Reported {when}" with NO name and never the literal "unknown"
               (this intentionally differs from the incident page's "unknown"
               fallback — keep it clean). One consistent report timestamp:
-              reportedAt is the cat's created_at, the same source `when` uses. */}
+              reportedAt is the cat's created_at, formatted via dateTimeFmt —
+              the same value the review note below shows. */}
           {reportedAt ? (
             <p className="text-xs text-muted [overflow-wrap:anywhere]">
               {reporterEmail ? (
@@ -405,12 +386,17 @@ export default async function CatDetail({
             </p>
           ) : null}
 
-          {/* Review context line for a reported cat. We don't store a reporter
-              column (no migration), so we surface the time it was reported and
-              set the right expectation by role. */}
+          {/* Review context line for a reported cat. Surfaces the report time
+              (org-tz, via dateTimeFmt — matching the attribution line above) and
+              sets the right expectation by role. The reporter itself shows in
+              the attribution line (reported_by, migration 0007). */}
           {unconfirmed ? (
             <p role="note" className={`${card} px-3 py-2 text-sm text-muted`}>
-              {when ? t("reportedWhen", { when }) : ""}
+              {reportedAt
+                ? t("reportedWhen", {
+                    when: dateTimeFmt.format(new Date(reportedAt)),
+                  })
+                : ""}
               {canReview ? t("reviewConfirmHint") : t("reviewWaitHint")}
             </p>
           ) : null}
