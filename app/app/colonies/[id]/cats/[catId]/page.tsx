@@ -17,6 +17,14 @@ import {
   type ConcernSighting,
   type ConcernReview,
 } from "@/lib/cat-concern";
+import {
+  collectUserIds,
+  buildSightingSection,
+  buildStatusSection,
+  type RawSighting,
+  type RawStatusChange,
+} from "@/lib/cat-history";
+import { EmptyState } from "@/components/empty-state";
 import { PawIcon, WarningIcon } from "@/components/icons";
 import { ConfirmButton } from "@/components/confirm-button";
 import { SubmitButton } from "@/components/submit-button";
@@ -204,6 +212,29 @@ export default async function CatDetail({
   const isMissing = status === "missing";
   const isActiveFlagged = status === "active" && concernFlag !== null;
 
+  // ── History sections (read-only, all roles) ────────────────────────────────
+  // Two bounded RLS queries (members-read-in-org enforces org scope, feeders
+  // included). LIMIT 11 so the pure helper can flag "older not shown" without a
+  // count query. We hit the BASE cat_sightings table (NOT the recent view, which
+  // drops feeder_id/note). changed_by is frequently null (system/alert-engine
+  // changes) — that's normal, the row just renders name-less.
+  const [{ data: sightingRows }, { data: statusRows }] = await Promise.all([
+    supabase
+      .from("cat_sightings")
+      .select("status, observed_at, feeder_id, note")
+      .eq("cat_id", catId)
+      .order("observed_at", { ascending: false })
+      .limit(11),
+    supabase
+      .from("cat_status_history")
+      .select("old_status, new_status, created_at, changed_by")
+      .eq("cat_id", catId)
+      .order("created_at", { ascending: false })
+      .limit(11),
+  ]);
+  const rawSightings = (sightingRows ?? []) as RawSighting[];
+  const rawStatusChanges = (statusRows ?? []) as RawStatusChange[];
+
   // Resolve the reporter / confirmer emails server-side. One service-client
   // lookup per DISTINCT id (≤2 here) — no N+1. Mirrors the incident detail
   // pattern (incidents/[incidentId]/page.tsx). The cat page has no service
@@ -211,8 +242,16 @@ export default async function CatDetail({
   const reportedBy = cat.reported_by as string | null;
   const confirmedBy = cat.confirmed_by as string | null;
   const emails = new Map<string, string>();
+  // One id-set for ALL attribution on the page: the cat's reporter/confirmer
+  // PLUS every distinct feeder/changed-by referenced by the two history lists.
+  // Still ONE getUserById per DISTINCT id (no N+1) — the history rows just join
+  // the same batch the reporter/confirmer lookup already runs.
   const userIds = new Set<string>(
-    [reportedBy, confirmedBy].filter((v): v is string => !!v),
+    [
+      reportedBy,
+      confirmedBy,
+      ...collectUserIds(rawSightings, rawStatusChanges),
+    ].filter((v): v is string => !!v),
   );
   if (userIds.size > 0) {
     const svc = createServiceClient();
@@ -227,6 +266,21 @@ export default async function CatDetail({
   }
   const reporterEmail = attributionEmail(reportedBy, emails);
   const confirmerEmail = attributionEmail(confirmedBy, emails);
+
+  // Shape the two history sections off the now-populated email map (pure helper,
+  // unit-tested): ≤10 rows newest-first + a hasMore flag for the overflow line.
+  const sightingSection = buildSightingSection(rawSightings, emails);
+  const statusSection = buildStatusSection(rawStatusChanges, emails);
+  // Translated outcome label for a sighting pill (seen/not_seen/concern). Falls
+  // back to the de-underscored raw status so an unexpected enum never throws.
+  const outcomeLabel = (s: string) =>
+    s === "seen"
+      ? t("outcomeSeen")
+      : s === "not_seen"
+        ? t("outcomeNotSeen")
+        : s === "concern"
+          ? t("outcomeConcern")
+          : formatStatus(s);
 
   // Same Intl.DateTimeFormat (org timezone) used on the incident page. Falls
   // back to UTC if there's no active org so a render never throws.
@@ -546,6 +600,140 @@ export default async function CatDetail({
               </form>
             </div>
           ) : null}
+
+          {/* ── Sighting timeline (read-only, all roles) ─────────────────────
+              Newest-first, ≤10, then a quiet "older not shown" line. Each row:
+              outcome pill (icon+label, never colour-alone) + org-tz time +
+              feeder email when it resolves + the note if present. Name-less rows
+              are normal — an unresolved/absent feeder just omits the who-line. */}
+          <section
+            aria-labelledby="cat-sightings-heading"
+            className="flex flex-col gap-2"
+          >
+            <h2 id="cat-sightings-heading" className="font-display text-xl">
+              {t("sightingTimelineTitle")}
+            </h2>
+            <p className="text-xs text-muted">{t("historyNewestFirst")}</p>
+            {sightingSection.rows.length === 0 ? (
+              <EmptyState
+                icon={<PawIcon className="h-6 w-6" />}
+                title={t("noSightingsTitle")}
+                body={t("noSightingsBody")}
+              />
+            ) : (
+              <>
+                <ol className="flex flex-col divide-y divide-border">
+                  {sightingSection.rows.map((row, i) => (
+                    <li
+                      key={`${row.observedAt}-${i}`}
+                      className="flex flex-col gap-1 py-3"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${toneClass[statusTone(row.status)]}`}
+                        >
+                          {row.status === "seen" ? (
+                            <PawIcon className="h-3.5 w-3.5" aria-hidden />
+                          ) : (
+                            <WarningIcon className="h-3.5 w-3.5" aria-hidden />
+                          )}
+                          {outcomeLabel(row.status)}
+                        </span>
+                        <span className="ml-auto text-xs text-muted">
+                          {dateTimeFmt.format(new Date(row.observedAt))}
+                        </span>
+                      </div>
+                      {row.who ? (
+                        <p className="text-xs text-muted [overflow-wrap:anywhere]">
+                          {row.who}
+                        </p>
+                      ) : null}
+                      {row.note ? (
+                        <p className="whitespace-pre-wrap text-sm">
+                          {row.note}
+                        </p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ol>
+                {sightingSection.hasMore ? (
+                  <p className="text-xs text-muted">{t("olderNotShown")}</p>
+                ) : null}
+              </>
+            )}
+          </section>
+
+          {/* ── Status-change history (read-only) ────────────────────────────
+              old → new via formatStatus(); the creation row (old_status null)
+              renders "Set to <status>", not "null →". changed_by often null
+              (system/alert engine) → render with NO name; that's normal. */}
+          <section
+            aria-labelledby="cat-status-history-heading"
+            className="flex flex-col gap-2"
+          >
+            <h2
+              id="cat-status-history-heading"
+              className="font-display text-xl"
+            >
+              {t("statusHistoryTitle")}
+            </h2>
+            <p className="text-xs text-muted">{t("historyNewestFirst")}</p>
+            {statusSection.rows.length === 0 ? (
+              <EmptyState
+                icon={<PawIcon className="h-6 w-6" />}
+                title={t("noStatusChangesTitle")}
+                body={t("noStatusChangesBody")}
+              />
+            ) : (
+              <>
+                <ol className="flex flex-col divide-y divide-border">
+                  {statusSection.rows.map((row, i) => (
+                    <li
+                      key={`${row.createdAt}-${i}`}
+                      className="flex flex-col gap-1 py-3"
+                    >
+                      <div className="flex flex-wrap items-center gap-2">
+                        {row.isCreation ? (
+                          <span className="text-xs text-muted">
+                            {t("statusSetTo", {
+                              status: formatStatus(row.newStatus),
+                            })}
+                          </span>
+                        ) : (
+                          <span className="flex flex-wrap items-center gap-1.5">
+                            <span
+                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${toneClass[statusTone(row.oldStatus ?? "")]}`}
+                            >
+                              {formatStatus(row.oldStatus ?? "")}
+                            </span>
+                            <span aria-hidden className="text-xs text-muted">
+                              {"→"}
+                            </span>
+                            <span
+                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${toneClass[statusTone(row.newStatus)]}`}
+                            >
+                              {formatStatus(row.newStatus)}
+                            </span>
+                          </span>
+                        )}
+                        <span className="ml-auto text-xs text-muted">
+                          {dateTimeFmt.format(new Date(row.createdAt))}
+                        </span>
+                      </div>
+                      {row.who ? (
+                        <p className="text-xs text-muted [overflow-wrap:anywhere]">
+                          {row.who}
+                        </p>
+                      ) : null}
+                    </li>
+                  ))}
+                </ol>
+                {statusSection.hasMore ? (
+                  <p className="text-xs text-muted">{t("olderNotShown")}</p>
+                ) : null}
+              </>
+            )}
+          </section>
         </div>
       </div>
     </div>

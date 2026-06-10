@@ -313,7 +313,19 @@
     "move": "Mover",
     "moving": "A mover…",
     "noOtherColonies": "Ainda não há outras colónias para onde mover este gato.",
-    "toastMoved": "✓ Movido para a nova colónia."
+    "toastMoved": "✓ Movido para a nova colónia.",
+    "sightingTimelineTitle": "Cronologia de avistamentos",
+    "statusHistoryTitle": "Histórico de estado",
+    "historyNewestFirst": "Mais recentes primeiro · últimos 10",
+    "olderNotShown": "Entradas mais antigas não mostradas",
+    "noSightingsTitle": "Ainda sem avistamentos registados",
+    "noSightingsBody": "As atualizações dos alimentadores para este gato aparecem aqui, das mais recentes para as mais antigas.",
+    "noStatusChangesTitle": "Ainda sem alterações de estado",
+    "noStatusChangesBody": "Quando este gato for confirmado ou marcado como desaparecido, a alteração aparece aqui.",
+    "outcomeSeen": "Visto",
+    "outcomeNotSeen": "Não visto",
+    "outcomeConcern": "Preocupação",
+    "statusSetTo": "Definido como {status}"
   },
   "schedules": {
     "backToColony": "← Colónia",
