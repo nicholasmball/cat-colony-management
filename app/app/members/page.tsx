@@ -10,6 +10,7 @@ import { ConfirmButton } from "@/components/confirm-button";
 import { RoleSelectForm } from "@/components/role-select-form";
 import { type AppRole } from "@/lib/member-role";
 import {
+  btnDanger,
   btnGhost,
   btnGhostDanger,
   btnPrimary,
@@ -25,6 +26,7 @@ import {
   deactivateMember,
   reactivateMember,
   updateMemberRole,
+  eraseMember,
 } from "./actions";
 
 type Member = { user_id: string; role: string; deleted_at: string | null };
@@ -44,6 +46,7 @@ export default async function MembersPage({
     sent?: string;
     updated?: string;
     role?: string;
+    ok?: string;
   }>;
 }) {
   const org = await getActiveOrg();
@@ -57,6 +60,7 @@ export default async function MembersPage({
     sent,
     updated,
     role: updatedRole,
+    ok,
   } = await searchParams;
 
   // The viewer's id — used to mark their own row (no self role change).
@@ -133,6 +137,11 @@ export default async function MembersPage({
           {updatedRole
             ? t("updatedToRole", { role: t(`role.${updatedRole}`) })
             : "."}
+        </p>
+      ) : null}
+      {ok === "erased" ? (
+        <p role="status" className={okClass}>
+          {t("erasedToast")}
         </p>
       ) : null}
 
@@ -242,6 +251,27 @@ export default async function MembersPage({
                         className={`${btnGhostDanger} h-9 px-3 text-sm`}
                       >
                         {t("deactivate")}
+                      </ConfirmButton>
+                    </form>
+                  )}
+                  {/* Permanent erase (GDPR) — admin-only (whole page is),
+                      hidden for self. Distinct from the reversible Deactivate:
+                      solid-danger styling + a confirm that names the email and
+                      states it cannot be undone and anonymises past activity. */}
+                  {isSelf ? null : (
+                    <form action={eraseMember}>
+                      <input type="hidden" name="user_id" value={m.user_id} />
+                      <ConfirmButton
+                        confirm={t("eraseConfirm", {
+                          email: emails.get(m.user_id) ?? t("thisMember"),
+                        })}
+                        confirmLabel={t("eraseConfirmLabel")}
+                        aria-label={t("eraseAria", {
+                          email: emails.get(m.user_id) ?? t("thisMember"),
+                        })}
+                        className={`${btnDanger} h-9 px-3 text-sm`}
+                      >
+                        {t("erase")}
                       </ConfirmButton>
                     </form>
                   )}
