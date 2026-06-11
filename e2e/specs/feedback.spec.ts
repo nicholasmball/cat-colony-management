@@ -36,7 +36,11 @@ test.describe("feedback channel (UI)", () => {
     const feeder = state.users.find((u) => u.role === "feeder")!;
     const marker = `e2e bug ${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-    await page.goto("/app/feedback");
+    // Navigate VIA the Feedback nav link from a real page so the link carries
+    // ?from=/app/today — the report should record which screen we came from.
+    await page.goto("/app/today");
+    await page.getByRole("link", { name: "Feedback" }).first().click();
+    await page.waitForURL("**/app/feedback**");
     await expect(page.getByRole("heading", { name: "Feedback" })).toBeVisible();
 
     // Choose kind = Bug (segmented radio group).
@@ -60,7 +64,7 @@ test.describe("feedback channel (UI)", () => {
     const { data: rows } = await svc
       .from("feedback")
       .select(
-        "id, organisation_id, reporter_id, reporter_role, kind, status, message, app_version",
+        "id, organisation_id, reporter_id, reporter_role, kind, status, message, app_version, page_url, locale",
       )
       .eq("message", marker);
     expect(rows ?? []).toHaveLength(1);
@@ -76,6 +80,10 @@ test.describe("feedback channel (UI)", () => {
     expect(
       typeof row.app_version === "string" && row.app_version.length > 0,
     ).toBe(true);
+    // page_url is the in-app route carried via the Feedback link's ?from=…
+    expect(row.page_url).toBe("/app/today");
+    // locale is the RESOLVED active locale (never blank), not a raw cookie read.
+    expect(["en", "pt"]).toContain(row.locale);
   });
 
   test("AC32: empty message is rejected — no row is written", async ({
