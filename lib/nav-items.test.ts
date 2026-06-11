@@ -7,9 +7,14 @@ import { navItemsFor, splitNavForTabbar } from "./nav-items.ts";
 const keys = (role?: string | null) =>
   navItemsFor({ role }).map((i) => i.labelKey);
 
-test("feeder omits Dashboard and Incidents, leading with Today and ending with Help", () => {
+test("feeder omits Dashboard and Incidents, leading with Today and ending with Feedback", () => {
   const ls = keys("feeder");
-  assert.deepEqual(ls, ["nav.today", "nav.colonies", "nav.help"]);
+  assert.deepEqual(ls, [
+    "nav.today",
+    "nav.colonies",
+    "nav.help",
+    "nav.feedback",
+  ]);
   assert.equal(ls[0], "nav.today");
   // Dashboard is a manager item — feeders never see it (no Home either).
   assert.ok(!ls.includes("nav.dashboard"));
@@ -30,6 +35,7 @@ test("caretaker leads with Dashboard and gets Incidents + Notifications + Alerts
     "nav.notifications",
     "nav.alerts",
     "nav.help",
+    "nav.feedback",
   ]);
   // Dashboard replaces the old Home item and is first for managers.
   assert.equal(ls[0], "nav.dashboard");
@@ -55,14 +61,26 @@ test("admin leads with Dashboard and gets Incidents + Notifications + Alerts + M
     "nav.members",
     "nav.org",
     "nav.help",
+    "nav.feedback",
   ]);
 });
 
-test("every role gets the Help item, and it always trails the list", () => {
+test("every role gets Help, and Feedback always trails the list (after Help)", () => {
   for (const role of ["feeder", "caretaker", "admin", undefined]) {
     const ls = keys(role);
     assert.ok(ls.includes("nav.help"), `role ${role} should see Help`);
-    assert.equal(ls.at(-1), "nav.help", `Help should be last for ${role}`);
+    assert.ok(ls.includes("nav.feedback"), `role ${role} should see Feedback`);
+    // Feedback is appended LAST, immediately after Help, for every role.
+    assert.equal(
+      ls.at(-1),
+      "nav.feedback",
+      `Feedback should be last for ${role}`,
+    );
+    assert.equal(
+      ls.at(-2),
+      "nav.help",
+      `Help should sit just before Feedback for ${role}`,
+    );
   }
 });
 
@@ -72,20 +90,23 @@ test("feeders never see the manager-only Notifications or Alerts items", () => {
 });
 
 test("unknown/undefined role is treated as a feeder (no Dashboard, no Incidents)", () => {
-  assert.deepEqual(keys(undefined), ["nav.today", "nav.colonies", "nav.help"]);
-  assert.deepEqual(keys(null), ["nav.today", "nav.colonies", "nav.help"]);
-  assert.deepEqual(keys("stranger"), ["nav.today", "nav.colonies", "nav.help"]);
+  const feeder = ["nav.today", "nav.colonies", "nav.help", "nav.feedback"];
+  assert.deepEqual(keys(undefined), feeder);
+  assert.deepEqual(keys(null), feeder);
+  assert.deepEqual(keys("stranger"), feeder);
   assert.ok(!keys("stranger").includes("nav.notifications"));
 });
 
-test("splitNavForTabbar: feeder (3 items) all visible, no overflow", () => {
+test("splitNavForTabbar: feeder (4 items incl. Feedback) all visible, no overflow", () => {
   const { visible, overflow } = splitNavForTabbar(
     navItemsFor({ role: "feeder" }),
   );
-  assert.equal(visible.length, 3);
+  assert.equal(visible.length, 4);
   assert.equal(overflow.length, 0);
-  // Help stays inline for feeders (it's the one they need most).
+  // Both Help and Feedback stay inline for feeders (≤5, no overflow) — neither
+  // bumps a working primary cell.
   assert.ok(visible.some((i) => i.labelKey === "nav.help"));
+  assert.ok(visible.some((i) => i.labelKey === "nav.feedback"));
 });
 
 test("splitNavForTabbar: <= maxCells stays fully visible (no cramming, no More)", () => {
@@ -95,7 +116,7 @@ test("splitNavForTabbar: <= maxCells stays fully visible (no cramming, no More)"
   assert.equal(overflow.length, 0);
 });
 
-test("splitNavForTabbar: caretaker (7) → 4 visible + 3 in More (incl. Help)", () => {
+test("splitNavForTabbar: caretaker (8) → 4 visible + 4 in More (incl. Help + Feedback)", () => {
   const { visible, overflow } = splitNavForTabbar(
     navItemsFor({ role: "caretaker" }),
   );
@@ -105,18 +126,25 @@ test("splitNavForTabbar: caretaker (7) → 4 visible + 3 in More (incl. Help)", 
   );
   assert.deepEqual(
     overflow.map((i) => i.labelKey),
-    ["nav.notifications", "nav.alerts", "nav.help"],
+    ["nav.notifications", "nav.alerts", "nav.help", "nav.feedback"],
   );
 });
 
-test("splitNavForTabbar: admin (9) → 4 visible + 5 in More (bar never exceeds 5 cells)", () => {
+test("splitNavForTabbar: admin (10) → 4 visible + 6 in More (bar never exceeds 5 cells)", () => {
   const { visible, overflow } = splitNavForTabbar(
     navItemsFor({ role: "admin" }),
   );
   assert.equal(visible.length, 4);
   assert.deepEqual(
     overflow.map((i) => i.labelKey),
-    ["nav.notifications", "nav.alerts", "nav.members", "nav.org", "nav.help"],
+    [
+      "nav.notifications",
+      "nav.alerts",
+      "nav.members",
+      "nav.org",
+      "nav.help",
+      "nav.feedback",
+    ],
   );
   // The bar renders visible + the "More" cell = 5, regardless of total items.
   assert.equal(visible.length + 1, 5);

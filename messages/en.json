@@ -26,6 +26,7 @@
     "members": "Members",
     "org": "Organisation",
     "help": "Help",
+    "feedback": "Feedback",
     "more": "More",
     "closeMenu": "Close menu"
   },
@@ -798,5 +799,33 @@
       "languageBody": "Prefer English or Português? Switch any time using the language toggle in the menu — the whole app changes instantly.",
       "offlineBody": "The app works without a signal in the field. Anything you save is kept on your phone and syncs the moment you’re back online."
     }
+  },
+  "feedback": {
+    "title": "Feedback",
+    "intro": "Tell us what’s broken or what would help. Goes to the SCoT app team.",
+    "kindLabel": "What’s this about?",
+    "kindBug": "Bug",
+    "kindIdea": "Idea",
+    "messageLabel": "Your message",
+    "messagePlaceholder": "What happened? What did you expect?",
+    "charCount": "{count} / {max}",
+    "screenshotLabel": "Screenshot (optional)",
+    "addScreenshot": "Add screenshot",
+    "replaceScreenshot": "Replace",
+    "removeScreenshot": "Remove screenshot",
+    "screenshotAlt": "Attached screenshot",
+    "uploading": "Uploading screenshot…",
+    "autoContext": "We’ll automatically attach the page you’re on, the app version and your device — so you don’t have to describe it.",
+    "privacy": "Only the SCoT app team can see this. Please don’t include personal details about other people.",
+    "submit": "Send feedback",
+    "submitting": "Sending…",
+    "successTitle": "Thanks — your feedback was sent.",
+    "successBody": "The SCoT app team will take a look.",
+    "sendMore": "Send more feedback",
+    "errorEmpty": "Please add a short message before sending.",
+    "errorUpload": "Couldn’t attach the screenshot. You can still send your message, or try another image.",
+    "errorNotImage": "That file isn’t an image.",
+    "errorTooLarge": "That image is too large.",
+    "errorSubmit": "Couldn’t send your feedback. Please try again."
   }
 }

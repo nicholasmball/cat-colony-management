@@ -47,6 +47,14 @@ const helpItem: NavItem = {
   labelKey: "nav.help",
   exact: false,
 };
+// Feedback / bug-report (UAT) is for EVERY role. Like Help it trails the list —
+// appended LAST, after Help — so it never bumps a working tab-bar primary cell:
+// feeders (few items) see it inline, managers find it under "More".
+const feedbackItem: NavItem = {
+  href: "/app/feedback",
+  labelKey: "nav.feedback",
+  exact: false,
+};
 
 export function navItemsFor({ role }: { role?: string | null }): NavItem[] {
   const isManager = role === "admin" || role === "caretaker";
@@ -55,6 +63,7 @@ export function navItemsFor({ role }: { role?: string | null }): NavItem[] {
     : [...coreItems];
   if (role === "admin") items.push(...adminItems);
   items.push(helpItem);
+  items.push(feedbackItem);
   return items;
 }
 

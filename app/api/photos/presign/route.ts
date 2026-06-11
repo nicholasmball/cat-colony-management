@@ -27,6 +27,10 @@ const EXT: Record<string, string> = {
 //                  The report action stores this key on cats.photo_url on
 //                  insert. DISTINCT from the manager-only "cat" branch — it
 //                  never widens that branch.
+//   • "feedback" → ANY org member (incl. feeders) attaching a UAT screenshot.
+//                  There is no entity to scope to, so the key is org-scoped only
+//                  (NO colonyId): org/{orgId}/feedback/{uuid}.jpg. Member-allowed
+//                  early return BEFORE the manager-only cat gate.
 export async function POST(req: Request) {
   if (!r2Configured()) {
     return NextResponse.json(
@@ -67,8 +71,20 @@ export async function POST(req: Request) {
       ? "incident"
       : body.entityType === "cat_report"
         ? "cat_report"
-        : "cat";
+        : body.entityType === "feedback"
+          ? "feedback"
+          : "cat";
   const supabase = await createClient();
+
+  // ── feedback branch: ANY org member (incl. feeders) may attach a UAT
+  // screenshot. No entity to scope to, so the key is org-scoped only (no
+  // colonyId). Member-allowed early return BEFORE the manager-only cat gate —
+  // getActiveOrg already proved org membership, so no further auth is needed.
+  if (entityType === "feedback") {
+    const key = `org/${org.organisation_id}/feedback/${crypto.randomUUID()}.${ext}`;
+    const uploadUrl = await presignPut(key, contentType);
+    return NextResponse.json({ uploadUrl, key });
+  }
 
   // Both "incident" and "cat_report" are colony-scoped, member-allowed branches:
   // the target entity doesn't exist yet at upload time, so the key is scoped to

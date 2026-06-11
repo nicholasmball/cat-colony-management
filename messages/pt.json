@@ -26,6 +26,7 @@
     "members": "Membros",
     "org": "Organização",
     "help": "Ajuda",
+    "feedback": "Feedback",
     "more": "Mais",
     "closeMenu": "Fechar menu"
   },
@@ -798,5 +799,33 @@
       "languageBody": "Prefere Português ou English? Mude a qualquer momento no seletor de idioma do menu — toda a aplicação muda de imediato.",
       "offlineBody": "A aplicação funciona sem rede no terreno. Tudo o que guardar fica no telemóvel e sincroniza assim que voltar a ter ligação."
     }
+  },
+  "feedback": {
+    "title": "Feedback",
+    "intro": "Diga-nos o que está avariado ou o que ajudaria. Vai para a equipa da aplicação da SCoT.",
+    "kindLabel": "Sobre o que é?",
+    "kindBug": "Erro",
+    "kindIdea": "Ideia",
+    "messageLabel": "A sua mensagem",
+    "messagePlaceholder": "O que aconteceu? O que esperava?",
+    "charCount": "{count} / {max}",
+    "screenshotLabel": "Captura de ecrã (opcional)",
+    "addScreenshot": "Adicionar captura de ecrã",
+    "replaceScreenshot": "Substituir",
+    "removeScreenshot": "Remover captura de ecrã",
+    "screenshotAlt": "Captura de ecrã anexada",
+    "uploading": "A carregar a captura de ecrã…",
+    "autoContext": "Vamos anexar automaticamente a página onde está, a versão da aplicação e o seu dispositivo — para não ter de descrever.",
+    "privacy": "Só a equipa da aplicação da SCoT vê isto. Por favor, não inclua dados pessoais de outras pessoas.",
+    "submit": "Enviar feedback",
+    "submitting": "A enviar…",
+    "successTitle": "Obrigado — o seu feedback foi enviado.",
+    "successBody": "A equipa da aplicação da SCoT vai dar uma vista de olhos.",
+    "sendMore": "Enviar mais feedback",
+    "errorEmpty": "Adicione uma mensagem breve antes de enviar.",
+    "errorUpload": "Não foi possível anexar a captura de ecrã. Pode enviar a mensagem na mesma ou tentar outra imagem.",
+    "errorNotImage": "Esse ficheiro não é uma imagem.",
+    "errorTooLarge": "Essa imagem é demasiado grande.",
+    "errorSubmit": "Não foi possível enviar o seu feedback. Tente novamente."
   }
 }

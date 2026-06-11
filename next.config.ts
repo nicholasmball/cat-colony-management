@@ -51,6 +51,9 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_SW_BUILD_REV:
       process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 8) ?? `dev-${Date.now()}`,
+    // The build's commit SHA, stamped onto feedback rows (lib/app-version.ts) so
+    // the app team can pin a UAT report to an exact deploy. "dev" off Vercel.
+    NEXT_PUBLIC_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA ?? "dev",
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

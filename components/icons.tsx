@@ -195,6 +195,27 @@ export function HelpIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+// Megaphone — the Feedback / bug-report channel. Reads as "tell us / speak up"
+// and covers both Bug and Idea without biasing toward "bug only"; visually
+// distinct from Help's question-mark and the Bell. Same family as the rest.
+export function MegaphoneIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M3 11v2a1 1 0 0 0 1 1h2l4 3.5V6.5L6 10H4a1 1 0 0 0-1 1Z" />
+      <path d="M10 6.5 19 3v18l-9-3.5" />
+      <path d="M6 14v3a1.5 1.5 0 0 0 3 0v-1.5" />
+    </svg>
+  );
+}
+
 // Horizontal ellipsis — the mobile tab bar's "More" overflow entry.
 export function EllipsisIcon(props: SVGProps<SVGSVGElement>) {
   return (
