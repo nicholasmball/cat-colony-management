@@ -27,8 +27,17 @@ export async function addCatViaUI(
 ): Promise<string> {
   const catName = `E2E Cat ${randomUUID().slice(0, 8)}`;
   await page.goto(`${colonyUrl}/cats/new`);
-  await page.getByLabel("Name").fill(catName);
-  await page.getByRole("button", { name: /add cat|create|save/i }).click();
+  // The "Name" label collides with the "Description (if it has no name)" label
+  // under getByLabel (strict-mode: 2 matches). getByPlaceholder is also ambiguous
+  // (case-insensitive substring: "e.g. Ginger" matches the temp_id field's
+  // "e.g. ginger tom by the bins"), so target the name input by its exact
+  // accessible name.
+  await page
+    .getByRole("textbox", { name: "Name", exact: true })
+    .fill(catName);
+  // Match the submit button by its exact name — the loose /save/i regex also
+  // matched the offline status button ("Online · All saved").
+  await page.getByRole("button", { name: "Add cat", exact: true }).click();
   await page.waitForURL(/\/app\/colonies\/[0-9a-f-]+(\?|$)/);
   return catName;
 }
