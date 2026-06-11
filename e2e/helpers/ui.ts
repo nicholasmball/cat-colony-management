@@ -32,9 +32,7 @@ export async function addCatViaUI(
   // (case-insensitive substring: "e.g. Ginger" matches the temp_id field's
   // "e.g. ginger tom by the bins"), so target the name input by its exact
   // accessible name.
-  await page
-    .getByRole("textbox", { name: "Name", exact: true })
-    .fill(catName);
+  await page.getByRole("textbox", { name: "Name", exact: true }).fill(catName);
   // Match the submit button by its exact name — the loose /save/i regex also
   // matched the offline status button ("Online · All saved").
   await page.getByRole("button", { name: "Add cat", exact: true }).click();
