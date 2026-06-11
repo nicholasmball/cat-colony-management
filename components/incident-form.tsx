@@ -501,7 +501,7 @@ export function IncidentForm({
               ref={fileRef}
               type="file"
               accept="image/*"
-              capture="environment"
+              // no capture: let iOS offer Photo Library + Camera
               onChange={onPickPhoto}
               className="hidden"
             />
