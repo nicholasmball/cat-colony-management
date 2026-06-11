@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
 import { isFailedWrite, writeErrorMessage } from "@/lib/mutation-result";
-import { canChangeRole, type AppRole } from "@/lib/member-role";
+import { canChangeRole, isRole, type AppRole } from "@/lib/member-role";
 import { canEraseMember } from "@/lib/member-admin";
 import { emailModeFromEnv } from "@/lib/email/flags";
 import { inviteEmailPath } from "@/lib/email/invite-plan";
@@ -89,7 +89,10 @@ export async function inviteVolunteer(formData: FormData) {
   if (!email.includes("@") || email.length < 3) {
     err(t("validEmailRequired"));
   }
-  if (role !== "caretaker" && role !== "feeder") {
+  // Validate against the canonical role set — admin/caretaker/feeder pass;
+  // "", "owner", "superadmin" and any junk are rejected (no invitation row is
+  // written). This is the real security boundary: the UI note is cosmetic.
+  if (!isRole(role)) {
     err(t("roleRequired"));
   }
 

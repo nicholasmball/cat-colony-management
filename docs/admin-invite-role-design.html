@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Design — Invite member as Admin (Members screen)</title>
+<style>
+  :root {
+    --cream: #faf7f0;
+    --surface: #ffffff;
+    --border: #e7e0d4;
+    --foreground: #2a2722;
+    --muted: #7a7163;
+    --accent: #4f46e5;        /* indigo */
+    --accent-soft: #eef0fe;
+    --amber-bg: #fef6e7;      /* note background */
+    --amber-border: #e7c98a;
+    --amber-fg: #7a5a16;      /* >=4.5:1 on amber-bg */
+    --ok-bg: #e9f7ef;
+    --ok-fg: #1f6b43;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--foreground);
+    background: var(--cream);
+    padding: 2rem clamp(1rem, 4vw, 3rem) 4rem;
+  }
+  h1 { font-size: 1.7rem; margin: 0 0 .25rem; }
+  h2 {
+    font-size: 1.15rem; margin: 2.4rem 0 .6rem;
+    padding-bottom: .3rem; border-bottom: 2px solid var(--accent-soft);
+  }
+  h3 { font-size: 1rem; margin: 1.4rem 0 .4rem; }
+  p, li { max-width: 70ch; }
+  code {
+    background: #f0ece2; padding: .1em .4em; border-radius: 4px;
+    font: .88em ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  .lede { color: var(--muted); margin-top: 0; }
+  .tag {
+    display: inline-block; font-size: .72rem; font-weight: 700;
+    letter-spacing: .04em; text-transform: uppercase;
+    background: var(--accent-soft); color: var(--accent);
+    padding: .2em .6em; border-radius: 999px; vertical-align: middle;
+  }
+  table { border-collapse: collapse; width: 100%; max-width: 760px; margin: .6rem 0; }
+  th, td { border: 1px solid var(--border); padding: .55rem .7rem; text-align: left; vertical-align: top; font-size: .92rem; }
+  th { background: #f3efe6; }
+  .grid2 { display: grid; gap: 1.2rem; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.1rem; }
+  .panel h3 { margin-top: 0; }
+
+  /* ---- live mock of the form ---- */
+  .phone {
+    width: 375px; max-width: 100%;
+    border: 1px solid var(--border); border-radius: 18px;
+    background: var(--cream); padding: 14px; margin: .4rem 0;
+    box-shadow: 0 10px 30px rgba(0,0,0,.06);
+  }
+  .phone .bar { font-size: .7rem; color: var(--muted); text-align: center; margin-bottom: 8px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px;
+  }
+  .eyebrow { font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0; }
+  .field { display: flex; flex-direction: column; gap: 6px; font-size: .85rem; font-weight: 600; }
+  .control {
+    min-height: 44px; border: 1px solid var(--border); border-radius: 8px;
+    background: var(--surface); padding: 0 12px; font-size: .95rem; color: var(--foreground);
+    display: flex; align-items: center;
+  }
+  select.control { appearance: auto; width: 100%; }
+  .btn {
+    align-self: flex-start; min-height: 44px; padding: 0 16px;
+    background: var(--accent); color: #fff; border: 0; border-radius: 8px;
+    font-weight: 600; font-size: .95rem; cursor: pointer;
+  }
+  /* the inline full-access note */
+  .note {
+    display: flex; gap: 8px; align-items: flex-start;
+    background: var(--amber-bg); border: 1px solid var(--amber-border);
+    color: var(--amber-fg); border-radius: 8px; padding: 8px 10px;
+    font-size: .82rem; font-weight: 500; line-height: 1.4;
+  }
+  .note .ico { flex: 0 0 auto; font-size: .95rem; line-height: 1.4; }
+  .callout {
+    background: var(--ok-bg); color: var(--ok-fg);
+    border-left: 4px solid var(--ok-fg); border-radius: 6px;
+    padding: .7rem .9rem; margin: 1rem 0; font-size: .92rem;
+  }
+  ul.check { list-style: none; padding-left: 0; }
+  ul.check li { padding-left: 1.7rem; position: relative; margin: .3rem 0; }
+  ul.check li::before { content: "✓"; position: absolute; left: 0; color: var(--ok-fg); font-weight: 700; }
+  .small { font-size: .82rem; color: var(--muted); }
+  .req { font-weight: 700; color: var(--accent); }
+</style>
+</head>
+<body>
+
+<p class="tag">Step 2 — UX Design &amp; Prototyping</p>
+<h1>Invite a member directly as Admin</h1>
+<p class="lede">Members screen · <code>app/app/members/page.tsx</code> · SCoT Colony Management (mobile-first PWA)</p>
+
+<p>
+  <strong>Feature.</strong> Admins can already invite Feeders and Caretakers. This change adds
+  <strong>Admin</strong> as a third option in the invite form's role <code>&lt;select&gt;</code>, and surfaces a
+  lightweight <strong>inline</strong> "full access" note when Admin is chosen (per Step-1 <strong>AC13</strong> — an
+  inline reveal, <em>not</em> a modal). The screen is already admin-only (<code>page.tsx</code> redirects non-admins),
+  so no new gating is needed. Default role stays <strong>Feeder</strong>.
+</p>
+
+<div class="callout">
+  <strong>Design constraint, restated:</strong> this is a single-form change. We reuse the existing design-system
+  tokens (<code>lib/ui.ts</code>: <code>input</code>, <code>fieldLabel</code>, <code>card</code>,
+  <code>btnPrimary</code>) and the existing reveal-on-change idiom already proven in
+  <code>components/role-select-form.tsx</code> (client <code>useState</code> + <code>aria-describedby</code>). No
+  new components, no new round-trip.
+</div>
+
+<!-- ============================================================ -->
+<h2>1 · Current vs proposed</h2>
+
+<div class="grid2">
+  <div class="panel">
+    <h3>Today</h3>
+    <p class="small">The role select offers two options; there is no contextual note.</p>
+    <pre style="white-space:pre-wrap;font-size:.8rem"><code>&lt;select name="role" defaultValue="feeder"&gt;
+  &lt;option value="feeder"&gt;Feeder&lt;/option&gt;
+  &lt;option value="caretaker"&gt;Caretaker&lt;/option&gt;
+&lt;/select&gt;</code></pre>
+  </div>
+  <div class="panel">
+    <h3>Proposed</h3>
+    <p class="small">Add Admin as the third option. Order follows privilege (Feeder → Caretaker → Admin), reading
+      low-to-high so the most privileged sits at the bottom. Default stays Feeder. An inline note appears only when
+      Admin is selected.</p>
+    <pre style="white-space:pre-wrap;font-size:.8rem"><code>&lt;select name="role" defaultValue="feeder"
+        aria-describedby={isAdmin ? "invite-admin-note" : undefined}&gt;
+  &lt;option value="feeder"&gt;Feeder&lt;/option&gt;
+  &lt;option value="caretaker"&gt;Caretaker&lt;/option&gt;
+  &lt;option value="admin"&gt;Admin&lt;/option&gt;
+&lt;/select&gt;
+{isAdmin &amp;&amp; <em>&lt;inline note&gt;</em>}</code></pre>
+  </div>
+</div>
+
+<p class="small">
+  <strong>Order rationale.</strong> The member-row editor (<code>role-select-form.tsx</code>) lists roles
+  high-to-low (<code>admin, caretaker, feeder</code>) because it edits an existing role. The <em>invite</em> select is
+  a fresh choice that defaults to the least-privileged Feeder, so listing low-to-high keeps the default at the top and
+  makes "stepping up" to Admin a deliberate downward move to the most powerful option. Both reuse the same
+  <code>members.role.*</code> labels — no privilege values are duplicated.
+</p>
+
+<!-- ============================================================ -->
+<h2>2 · The "full access" note</h2>
+<ul>
+  <li><strong>Placement.</strong> Inline, directly <strong>below the role field</strong>, inside the same invite
+    <code>card</code>, spanning the form width (so on the <code>sm:flex-row</code> layout it sits under the
+    email+role row, not squeezed beside a 176px select). It is part of normal document flow — it pushes the Send
+    button down rather than overlaying anything. <span class="req">Not a modal</span> (AC13).</li>
+  <li><strong>Trigger.</strong> Pure client-side reveal driven by the select's <code>onChange</code> value
+    (<code>role === "admin"</code>). <strong>No extra round-trip</strong> — nothing is fetched or posted to show it.
+    Hidden again the instant a different role is chosen.</li>
+  <li><strong>Not colour alone (WCAG 1.4.1).</strong> The note pairs an <strong>icon marker</strong> (a key
+    <code>🔑</code> / or an inline SVG shield) with explicit <strong>text</strong> ("Full access"). Meaning never
+    depends on the amber tint — a greyscale or colour-blind user still gets the icon + the words.</li>
+  <li><strong>Contrast (WCAG 1.4.3).</strong> Amber-on-cream note text uses <code>#7a5a16</code> on
+    <code>#fef6e7</code> ≈ <strong>6.0:1</strong>, comfortably past the 4.5:1 AA threshold for the small text. The
+    1px <code>#e7c98a</code> border gives a non-colour edge too.</li>
+  <li><strong>Width / 375px.</strong> The note wraps cleanly at the smallest target width (see §5 mock). Icon is
+    <code>flex: 0 0 auto</code> so the text reflows beside it without clipping.</li>
+</ul>
+
+<h3>Proposed copy</h3>
+<table>
+  <tr><th>Locale</th><th>String</th></tr>
+  <tr><td>EN</td><td>Admins have full access to this organisation — they can manage every colony, member and setting, and invite or remove other admins.</td></tr>
+  <tr><td>PT-PT</td><td>Os administradores têm acesso total a esta organização — podem gerir todas as colónias, membros e definições, e convidar ou remover outros administradores.</td></tr>
+</table>
+<p class="small">Tone matches the existing honest, plain-language copy (cf. <code>members.demoteConfirm</code>,
+  <code>members.eraseConfirm</code>). It states a fact, not a scary warning — inviting an admin is a legitimate action.</p>
+
+<!-- ============================================================ -->
+<h2>3 · States &amp; behaviour</h2>
+<table>
+  <tr><th>Selected role</th><th>Note</th><th>Notes</th></tr>
+  <tr><td>Feeder <span class="small">(default)</span></td><td>Hidden</td><td>Initial render — no note, button sits tight under the row.</td></tr>
+  <tr><td>Caretaker</td><td>Hidden</td><td>No note for non-admin roles.</td></tr>
+  <tr><td>Admin</td><td><strong>Visible</strong></td><td>Note reveals inline; <code>aria-describedby</code> ties it to the select.</td></tr>
+</table>
+
+<ul class="check">
+  <li><strong>Keyboard.</strong> The note is plain inline text, not interactive — it's reached purely by changing the
+    native <code>&lt;select&gt;</code> with keyboard (Tab to select, arrow/type to "Admin"). No focus trap, no extra
+    tab stop, nothing to dismiss.</li>
+  <li><strong>Screen-reader association.</strong> When Admin is active, the select carries
+    <code>aria-describedby="invite-admin-note"</code> and the note element has <code>id="invite-admin-note"</code>.
+    SR users hear the role label, value, <em>and</em> the full-access description as one unit — exactly the pattern
+    already used for the last-admin hint in <code>role-select-form.tsx</code>.</li>
+  <li><strong>Live announcement (optional, recommended).</strong> Give the note container
+    <code>role="status"</code> so AT announces the description when it appears mid-form, without stealing focus.</li>
+  <li><strong>No-JS / progressive enhancement.</strong> If JS is unavailable the note simply never shows, but the
+    Admin <code>&lt;option&gt;</code> still submits correctly — the server action is the real authority. The reveal is
+    a non-blocking enhancement, consistent with how the rest of this screen degrades.</li>
+  <li><strong>Form integrity.</strong> Showing/hiding the note must not reset the email field or the Send button — it's
+    a sibling element toggled by the same client component that wraps the select; the email input is uncontrolled and
+    untouched.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2>4 · Proposed i18n keys</h2>
+<p>One new key per locale. We <strong>reuse <code>members.role.admin</code></strong> ("Admin" / "Administrador") for the
+  option label — do not add a second admin label.</p>
+<table>
+  <tr><th>Key</th><th>EN (<code>messages/en.json</code>)</th><th>PT (<code>messages/pt.json</code>)</th></tr>
+  <tr>
+    <td><code>members.invite.adminNote</code></td>
+    <td>Admins have full access to this organisation — they can manage every colony, member and setting, and invite or remove other admins.</td>
+    <td>Os administradores têm acesso total a esta organização — podem gerir todas as colónias, membros e definições, e convidar ou remover outros administradores.</td>
+  </tr>
+</table>
+<p class="small">
+  Placed under a new <code>invite</code> sub-object inside <code>members</code> (sibling of the existing flat keys),
+  keeping the namespace tidy if more invite-specific strings arrive later. If a flat key is preferred to avoid nesting
+  churn, <code>members.inviteAdminNote</code> is the equivalent. Either way the <strong>key carries the information
+  scent</strong> (it's about the admin invite note) and both locales must stay key-parity (guarded by
+  <code>messages/messages.test.ts</code>).
+</p>
+
+<!-- ============================================================ -->
+<h2>5 · Wireframe — Admin selected, note visible (375px)</h2>
+<p class="small">Rendered with the real tokens (cream surface, indigo accent, 44px controls). Resize-safe at mobile width.</p>
+
+<div class="phone">
+  <div class="bar">app.streetcatsoftavira.org/app/members · 375px</div>
+  <div class="card">
+    <p class="eyebrow">Invite a volunteer</p>
+
+    <label class="field">
+      Email
+      <span class="control" style="color:var(--muted)">volunteer@example.com</span>
+    </label>
+
+    <label class="field" for="mock-role">
+      Role
+      <select id="mock-role" class="control" aria-describedby="invite-admin-note">
+        <option>Feeder</option>
+        <option>Caretaker</option>
+        <option selected>Admin</option>
+      </select>
+    </label>
+
+    <!-- the inline reveal -->
+    <div id="invite-admin-note" class="note" role="status">
+      <span class="ico" aria-hidden="true">🔑</span>
+      <span><strong>Full access.</strong> Admins can manage every colony, member and setting, and invite or remove other admins.</span>
+    </div>
+
+    <button class="btn" type="button">Send invite</button>
+  </div>
+</div>
+
+<p class="small">For comparison, with <strong>Feeder</strong> or <strong>Caretaker</strong> selected the note is absent
+  and the Send button sits directly under the Role field — the layout is identical to today.</p>
+
+<!-- ============================================================ -->
+<h2>6 · Accessibility checklist (this change)</h2>
+<ul class="check">
+  <li><strong>1.4.1 Use of Colour</strong> — note conveys meaning via icon + "Full access" text, never colour alone.</li>
+  <li><strong>1.4.3 Contrast</strong> — note text ≈ 6.0:1 on its amber background; visible 1px border edge.</li>
+  <li><strong>1.3.1 / 4.1.2 Name, Role, Value</strong> — <code>aria-describedby</code> links select → note so the
+    description is part of the field's accessible name when Admin is active.</li>
+  <li><strong>4.1.3 Status Messages</strong> — <code>role="status"</code> on the note announces the reveal without
+    moving focus.</li>
+  <li><strong>2.1.1 Keyboard</strong> — entirely operable via the native select; the note adds no tab stop and needs
+    no dismissal.</li>
+  <li><strong>2.5.5 Target Size</strong> — select and Send button keep the ≥44px min-height from <code>input</code> /
+    <code>btnPrimary</code>; the note is non-interactive.</li>
+  <li><strong>3.2.2 On Input</strong> — changing the role only reveals/hides adjacent text; no navigation, no submit,
+    no context change.</li>
+  <li><strong>Reduced motion / no-JS</strong> — instant show/hide (no animation required); Admin still submits without
+    JS, server action enforces authority.</li>
+</ul>
+
+<hr style="margin:2.5rem 0;border:0;border-top:1px solid var(--border)" />
+<p class="small">
+  <strong>Implementation footprint (for Step 3).</strong> Add <code>&lt;option value="admin"&gt;</code> to the invite
+  select; lift that select into a tiny client wrapper (mirroring <code>role-select-form.tsx</code>) that tracks the
+  selected value and conditionally renders the note with <code>id="invite-admin-note"</code> +
+  <code>aria-describedby</code>; add <code>members.invite.adminNote</code> to <code>en.json</code> and
+  <code>pt.json</code>. No server-action change is required for the note itself — the existing invite action already
+  accepts any valid role; confirm it permits <code>admin</code> (Step-1 AC: admins may invite admins).
+</p>
+
+</body>
+</html>

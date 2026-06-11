@@ -501,6 +501,9 @@
     "urgentBadge": "Urgente"
   },
   "members": {
+    "invite": {
+      "adminNote": "Os administradores têm acesso total a esta organização — podem gerir todas as colónias, membros e definições, e convidar ou remover outros administradores."
+    },
     "title": "Membros",
     "subtitle": "Pessoas em {org}",
     "invitedToast": "<strong>{email}</strong> convidado. ",

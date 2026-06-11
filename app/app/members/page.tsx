@@ -8,6 +8,7 @@ import { SubmitButton } from "@/components/submit-button";
 import { CopyButton } from "@/components/copy-button";
 import { ConfirmButton } from "@/components/confirm-button";
 import { RoleSelectForm } from "@/components/role-select-form";
+import { InviteRoleSelect } from "@/components/invite-role-select";
 import { type AppRole } from "@/lib/member-role";
 import {
   btnDanger,
@@ -164,13 +165,7 @@ export default async function MembersPage({
               className={input}
             />
           </label>
-          <label className={`${fieldLabel} sm:w-44`}>
-            <span>{t("roleLabel")}</span>
-            <select name="role" defaultValue="feeder" className={input}>
-              <option value="feeder">{t("role.feeder")}</option>
-              <option value="caretaker">{t("role.caretaker")}</option>
-            </select>
-          </label>
+          <InviteRoleSelect />
         </div>
         <SubmitButton
           pendingText={t("inviting")}

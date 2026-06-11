@@ -1,6 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { canChangeRole, isDemotion, ROLE_REASON } from "./member-role.ts";
+import {
+  canChangeRole,
+  isDemotion,
+  isRole,
+  ROLE_REASON,
+} from "./member-role.ts";
 
 // A valid active target with a given current role, used as a base for cases.
 function target(currentRole: "admin" | "caretaker" | "feeder", overrides = {}) {
@@ -8,6 +13,23 @@ function target(currentRole: "admin" | "caretaker" | "feeder", overrides = {}) {
 }
 
 const ACTOR = "actor-1";
+
+// isRole is the canonical role-set guard the invite action now relies on:
+// admin/caretaker/feeder pass; anything else (including the empty string and
+// privileged-sounding junk) is rejected, so no invitation row gets written.
+test("isRole: accepts every canonical AppRole", () => {
+  assert.equal(isRole("admin"), true);
+  assert.equal(isRole("caretaker"), true);
+  assert.equal(isRole("feeder"), true);
+});
+
+test("isRole: rejects empty, near-misses and arbitrary junk", () => {
+  assert.equal(isRole(""), false);
+  assert.equal(isRole("owner"), false);
+  assert.equal(isRole("superadmin"), false);
+  assert.equal(isRole("Admin"), false);
+  assert.equal(isRole("nonsense"), false);
+});
 
 test("isDemotion: drops in privilege are demotions", () => {
   assert.equal(isDemotion("admin", "caretaker"), true);
