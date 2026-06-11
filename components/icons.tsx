@@ -176,6 +176,25 @@ export function SlidersIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+// Question mark in a circle — used for the Help / quick-start page.
+export function HelpIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9.5a2.5 2.5 0 0 1 4.5 1.5c0 1.7-2.5 2-2.5 3.5" />
+      <path d="M12 17h.01" />
+    </svg>
+  );
+}
+
 // Horizontal ellipsis — the mobile tab bar's "More" overflow entry.
 export function EllipsisIcon(props: SVGProps<SVGSVGElement>) {
   return (

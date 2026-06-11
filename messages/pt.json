@@ -25,6 +25,7 @@
     "alerts": "Limites de alerta",
     "members": "Membros",
     "org": "Organização",
+    "help": "Ajuda",
     "more": "Mais",
     "closeMenu": "Fechar menu"
   },
@@ -746,6 +747,53 @@
       "feeding": "Atualização de alimentação",
       "cat_report": "Relatório de gato",
       "incident": "Relatório de incidente"
+    }
+  },
+  "help": {
+    "title": "Ajuda e primeiros passos",
+    "intro": "Bem-vindo(a)! Aqui tem tudo o que precisa para começar a ajudar as nossas colónias — sem formação necessária. Basta um minuto para ler.",
+    "questions": {
+      "heading": "O que esta aplicação ajuda a responder todos os dias",
+      "fed": "A colónia foi alimentada?",
+      "seen": "Que gatos foram vistos?",
+      "newMissing": "Há gatos novos ou desaparecidos?",
+      "problem": "Há algum problema?"
+    },
+    "feeding": {
+      "heading": "Registar uma atualização de alimentação (cerca de 30 segundos)",
+      "intro": "É a única coisa a fazer em cada visita. Rápido e simples:",
+      "step1": "Abra a colónia que vai visitar a partir de Colónias.",
+      "step2": "Toque em Registar atualização de alimentação.",
+      "step3": "Para cada gato, toque em Visto, Não visto ou Preocupação.",
+      "step4": "Responda a «A colónia foi alimentada?»",
+      "step5": "Toque em Guardar — e já está.",
+      "offline": "Sem rede? Não há problema. A sua atualização fica guardada no telemóvel e sincroniza automaticamente assim que voltar a ter ligação."
+    },
+    "newCat": {
+      "heading": "Reportar um gato novo",
+      "body": "Viu um gato que não reconhece? Adicione-o a partir da página da colónia. Preencha apenas o que souber — um nome, uma cor, o que for. Não faz mal estar incompleto; nunca é impedido por um campo em falta. Uma fotografia ajuda, mas é opcional."
+    },
+    "incident": {
+      "heading": "Reportar um incidente",
+      "body": "Algo de errado? Reporte a partir da colónia — escolha o tipo e acrescente uma nota curta ou uma fotografia.",
+      "urgentLabel": "Urgente",
+      "urgent": "Envenenamento, um gato ferido, perigo de cão ou ameaça de uma pessoa. Estes enviam um alerta imediato aos responsáveis.",
+      "notUrgentLabel": "Não urgente",
+      "notUrgent": "Tudo o resto — aparece no painel do responsável para análise."
+    },
+    "roles": {
+      "heading": "Quem faz o quê",
+      "adminLabel": "Administrador",
+      "admin": "Gere toda a organização e as suas definições.",
+      "caretakerLabel": "Responsável",
+      "caretaker": "Cuida das colónias, analisa os relatórios e fecha os incidentes.",
+      "feederLabel": "Alimentador",
+      "feeder": "Visita as colónias e envia atualizações do terreno — o coração do trabalho."
+    },
+    "language": {
+      "heading": "O seu idioma e trabalhar sem ligação",
+      "languageBody": "Prefere Português ou English? Mude a qualquer momento no seletor de idioma do menu — toda a aplicação muda de imediato.",
+      "offlineBody": "A aplicação funciona sem rede no terreno. Tudo o que guardar fica no telemóvel e sincroniza assim que voltar a ter ligação."
     }
   }
 }
