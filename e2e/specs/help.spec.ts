@@ -32,10 +32,10 @@ test.describe("feeder reaches Help and sees the quick-start", () => {
     await page.goto("/app/help");
 
     // The four daily questions + each major section heading render real text.
+    // "Was the colony fed?" appears twice (the daily-questions list AND the
+    // feeding-update steps), so assert the first match rather than a unique one.
     await expect(
-      page
-        .getByRole("heading", { name: /Was the colony fed/i })
-        .or(page.getByText("Was the colony fed?", { exact: false })),
+      page.getByText("Was the colony fed?").first(),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: /Record a feeding update/i }),
@@ -75,8 +75,9 @@ test("Help renders in Portuguese when the locale is PT", async ({
   await expect(
     page.getByRole("heading", { name: "Ajuda e primeiros passos" }),
   ).toBeVisible();
+  // Appears twice (daily-questions list + feeding steps) — assert the first.
   await expect(
-    page.getByText("A colónia foi alimentada?", { exact: false }),
+    page.getByText("A colónia foi alimentada?").first(),
   ).toBeVisible();
   // No raw keys in PT either.
   await expect(page.getByText(/help\./)).toHaveCount(0);
