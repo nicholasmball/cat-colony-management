@@ -38,6 +38,15 @@ const adminItems: NavItem[] = [
   { href: "/app/members", labelKey: "nav.members", exact: false },
   { href: "/app/org", labelKey: "nav.org", exact: false },
 ];
+// Help / quick-start is for EVERY role (feeders most of all — they get no
+// training). It trails every role's list so it never bumps a working item out
+// of the mobile tab bar's primary cells: feeders (few items) see it inline,
+// managers find it under "More".
+const helpItem: NavItem = {
+  href: "/app/help",
+  labelKey: "nav.help",
+  exact: false,
+};
 
 export function navItemsFor({ role }: { role?: string | null }): NavItem[] {
   const isManager = role === "admin" || role === "caretaker";
@@ -45,6 +54,7 @@ export function navItemsFor({ role }: { role?: string | null }): NavItem[] {
     ? [dashboardItem, ...coreItems, ...managerItems]
     : [...coreItems];
   if (role === "admin") items.push(...adminItems);
+  items.push(helpItem);
   return items;
 }
 

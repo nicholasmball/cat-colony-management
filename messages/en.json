@@ -25,6 +25,7 @@
     "alerts": "Alert thresholds",
     "members": "Members",
     "org": "Organisation",
+    "help": "Help",
     "more": "More",
     "closeMenu": "Close menu"
   },
@@ -746,6 +747,53 @@
       "feeding": "Feeding update",
       "cat_report": "Cat report",
       "incident": "Incident report"
+    }
+  },
+  "help": {
+    "title": "Help & quick start",
+    "intro": "Welcome! Here’s everything you need to start helping our colonies — no training required. It only takes a minute to read.",
+    "questions": {
+      "heading": "What this app helps you answer every day",
+      "fed": "Was the colony fed?",
+      "seen": "Which cats were seen?",
+      "newMissing": "Are there new or missing cats?",
+      "problem": "Is there a problem?"
+    },
+    "feeding": {
+      "heading": "Record a feeding update (about 30 seconds)",
+      "intro": "This is the one thing to do on every visit. Quick and simple:",
+      "step1": "Open the colony you’re visiting from Colonies.",
+      "step2": "Tap Record feeding update.",
+      "step3": "For each cat, tap Seen, Not seen, or Concern.",
+      "step4": "Answer “Was the colony fed?”",
+      "step5": "Tap Save — that’s it.",
+      "offline": "No signal? No problem. Your update is saved on your phone and syncs automatically once you’re back online."
+    },
+    "newCat": {
+      "heading": "Report a new cat",
+      "body": "Spotted a cat you don’t recognise? Add it from the colony’s page. Fill in only what you know — a name, a colour, anything. Incomplete is fine; you’re never blocked for a missing field. A photo helps but is optional."
+    },
+    "incident": {
+      "heading": "Report an incident",
+      "body": "Something wrong? Report it from the colony — choose the type and add a short note or photo.",
+      "urgentLabel": "Urgent",
+      "urgent": "Poisoning, an injured cat, a dog danger, or a threat from a person. These send an immediate alert to the caretakers.",
+      "notUrgentLabel": "Not urgent",
+      "notUrgent": "Everything else — it appears on the caretaker’s dashboard for review."
+    },
+    "roles": {
+      "heading": "Who does what",
+      "adminLabel": "Admin",
+      "admin": "Manages the whole organisation and its settings.",
+      "caretakerLabel": "Caretaker",
+      "caretaker": "Looks after colonies, reviews reports, and closes incidents.",
+      "feederLabel": "Feeder",
+      "feeder": "Visits colonies and sends field updates — the heart of the work."
+    },
+    "language": {
+      "heading": "Your language & working offline",
+      "languageBody": "Prefer English or Português? Switch any time using the language toggle in the menu — the whole app changes instantly.",
+      "offlineBody": "The app works without a signal in the field. Anything you save is kept on your phone and syncs the moment you’re back online."
     }
   }
 }

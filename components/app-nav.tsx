@@ -14,6 +14,7 @@ import {
   WarningIcon,
   BellIcon,
   SlidersIcon,
+  HelpIcon,
   EllipsisIcon,
 } from "./icons";
 import { navItemsFor, splitNavForTabbar } from "@/lib/nav-items";
@@ -31,6 +32,7 @@ const iconByHref: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
   "/app/alerts": SlidersIcon,
   "/app/members": UsersIcon,
   "/app/org": CogIcon,
+  "/app/help": HelpIcon,
 };
 
 // The single nav item that carries the unread-notifications badge.
