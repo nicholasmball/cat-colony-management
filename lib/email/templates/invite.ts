@@ -24,9 +24,13 @@ export function renderInvite(
 ): EmailContent {
   const t = emailTranslator(locale, "email.invite");
   const brand = emailTranslator(locale, "email");
+  // Reuse the in-app role labels (members.role.*) so the body shows a
+  // localized, capitalized label ("Caretaker" / "Cuidador") rather than the
+  // raw lowercase enum the members action passes in.
+  const roleLabel = emailTranslator(locale, "members.role")(params.role);
   const subject = t("subject", { orgName: params.orgName });
   const heading = t("heading", { orgName: params.orgName });
-  const body = t("body", { orgName: params.orgName, role: params.role });
+  const body = t("body", { orgName: params.orgName, role: roleLabel });
   const cta = t("cta");
   const kicker = brand("kicker");
   const footer = brand("tagline");

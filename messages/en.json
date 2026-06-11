@@ -95,7 +95,7 @@
     "invite": {
       "subject": "You’re invited to {orgName}",
       "heading": "Welcome to {orgName} 🐾",
-      "body": "You’ve been invited to help look after the cats at {orgName} as a {role}. Tap the button below to choose a password and join.",
+      "body": "You’ve been invited to help look after the cats at {orgName} as {role}. Tap the button below to choose a password and join.",
       "cta": "Accept invitation"
     },
     "digest": {

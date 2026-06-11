@@ -54,6 +54,56 @@ test("invite renders in Portuguese when locale is pt", () => {
   assert.ok(pt.html.includes('lang="pt"'));
 });
 
+// The members action passes the raw lowercase role enum; the template must
+// render the localized, capitalized members.role.* label — never the raw word.
+const roleLabels = {
+  en: { admin: "Admin", caretaker: "Caretaker", feeder: "Feeder" },
+  pt: { admin: "Administrador", caretaker: "Cuidador", feeder: "Alimentador" },
+} as const;
+
+for (const locale of ["en", "pt"] as const) {
+  for (const role of ["admin", "caretaker", "feeder"] as const) {
+    test(`invite (${locale}/${role}) renders the localized role label, not the raw enum`, () => {
+      const out = renderInvite(locale, {
+        acceptUrl: "https://app.example.org/accept?token=xyz",
+        orgName: "Street Cats of Tavira",
+        role,
+      });
+      const label = roleLabels[locale][role];
+      assert.ok(
+        out.html.includes(label),
+        `html should contain localized label "${label}"`,
+      );
+      assert.ok(
+        out.text.includes(label),
+        `text should contain localized label "${label}"`,
+      );
+      // The raw lowercase enum must not leak into the rendered body.
+      assert.ok(
+        !out.text.includes(`as ${role}`),
+        `text must not contain the raw enum "${role}"`,
+      );
+      assert.ok(
+        !out.text.includes(`como ${role}`),
+        `text must not contain the raw enum "${role}"`,
+      );
+    });
+  }
+}
+
+test("invite EN no longer emits the 'as a {role}' article grammar bug", () => {
+  const out = renderInvite("en", {
+    acceptUrl: "https://x",
+    orgName: "Org",
+    role: "admin",
+  });
+  assert.ok(
+    !out.text.includes("as a Admin"),
+    "the broken 'as a Admin' grammar must be gone",
+  );
+  assert.ok(out.text.includes("as Admin"), "reads 'as Admin'");
+});
+
 test("digest summarises the item count and lists titles", () => {
   const out = renderDailyDigest("en", {
     appUrl: "https://app.example.org/app/notifications",
