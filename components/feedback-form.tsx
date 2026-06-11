@@ -47,7 +47,11 @@ async function resizeToJpeg(
   );
 }
 
-export function FeedbackForm() {
+export function FeedbackForm({
+  initialPageUrl = null,
+}: {
+  initialPageUrl?: string | null;
+}) {
   const t = useTranslations("feedback");
   const fileRef = useRef<HTMLInputElement>(null);
   const messageRef = useRef<HTMLTextAreaElement>(null);
@@ -141,11 +145,14 @@ export function FeedbackForm() {
     setSubmitError(null);
     setSubmitting(true);
 
-    // Honest page context: where the tester came from before opening Feedback.
+    // Honest page context: the in-app route the tester came from, carried on the
+    // Feedback nav link as ?from=… (preferred — SPA nav leaves document.referrer
+    // blank). Fall back to the referrer for a full-page/direct open.
     const pageUrl =
-      typeof document !== "undefined" && document.referrer
+      initialPageUrl ??
+      (typeof document !== "undefined" && document.referrer
         ? document.referrer
-        : null;
+        : null);
 
     try {
       const result = await submitFeedback({

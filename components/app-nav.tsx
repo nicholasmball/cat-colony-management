@@ -65,6 +65,13 @@ export function AppNav({
   }));
   const isActive = (href: string, exact: boolean) =>
     exact ? path === href : path.startsWith(href);
+  // The Feedback link carries the route the user is currently on as ?from=…, so
+  // the report records which screen they were looking at (SPA nav leaves
+  // document.referrer blank). Active-state checks still use the clean href.
+  const linkHref = (href: string) =>
+    href === "/app/feedback" && path && !path.startsWith("/app/feedback")
+      ? `${href}?from=${encodeURIComponent(path)}`
+      : href;
 
   if (variant === "sidebar") {
     return (
@@ -74,7 +81,7 @@ export function AppNav({
           return (
             <Link
               key={href}
-              href={href}
+              href={linkHref(href)}
               aria-current={on ? "page" : undefined}
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
                 on
@@ -132,7 +139,7 @@ export function AppNav({
               return (
                 <Link
                   key={href}
-                  href={href}
+                  href={linkHref(href)}
                   role="menuitem"
                   aria-current={on ? "page" : undefined}
                   onClick={() => setMoreOpen(false)}
@@ -168,7 +175,7 @@ export function AppNav({
           return (
             <Link
               key={href}
-              href={href}
+              href={linkHref(href)}
               aria-current={on ? "page" : undefined}
               onClick={() => setMoreOpen(false)}
               className={`flex min-h-16 flex-col items-center justify-center gap-1 px-1 text-center text-xs font-medium transition ${

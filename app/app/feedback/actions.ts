@@ -1,7 +1,7 @@
 "use server";
 
-import { cookies, headers } from "next/headers";
-import { getTranslations } from "next-intl/server";
+import { headers } from "next/headers";
+import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
 import { isKeyInOrg } from "@/lib/photo-key";
@@ -55,15 +55,17 @@ export async function submitFeedback(input: {
   // page_url is advisory context — kept as a bounded string (honest, not trusted).
   const pageUrl = input.pageUrl ? String(input.pageUrl).slice(0, 2000) : null;
 
-  // Server-derived context: locale (next-intl cookie), user_agent (header),
-  // app_version (build env). reporter_id comes from the authenticated session.
+  // Server-derived context: locale (the RESOLVED active locale — getLocale()
+  // always returns en/pt even when the cookie is unset, unlike a raw cookie
+  // read), user_agent (header), app_version (build env). reporter_id comes from
+  // the authenticated session.
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: t("errorSubmit") };
 
-  const locale = (await cookies()).get("locale")?.value ?? null;
+  const locale = await getLocale();
   const userAgent = (await headers()).get("user-agent") ?? null;
 
   // Insert via the RLS client: the DB re-checks reporter_id = auth.uid() AND
