@@ -45,6 +45,59 @@ test("admin invites a volunteer; an invitation row + link appear", async ({
   expect(data![0].token).toBeTruthy();
 });
 
+test("admin invites a volunteer as Admin; the full-access note shows and the invitation is stored with role=admin", async ({
+  page,
+}) => {
+  // AC15: exercises the admin-as-invite-role path end-to-end.
+  //  • Selecting Admin in the invite form reveals the inline "full access" note
+  //    (client-only reveal, accessible status region — AC13).
+  //  • Submitting an Admin invite writes an invitations row with role=admin
+  //    (the security boundary in inviteVolunteer accepts admin — AC4/AC5), and
+  //  • the pending-invites list shows that invite with an "Admin" role pill.
+  // NOTE: this asserts behaviour that ships with feat/invite-admin-role; against
+  // PROD it only goes green post-deploy (the Admin option + note aren't live yet).
+  const email = `e2e+invite-admin-${randomUUID().slice(0, 8)}@scot-e2e.invalid`;
+
+  await page.goto("/app/members");
+  await expect(page.getByRole("heading", { name: "Members" })).toBeVisible();
+
+  // Scope to the invite form so the Role select can't collide with the per-row
+  // "Role for <email>" selects (strict-mode safety).
+  const inviteForm = page.locator("form").filter({ hasText: "Send invite" });
+  await inviteForm.getByLabel("Email").fill(email);
+
+  // The note is hidden until Admin is chosen.
+  const adminNote = page.locator("#invite-admin-note");
+  await expect(adminNote).toHaveCount(0);
+
+  await inviteForm.getByLabel("Role").selectOption("admin");
+
+  // Inline note revealed (status role, icon + text), no modal/navigation.
+  await expect(adminNote).toBeVisible();
+  await expect(adminNote).toHaveAttribute("role", "status");
+  await expect(adminNote).toContainText("full access");
+
+  await page.getByRole("button", { name: "Send invite" }).click();
+  await page.waitForURL(/\/app\/members\?invited=/);
+
+  // The invitation persisted with the admin role.
+  const { orgId } = readRunState();
+  const svc = serviceClient();
+  const { data } = await svc
+    .from("invitations")
+    .select("email, role, accepted_at")
+    .eq("organisation_id", orgId!)
+    .eq("email", email);
+  expect(data?.length).toBe(1);
+  expect(data![0].role).toBe("admin");
+  expect(data![0].accepted_at).toBeNull();
+
+  // And it surfaces in the Pending invites list with an "Admin" role pill.
+  const inviteRow = page.locator("li").filter({ hasText: email });
+  await expect(inviteRow).toBeVisible();
+  await expect(inviteRow).toContainText("Admin");
+});
+
 test("re-inviting an email with a prior accepted invitation succeeds (re-issue)", async ({
   page,
 }) => {
