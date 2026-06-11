@@ -1,0 +1,1160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      Street Cats colony app — plain-English guide &amp; handover runbook
+    </title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #f7f4f2;
+        color: #2a2a2a;
+        font:
+          17px/1.7 Georgia,
+          "Times New Roman",
+          serif;
+      }
+      .page {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 48px 28px 72px;
+      }
+      header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .kicker {
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        color: #8a7f73;
+        margin: 0 0 10px;
+      }
+      h1 {
+        font-size: 30px;
+        line-height: 1.25;
+        margin: 0 auto 14px;
+        max-width: 17em;
+      }
+      .intro {
+        font-size: 18px;
+        color: #3a3a3a;
+      }
+      h2 {
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 23px;
+        margin: 44px 0 6px;
+      }
+      h3 {
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 18px;
+        margin: 28px 0 4px;
+        color: #3c3c3c;
+      }
+      .tagline {
+        font-style: italic;
+        color: #6b6259;
+        margin: 0 0 14px;
+      }
+      p {
+        margin: 0 0 14px;
+      }
+      .part-banner {
+        background: #4f7a70;
+        color: #fff;
+        border-radius: 12px;
+        padding: 18px 22px;
+        margin: 46px 0 8px;
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      .part-banner .lbl {
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-size: 12px;
+        font-weight: 700;
+        opacity: 0.85;
+        display: block;
+        margin-bottom: 4px;
+      }
+      .part-banner .ttl {
+        font-size: 21px;
+        font-weight: 700;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #e6e0d8;
+        border-radius: 12px;
+        padding: 4px 22px 18px;
+        margin: 16px 0;
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 16px;
+      }
+      .card h3 {
+        margin-top: 18px;
+      }
+      .plain {
+        background: #fdf6ee;
+        border-left: 4px solid #c79a5b;
+        border-radius: 0 8px 8px 0;
+        padding: 8px 16px;
+        margin: 10px 0 4px;
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 15px;
+        color: #5a4d3a;
+      }
+      .plain b {
+        color: #8a5a13;
+      }
+      .ask {
+        background: #fff;
+        border: 1px solid #e6e0d8;
+        border-left: 4px solid #4f7a70;
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin: 14px 0;
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+      }
+      .ask .h {
+        font-weight: 700;
+        color: #3c645b;
+        display: block;
+        margin-bottom: 6px;
+      }
+      .note {
+        background: #fdf6ee;
+        border: 1px solid #f0dcc2;
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin: 16px 0;
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 16px;
+      }
+      .note .h {
+        font-weight: 700;
+        color: #a85a13;
+        display: block;
+        margin-bottom: 4px;
+      }
+      .warn {
+        background: #fdeede;
+        border: 1px solid #f0c9a0;
+        border-left: 4px solid #c2541f;
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin: 16px 0;
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 16px;
+      }
+      .warn .h {
+        font-weight: 700;
+        color: #b3441a;
+        display: block;
+        margin-bottom: 4px;
+      }
+      ol.steps {
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 16px;
+        padding-left: 22px;
+      }
+      ol.steps > li {
+        margin: 12px 0;
+        padding-left: 4px;
+      }
+      ul.tight {
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 16px;
+        padding-left: 20px;
+      }
+      ul.tight li {
+        margin: 7px 0;
+      }
+      code {
+        font-family: "SF Mono", Menlo, Consolas, monospace;
+        font-size: 13.5px;
+        background: #f0ece6;
+        border: 1px solid #e3ddd4;
+        border-radius: 5px;
+        padding: 1px 5px;
+        color: #5a4636;
+        white-space: nowrap;
+      }
+      pre {
+        background: #2c2a28;
+        color: #e8e2d8;
+        border-radius: 10px;
+        padding: 14px 16px;
+        overflow-x: auto;
+        font-size: 13px;
+        line-height: 1.55;
+        font-family: "SF Mono", Menlo, Consolas, monospace;
+      }
+      pre code {
+        background: none;
+        border: 0;
+        color: inherit;
+        padding: 0;
+        white-space: pre;
+      }
+      .pill {
+        display: inline-block;
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 3px 11px;
+        border-radius: 999px;
+        margin-bottom: 4px;
+      }
+      .free {
+        background: #e7f5ea;
+        color: #1f7a3d;
+      }
+      .small {
+        background: #fdeede;
+        color: #a85a13;
+      }
+      hr {
+        border: 0;
+        border-top: 1px solid #e3ddd4;
+        margin: 36px 0;
+      }
+      .cost {
+        background: #fff;
+        border: 1px solid #e6e0d8;
+        border-radius: 12px;
+        padding: 6px 22px 14px;
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 16px;
+      }
+      .cost div.row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 11px 0;
+        border-bottom: 1px solid #efeae2;
+      }
+      .cost div.row:last-child {
+        border-bottom: 0;
+        font-weight: 700;
+      }
+      .cost .amt {
+        color: #6b6259;
+        text-align: right;
+        white-space: nowrap;
+      }
+      .cost div.row:last-child .amt {
+        color: #2a2a2a;
+      }
+      table.env {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 14.5px;
+        margin: 10px 0;
+      }
+      table.env th,
+      table.env td {
+        text-align: left;
+        padding: 9px 10px;
+        border-bottom: 1px solid #efeae2;
+        vertical-align: top;
+      }
+      table.env th {
+        background: #f3efe9;
+        color: #4a4036;
+        font-weight: 700;
+      }
+      table.env code {
+        white-space: normal;
+      }
+      .diagram {
+        background: #fff;
+        border: 1px solid #e6e0d8;
+        border-radius: 12px;
+        padding: 18px;
+        margin: 16px 0;
+        overflow-x: auto;
+      }
+      .diagram pre {
+        background: none;
+        color: #4a4036;
+        font-size: 12.5px;
+        padding: 0;
+      }
+      .closing {
+        font-style: italic;
+        color: #6b6259;
+        text-align: center;
+        margin-top: 34px;
+      }
+      .toc {
+        background: #fff;
+        border: 1px solid #e6e0d8;
+        border-radius: 12px;
+        padding: 14px 22px;
+        font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 15.5px;
+      }
+      .toc a {
+        color: #3c645b;
+        text-decoration: none;
+      }
+      .toc a:hover {
+        text-decoration: underline;
+      }
+      .toc ul {
+        padding-left: 20px;
+        margin: 8px 0;
+      }
+      .toc li {
+        margin: 5px 0;
+      }
+      @media print {
+        body {
+          background: #fff;
+        }
+        .page {
+          padding: 0;
+        }
+        pre {
+          white-space: pre-wrap;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <p class="kicker">Street Cats of Tavira · the colony app</p>
+        <h1>
+          How the app is built, and how to move it onto Street Cats' own
+          accounts
+        </h1>
+      </header>
+
+      <p class="intro">
+        This is the one document to keep for the handover.
+        <strong>Part 1</strong>
+        explains, in plain language, what every moving part of the app actually
+        is — so you (and anyone after you) can picture the whole thing.
+        <strong>Part 2</strong> is a click-by-click runbook for lifting the app
+        off Nick's personal cloud accounts and putting it onto Street Cats' own
+        — <em>without losing the live cats, photos, or logins.</em> 🐾
+      </p>
+
+      <div class="note">
+        <span class="h">Where things stand today</span>
+        The app is built, live, and in pre-launch testing — but it currently
+        runs on <strong>Nick's personal accounts</strong> (Vercel, Supabase,
+        Cloudflare, and Resend for email). Moving it onto Street Cats' own
+        accounts is the main job left before handover. Nothing here needs doing
+        until Catherine has opened those accounts; this guide is what you follow
+        on the call when she does.
+      </div>
+
+      <div class="toc">
+        <strong>What's inside</strong>
+        <ul>
+          <li>
+            <a href="#part1">Part 1 — What each piece is, in plain English</a>
+          </li>
+          <li><a href="#fit">How it all fits together (a simple map)</a></li>
+          <li>
+            <a href="#costs"
+              >The accounts you'll need &amp; rough monthly cost</a
+            >
+          </li>
+          <li>
+            <a href="#part2">Part 2 — The migration runbook (click by click)</a>
+          </li>
+          <li><a href="#smoke">Final smoke-test checklist</a></li>
+        </ul>
+      </div>
+
+      <!-- ============================ PART 1 ============================ -->
+      <div class="part-banner" id="part1">
+        <span class="lbl">Part 1</span>
+        <span class="ttl">What each piece is — in plain English</span>
+      </div>
+
+      <p>
+        The app is stitched together from a handful of separate online services,
+        each doing one job. None of them are unusual — they're the standard,
+        well-trodden tools for an app like this. Here's each one, what it does,
+        and the plain-English version.
+      </p>
+
+      <div class="card">
+        <h3>🟢 Vercel — where the app actually lives</h3>
+        <p>
+          Vercel is the <strong>host</strong>: the company whose computers run
+          the website itself (the pages, buttons, and screens your volunteers
+          tap). When someone opens the app on their phone, they're talking to
+          Vercel. The app is built with <strong>Next.js</strong> (a popular way
+          of building modern web apps); Vercel is the home built for running
+          Next.js.
+        </p>
+        <div class="plain">
+          <b>Plain version:</b> Vercel is the <b>shop floor</b> — the place
+          customers walk into. It serves the pages but doesn't itself store the
+          cat records; it asks the database for those.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>🗄️ Supabase — the database, the logins, and the rules</h3>
+        <p>Supabase does three jobs at once:</p>
+        <ul class="tight">
+          <li>
+            <strong>The database</strong> — the permanent record of everything:
+            colonies, cats, feeding schedules, incidents, notifications. (It's a
+            <em>Postgres</em> database — a very standard, reliable kind.)
+          </li>
+          <li>
+            <strong>Logins (Auth)</strong> — it handles signing volunteers in,
+            password resets, and the invite-only sign-up.
+          </li>
+          <li>
+            <strong>The access rules (RLS)</strong> — "Row-Level Security" is a
+            built-in guard that makes sure each organisation only ever sees its
+            own data, and each role (Admin / Caretaker / Feeder) can only do
+            what it's allowed. These rules live <em>inside</em> the database, so
+            they can't be bypassed by a bug in the app.
+          </li>
+        </ul>
+        <p>
+          The shape of the database (its tables and rules) is defined by a set
+          of
+          <strong>migration files</strong> in the code — numbered
+          <code>0001</code> through <code>0010</code>. Running them in order on
+          a fresh Supabase project builds an identical, empty database ready for
+          data.
+        </p>
+        <div class="plain">
+          <b>Plain version:</b> Supabase is the
+          <b>filing cabinet, the front-door lock, and the rulebook</b> all in
+          one. Nick's project is reference <code>ogdeoskhplqnguyacxyh</code>;
+          Street Cats will get a brand-new one of their own.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📷 Cloudflare R2 — where the cat photos are stored</h3>
+        <p>
+          Photos don't go in the database (they'd bloat it). They live in
+          <strong>Cloudflare R2</strong>, a storage bucket — think of it as a
+          private online photo drawer. The bucket is named
+          <code>scot-photos</code> and is <strong>private</strong>: nobody can
+          reach a photo by guessing its web address.
+        </p>
+        <p>
+          When the app needs to show a photo, it asks R2 for a
+          <strong>short-lived signed link</strong> — a one-time web address that
+          works for a few minutes and then stops working. That keeps the photos
+          private while still letting the right people see them.
+        </p>
+        <div class="plain">
+          <b>Plain version:</b> R2 is a <b>locked photo drawer</b>. The app
+          hands out a temporary key each time a photo needs showing, and the key
+          expires on its own.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>⏰ The automatic watcher — pg_cron, pg_net &amp; Vault</h3>
+        <p>
+          Some alerts can only be noticed by a clock: "this colony's feeding
+          window passed and nobody fed it," or "this cat hasn't been seen in a
+          while." Nobody is sitting there watching, so the app has a built-in
+          timer that checks for these on its own.
+        </p>
+        <ul class="tight">
+          <li>
+            <strong>pg_cron</strong> is a scheduler that lives inside Supabase.
+            It runs a small task every <strong>15 minutes</strong>.
+          </li>
+          <li>
+            That task uses <strong>pg_net</strong> (a tool that lets the
+            database call a web address) to ping the app at
+            <code>/api/cron/alerts</code> — the page that runs the "missed feed"
+            and "not seen" sweeps.
+          </li>
+          <li>
+            A <strong>second</strong> scheduled task pings
+            <code>/api/cron/email-digest</code> once a day (around 14:00 UTC,
+            i.e. mid-afternoon Portugal time) to send the daily summary email.
+          </li>
+          <li>
+            <strong>Vault</strong> is Supabase's secret-keeper. The timer has to
+            prove it's allowed to trigger these — it carries a password (the
+            <code>CRON_SECRET</code>) stored safely in Vault, and the app only
+            runs the sweep if the password matches. (In the database, that
+            stored password is named <code>cron_alert_bearer</code>.)
+          </li>
+        </ul>
+        <div class="plain">
+          <b>Plain version:</b> a
+          <b>quiet caretaker who checks the colonies every 15 minutes</b> and
+          posts a daily summary — and shows a pass before they're let in, so
+          randoms can't trigger it.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>✉️ Resend — sending emails</h3>
+        <p>
+          The app sends a few kinds of email: a
+          <strong>"you've been invited"</strong> message when an admin adds a
+          volunteer, a gentle <strong>daily summary</strong> of non-urgent
+          things, and <strong>password-reset</strong> emails. These go out
+          through <strong>Resend</strong>, a service that specialises in sending
+          app email reliably (so it doesn't land in spam).
+        </p>
+        <p>
+          There are really two email paths, and it's worth knowing the
+          difference:
+        </p>
+        <ul class="tight">
+          <li>
+            <strong>Invites &amp; the daily digest</strong> — sent by the app's
+            own email layer through Resend.
+          </li>
+          <li>
+            <strong>Password reset / confirm</strong> — sent by Supabase's login
+            system, which is pointed at Resend using <em>SMTP</em> (the standard
+            plumbing for sending mail), with branded templates so the emails
+            look like Street Cats.
+          </li>
+        </ul>
+        <div class="warn">
+          <span class="h">Important for handover</span>
+          Right now email runs on
+          <strong>Nick's personal Resend account</strong>, sending from the
+          domain <code>buddha-balla.com</code>. Part 2 swaps this to Street
+          Cats' own Resend account and domain. Good news: it's purely a settings
+          change — no code edits needed.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>📱 PWA / offline — and English + Portuguese</h3>
+        <p>
+          The app is a <strong>PWA</strong> ("Progressive Web App") — a website
+          that can be <strong>added to a phone's home screen</strong> and
+          behaves like a normal app, including working
+          <strong>without signal</strong> in the field. Updates made offline
+          queue up and sync when the phone gets a connection again. This offline
+          behaviour is controlled by a setting called
+          <code>NEXT_PUBLIC_SW_ENABLED</code> (currently on), with an emergency
+          off-switch called <code>NEXT_PUBLIC_SW_KILL</code> if it ever needs
+          disabling fast.
+        </p>
+        <p>
+          Everything is available in
+          <strong>English and (European) Portuguese</strong>, and the app
+          remembers each person's choice.
+        </p>
+        <div class="plain">
+          <b>Plain version:</b> it installs like an app, works off-grid, syncs
+          later, and speaks both languages.
+        </div>
+      </div>
+
+      <!-- ===================== HOW IT FITS ===================== -->
+      <h2 id="fit">How it all fits together</h2>
+      <p>
+        Here's the whole thing on one page. A volunteer's phone talks to Vercel;
+        Vercel talks to Supabase (data + logins) and R2 (photos); the timer
+        inside Supabase pokes the app on a schedule; and Resend carries the
+        emails out.
+      </p>
+      <div class="diagram">
+        <pre>
+                    ┌──────────────────────────┐
+                    │   Volunteer's phone      │
+                    │  (the installed PWA)     │
+                    └────────────┬─────────────┘
+                                 │  taps, feeding updates
+                                 ▼
+                    ┌──────────────────────────┐
+                    │        VERCEL            │   ← hosts the app (Next.js)
+                    │  the pages & screens     │
+                    └───┬──────────────────┬───┘
+            data &      │                  │   temporary
+            logins &    ▼                  ▼   photo links
+            rules ┌───────────┐      ┌──────────────┐
+                  │ SUPABASE  │      │ CLOUDFLARE R2│  ← photos
+                  │ DB · Auth │      │  scot-photos │     (private bucket)
+                  │ · RLS     │      └──────────────┘
+                  └─────┬─────┘
+                        │  every 15 min  → /api/cron/alerts   (missed feed / not seen)
+   pg_cron + pg_net ────┤  once a day    → /api/cron/email-digest
+   (with Vault pass)    │
+                        └──────────────►  app  ──►  RESEND  ──►  email to volunteers
+                                                  (invites, daily digest, resets)
+</pre
+        >
+      </div>
+
+      <!-- ===================== COSTS ===================== -->
+      <h2 id="costs">The accounts you'll need &amp; rough monthly cost</h2>
+      <p>
+        For the migration, Catherine needs to open accounts on these services in
+        Street Cats' name. All have a free tier the app can launch on.
+      </p>
+      <ul class="tight">
+        <li><strong>Vercel</strong> — hosting the app.</li>
+        <li><strong>Supabase</strong> — database, logins, the timer.</li>
+        <li><strong>Cloudflare</strong> — for the R2 photo bucket.</li>
+        <li><strong>Resend</strong> — sending email.</li>
+        <li>
+          <strong>A domain</strong> — e.g.
+          <code>app.streetcatsoftavira.org</code> (likely a sub-name of the
+          domain Street Cats already own).
+        </li>
+      </ul>
+
+      <p>
+        The figures below are <strong>estimates</strong>, not quotes — providers
+        bill in dollars/euros so totals wobble a little.
+      </p>
+      <div class="cost">
+        <div class="row">
+          <span>Vercel — hosting</span
+          ><span class="amt"
+            >Free to start · ~£16–18/mo only if it outgrows the free tier</span
+          >
+        </div>
+        <div class="row">
+          <span>Supabase — database, logins, photos drawer</span
+          ><span class="amt"
+            >Free to start · ~£25/mo (Pro) once photos &amp; daily use
+            grow</span
+          >
+        </div>
+        <div class="row">
+          <span>Cloudflare R2 — photo storage</span
+          ><span class="amt"
+            >Free to start (generous free storage); pennies as photos grow</span
+          >
+        </div>
+        <div class="row">
+          <span>Domain (the <code>.org</code> sub-name)</span
+          ><span class="amt"
+            >~£1–2/mo (often already covered by the existing domain)</span
+          >
+        </div>
+        <div class="row">
+          <span>Resend — email</span
+          ><span class="amt">Free tier (~3,000 emails/mo) — plenty</span>
+        </div>
+        <div class="row">
+          <span>Realistic total once genuinely in daily use</span
+          ><span class="amt">~£25–35/mo</span>
+        </div>
+      </div>
+      <p style="font-size: 15px; color: #6b6259; margin-top: 10px">
+        For the breakdown (and the text-message/SMS option, which is the only
+        usage-based cost and is a <em>post-launch</em> extra), see
+        <code>docs/running-costs.md</code> and the channels note in
+        <code>docs/scot-notification-channels.html</code> — that note carries
+        the ~8 cents-per-text figure and the privacy question about storing
+        phone numbers.
+      </p>
+
+      <!-- ============================ PART 2 ============================ -->
+      <div class="part-banner" id="part2">
+        <span class="lbl">Part 2</span>
+        <span class="ttl">The migration runbook — click by click</span>
+      </div>
+
+      <p>
+        Do these <strong>in order</strong>. The golden rule: build the new home
+        first, copy the live data across, point the door at the new home, then —
+        only once it's confirmed working — take down the old one and rotate
+        every password. Take your time; nothing here is reversible-by-accident
+        if you leave Nick's accounts running until the very end.
+      </p>
+
+      <div class="note">
+        <span class="h">Two facts to keep handy while you work</span>
+        The <strong>live Street Cats organisation</strong> inside the database
+        has the id <code>46c8fdda-1a5e-481f-bc9e-4f98069afd91</code>, and it
+        holds the real data imported from the Wix site —
+        <strong>152 cats + 22 colonies + photos</strong>. Imported cats sit in
+        an "Imported from website" holding colony for caretakers to reassign.
+      </div>
+
+      <!-- STEP 1 -->
+      <h2>① Supabase — the new database, rules, timer &amp; data</h2>
+
+      <h3>1a · Create Street Cats' Supabase project</h3>
+      <ol class="steps">
+        <li>
+          At <strong>supabase.com</strong>, sign in to Street Cats' new account
+          and click <strong>New project</strong>. Pick the EU (e.g.
+          Frankfurt/London) region — closest to Portugal. Set a strong database
+          password and save it in the password manager.
+        </li>
+        <li>
+          Once it's created, go to <strong>Project Settings → API</strong> and
+          copy two values for later: the <strong>Project URL</strong> (becomes
+          <code>NEXT_PUBLIC_SUPABASE_URL</code>) and the
+          <strong>anon / public key</strong> (becomes
+          <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>). Also copy the
+          <strong>service_role key</strong> (becomes
+          <code>SUPABASE_SERVICE_ROLE_KEY</code>) — treat this one like a master
+          key, never share it.
+        </li>
+      </ol>
+
+      <h3>1b · Build the database shape (apply migrations 0001–0010)</h3>
+      <p>
+        The repo's <code>supabase/migrations/</code> folder holds ten files,
+        <code>0001_init.sql</code> through
+        <code>0010_recent_per_cat_views.sql</code>. Applied in order on the
+        fresh project, they recreate every table
+        <em>and the access rules (RLS)</em>.
+      </p>
+      <ul class="tight">
+        <li>
+          <strong>Easiest:</strong> use the Supabase MCP / CLI's apply-migration
+          in order — the same way they were applied originally (see your MEMORY
+          note "Applying Supabase migrations").
+        </li>
+        <li>
+          <strong>Or by hand:</strong> Supabase dashboard →
+          <strong>SQL Editor</strong> → paste each file's contents in numerical
+          order (0001 first, 0010 last) and run each. Don't skip or reorder.
+        </li>
+      </ul>
+
+      <h3>1c · Confirm the access rules (RLS) are intact</h3>
+      <ol class="steps">
+        <li>
+          In the dashboard go to <strong>Authentication → Policies</strong> (or
+          <strong>Database → Tables</strong>) and check that the main tables
+          show "RLS enabled" with policies present. The migrations create these,
+          so if 0001–0010 all ran, they're there.
+        </li>
+        <li>
+          Run Supabase's <strong>Advisors</strong> (Database → Advisors) and
+          confirm there are no "RLS disabled on a public table" warnings.
+        </li>
+      </ol>
+
+      <h3>1d · Move the live data across</h3>
+      <p>There are two routes — pick one:</p>
+      <div class="ask">
+        <span class="h"
+          >Route A — copy the existing data (recommended: keeps everything,
+          incl. logins &amp; history)</span
+        >
+        Take a <strong>dump</strong> (a complete export) of Nick's project and
+        <strong>restore</strong> it into the new one:
+        <pre><code># Export from Nick's project (connection string from its dashboard)
+pg_dump "postgres://...OLD_PROJECT..." \
+  --no-owner --no-privileges -Fc -f scot.dump
+
+# Restore into Street Cats' new project
+pg_restore --no-owner --no-privileges \
+  -d "postgres://...NEW_PROJECT..." scot.dump</code></pre>
+        Do this <em>after</em> 1b so the shape exists, or restore data-only.
+        Verify counts afterwards (see 1f).
+        <strong>Confirm at migration time</strong> whether to dump schema+data
+        or data-only, depending on exactly how the new project was built in 1b —
+        easiest is a full <code>pg_dump</code> into a truly empty project and
+        skip 1b.
+      </div>
+      <div class="ask">
+        <span class="h">Route B — re-import fresh from the Wix site</span>
+        Re-run the idempotent importer against the new project + new photo
+        bucket:
+        <code>node scripts/import-from-site.mjs</code> (it re-pulls 152 cats +
+        22 colonies + photos and is safe to re-run). This rebuilds the
+        cats/colonies/ photos but <strong>not</strong> any feeding history,
+        incidents, or volunteer logins created since launch — so for a live app
+        that's been in use, <strong>Route A is the safe choice</strong>. Route B
+        is the fallback if a dump/restore proves awkward.
+      </div>
+
+      <h3>1e · Recreate the two scheduled timers</h3>
+      <p>
+        The timers don't survive a data copy — recreate them on the new project.
+        First make sure the two extensions are on (Database → Extensions →
+        enable <code>pg_cron</code> and <code>pg_net</code>), then store the
+        cron password in Vault and schedule both jobs.
+      </p>
+      <ol class="steps">
+        <li>
+          <strong>Store the password in Vault:</strong> dashboard →
+          <strong>Project Settings → Vault</strong> → add a secret named
+          <code>cron_alert_bearer</code> whose value is the <em>same</em> string
+          you'll set as <code>CRON_SECRET</code> in Vercel (step ③). They must
+          match exactly.
+        </li>
+        <li>
+          <strong>Schedule the alert sweep (every 15 min)</strong> in the SQL
+          Editor — point the URL at the new Vercel address:
+          <pre><code>select cron.schedule(
+  'alerts-sweep', '*/15 * * * *',
+  $$ select net.http_post(
+       url := 'https://YOUR-NEW-APP.vercel.app/api/cron/alerts',
+       headers := jsonb_build_object(
+         'Content-Type','application/json',
+         'Authorization','Bearer ' || (select decrypted_secret
+           from vault.decrypted_secrets where name='cron_alert_bearer')),
+       body := '{}'::jsonb); $$ );</code></pre>
+        </li>
+        <li>
+          <strong>Schedule the daily digest</strong> (the email-setup doc uses
+          07:00; the live one runs ~14:00 UTC — pick the time Street Cats
+          prefer, mid-afternoon Portugal is <code>0 14 * * *</code>):
+          <pre><code>select cron.schedule(
+  'email-digest-daily', '0 14 * * *',
+  $$ select net.http_post(
+       url := 'https://YOUR-NEW-APP.vercel.app/api/cron/email-digest',
+       headers := jsonb_build_object(
+         'Content-Type','application/json',
+         'Authorization','Bearer ' || (select decrypted_secret
+           from vault.decrypted_secrets where name='cron_alert_bearer')),
+       body := '{}'::jsonb); $$ );</code></pre>
+        </li>
+        <li>
+          <strong>Verify:</strong> after 15 minutes, check
+          <code>cron.job_run_details</code> and
+          <code>net._http_response</code> for a <code>200</code> reply.
+          (Schedule these <em>after</em> Vercel is live in step ③ so the URL
+          exists.)
+        </li>
+      </ol>
+
+      <h3>1f · Set up login emails (Supabase Auth custom SMTP)</h3>
+      <ol class="steps">
+        <li>
+          Dashboard → <strong>Authentication → Emails → SMTP Settings</strong> →
+          enable <strong>Custom SMTP</strong>.
+        </li>
+        <li>
+          Point it at Street Cats' Resend (from step ⑤): host
+          <code>smtp.resend.com</code>, port <code>465</code>, username
+          <code>resend</code>, password = a Resend API key. Set the sender to
+          the verified Street Cats address.
+        </li>
+        <li>
+          Paste the branded email templates (the design is in
+          <code>docs/supabase-reset-email.html</code>) into Authentication →
+          Emails → Templates.
+        </li>
+        <li>
+          Under Authentication → URL Configuration, set the
+          <strong>Site URL</strong> and <strong>Redirect URLs</strong> to the
+          new app address, including <code>…/auth/confirm</code> so reset links
+          land correctly.
+        </li>
+      </ol>
+
+      <h3>1g · Verify counts</h3>
+      <p>
+        In the SQL Editor, confirm the data made it: you should see
+        <strong>~152 cats</strong> and <strong>22 colonies</strong> for org
+        <code>46c8fdda-1a5e-481f-bc9e-4f98069afd91</code>. If those numbers
+        match, the move worked.
+      </p>
+
+      <!-- STEP 2 -->
+      <h2>② Cloudflare R2 — the new photo drawer</h2>
+      <ol class="steps">
+        <li>
+          In Street Cats' Cloudflare account, open <strong>R2</strong> and click
+          <strong>Create bucket</strong>. Name it
+          <code>scot-photos</code> (keeping the same name means the stored photo
+          links don't need rewriting). Keep it <strong>private</strong>.
+        </li>
+        <li>
+          Create an <strong>R2 API token</strong> with
+          <strong>Object Read &amp; Write</strong> permission on that bucket.
+          Copy the four values for Vercel later:
+          <strong>Account ID</strong> (<code>R2_ACCOUNT_ID</code>),
+          <strong>Access Key ID</strong> (<code>R2_ACCESS_KEY_ID</code>),
+          <strong>Secret Access Key</strong>
+          (<code>R2_SECRET_ACCESS_KEY</code>), and the bucket name (<code
+            >R2_BUCKET</code
+          >
+          = <code>scot-photos</code>). The secret is shown once — save it now.
+        </li>
+        <li>
+          <strong>Copy the photos across.</strong> Use an S3-compatible copy
+          tool (e.g. <code>rclone</code> set up with both R2 accounts) to mirror
+          every object from Nick's <code>scot-photos</code> bucket into the new
+          one. <em>Or</em>, if you took Route B in 1d, the importer already
+          re-uploaded the photos to the new bucket — in which case skip this.
+        </li>
+        <li>
+          <strong>Only if you changed the bucket name:</strong> the cat photo
+          links (<code>photo_url</code> values in the database) embed the bucket
+          name, so they'd need updating with a one-off SQL update. Keeping the
+          name <code>scot-photos</code> avoids this entirely — which is why we
+          kept it.
+        </li>
+        <li>
+          <strong>Verify:</strong> the new bucket's object count should match
+          the old one.
+        </li>
+      </ol>
+
+      <!-- STEP 3 -->
+      <h2>③ Vercel — the new home for the app</h2>
+      <ol class="steps">
+        <li>
+          In Street Cats' Vercel account, click
+          <strong>Add New → Project</strong> and
+          <strong>connect the GitHub repository</strong> for the app. (Street
+          Cats will need access to the repo, or it moved into their GitHub org.)
+        </li>
+        <li>
+          Before the first deploy, open
+          <strong>Settings → Environment Variables</strong> (set them for
+          <strong>Production</strong>) and add every variable below.
+        </li>
+        <li>
+          Deploy to <strong>Production</strong>. Vercel gives the project a
+          <code>…vercel.app</code> address — note it; the timers (1e) and domain
+          (④) point at it.
+        </li>
+      </ol>
+
+      <p>
+        The full set of environment variables (the app's settings), with what
+        each is:
+      </p>
+      <table class="env">
+        <tr>
+          <th>Variable</th>
+          <th>What it is / where it comes from</th>
+        </tr>
+        <tr>
+          <td><code>NEXT_PUBLIC_SUPABASE_URL</code></td>
+          <td>New Supabase Project URL (step 1a)</td>
+        </tr>
+        <tr>
+          <td><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></td>
+          <td>New Supabase anon/public key (1a)</td>
+        </tr>
+        <tr>
+          <td><code>SUPABASE_SERVICE_ROLE_KEY</code></td>
+          <td>New Supabase service_role key (1a) — master key, secret</td>
+        </tr>
+        <tr>
+          <td><code>R2_ACCOUNT_ID</code></td>
+          <td>Cloudflare account ID (step ②)</td>
+        </tr>
+        <tr>
+          <td><code>R2_ACCESS_KEY_ID</code></td>
+          <td>R2 token access key (②)</td>
+        </tr>
+        <tr>
+          <td><code>R2_SECRET_ACCESS_KEY</code></td>
+          <td>R2 token secret (②) — <strong>mark Sensitive</strong></td>
+        </tr>
+        <tr>
+          <td><code>R2_BUCKET</code></td>
+          <td><code>scot-photos</code></td>
+        </tr>
+        <tr>
+          <td><code>CRON_SECRET</code></td>
+          <td>
+            A new long random string — must equal the Vault
+            <code>cron_alert_bearer</code> (1e)
+          </td>
+        </tr>
+        <tr>
+          <td><code>RESEND_API_KEY</code></td>
+          <td>Street Cats' Resend API key (step ⑤)</td>
+        </tr>
+        <tr>
+          <td><code>EMAIL_ENABLED</code></td>
+          <td>Exactly <code>true</code> to turn email on</td>
+        </tr>
+        <tr>
+          <td><code>EMAIL_FROM</code></td>
+          <td>
+            e.g.
+            <code
+              >Street Cats of Tavira
+              &lt;no-reply@app.streetcatsoftavira.org&gt;</code
+            >
+          </td>
+        </tr>
+        <tr>
+          <td><code>NEXT_PUBLIC_SITE_URL</code></td>
+          <td>
+            The live app address, e.g.
+            <code>https://app.streetcatsoftavira.org</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>NEXT_PUBLIC_DEFAULT_LOCALE</code></td>
+          <td>Default language, e.g. <code>pt</code> or <code>en</code></td>
+        </tr>
+        <tr>
+          <td><code>NEXT_PUBLIC_SW_ENABLED</code></td>
+          <td><code>true</code> — keeps offline mode on (as in prod today)</td>
+        </tr>
+        <tr>
+          <td><code>NEXT_PUBLIC_SW_KILL</code></td>
+          <td>Leave unset; the emergency off-switch for offline mode</td>
+        </tr>
+      </table>
+      <div class="warn">
+        <span class="h">About the "Sensitive" tick in Vercel</span>
+        Marking the R2 secret (and other keys) <strong>Sensitive</strong> means
+        Vercel won't ever show the value back to you — safer, but it also means
+        you <strong>can't pull it back later</strong>. So always copy these
+        values from their original source (Cloudflare, Supabase, Resend), not
+        from Vercel. Keep them in the password manager too.
+      </div>
+
+      <!-- STEP 4 -->
+      <h2>④ Domain — point the web address at the new app</h2>
+      <ol class="steps">
+        <li>
+          In Street Cats' <strong>Vercel project → Settings → Domains</strong>,
+          add <code>app.streetcatsoftavira.org</code>.
+        </li>
+        <li>
+          Vercel shows a DNS record to add (usually a <strong>CNAME</strong>).
+          Add it wherever Street Cats' domain DNS is managed (their registrar or
+          Cloudflare). The apex marketing site stays on Wix and is untouched —
+          this is only the <code>app.</code> sub-name.
+        </li>
+        <li>
+          Wait for Vercel to show the domain as
+          <strong>Valid / verified</strong> (DNS can take a little while). Then
+          confirm <code>NEXT_PUBLIC_SITE_URL</code> in step ③ matches it, and
+          that the timer URLs in 1e use it (or the
+          <code>…vercel.app</code> address — both work).
+        </li>
+      </ol>
+
+      <!-- STEP 5 -->
+      <h2>⑤ Email — Street Cats' own Resend, off buddha-balla.com</h2>
+      <ol class="steps">
+        <li>
+          In Street Cats' new <strong>Resend</strong> account,
+          <strong>verify the domain</strong> (add the SPF, DKIM and DMARC DNS
+          records Resend shows) so email can send from e.g.
+          <code>app.streetcatsoftavira.org</code>. Wait for "Verified".
+        </li>
+        <li>
+          Create a Resend <strong>API key</strong> (shown once — copy it). Put
+          it in Vercel as <code>RESEND_API_KEY</code> and set
+          <code>EMAIL_FROM</code> to the verified sender (step ③), then
+          <strong>redeploy</strong>.
+        </li>
+        <li>
+          Point Supabase Auth's custom SMTP at this same Resend account (step
+          1f). This is what finally moves everything
+          <strong>off Nick's <code>buddha-balla.com</code></strong
+          >.
+        </li>
+        <li>
+          The "SMS for urgent alerts" option is <strong>post-launch</strong> and
+          not part of this migration — it needs a paid provider plus Catherine's
+          decision on storing phone numbers (see the channels note).
+        </li>
+      </ol>
+
+      <!-- STEP 6 -->
+      <h2>⑥ Handover hygiene — rotate secrets &amp; hand over ownership</h2>
+      <p>
+        Once the new instance is confirmed working (do the smoke test below
+        <em>first</em>), close the door on the old setup. Any password that ever
+        passed through Nick's machine should be replaced with a fresh one that
+        only Street Cats hold.
+      </p>
+      <ol class="steps">
+        <li>
+          <strong>Rotate every secret:</strong> generate a <em>new</em> Supabase
+          service-role key, <em>new</em> R2 access keys, a <em>new</em>
+          <code>CRON_SECRET</code> (update both Vercel and the Vault
+          <code>cron_alert_bearer</code> so they still match), and a
+          <em>new</em> <code>RESEND_API_KEY</code>. Redeploy after changing
+          Vercel values. Because the R2 secret in Vercel is marked Sensitive,
+          you can't read the old one back — that's fine, you're replacing it
+          from Cloudflare anyway.
+        </li>
+        <li>
+          <strong>Remove Nick's access:</strong> take Nick off the Supabase
+          project, Cloudflare account, Vercel team, Resend account, and (once
+          moved) the GitHub repo. Confirm Catherine / Street Cats are the
+          <strong>owners</strong>, not just members, of every account.
+        </li>
+        <li>
+          <strong>Decommission the old stack last:</strong> once everything runs
+          on Street Cats' accounts and the smoke test passes, pause/delete
+          Nick's old Supabase project, the old R2 bucket, the old Vercel
+          project, and the <code>buddha-balla.com</code> Resend sender. Keep a
+          final database dump as a backup until you're sure.
+        </li>
+      </ol>
+
+      <!-- STEP 7 -->
+      <h2 id="smoke">
+        ⑦ Final smoke-test — does the live instance actually work?
+      </h2>
+      <p>
+        Open <code>app.streetcatsoftavira.org</code> on a phone and walk through
+        it end to end. Tick each:
+      </p>
+      <ul class="tight">
+        <li>☐ <strong>Log in</strong> as a caretaker test account.</li>
+        <li>
+          ☐ <strong>See the colonies and cats</strong> — the 22 colonies and
+          ~152 cats are there.
+        </li>
+        <li>
+          ☐ <strong>Photos load</strong> — open a cat with a photo; it appears
+          (proves R2 + the signed links work).
+        </li>
+        <li>
+          ☐ <strong>Do a feeding update</strong> on a colony and confirm it
+          saves and shows on Today.
+        </li>
+        <li>
+          ☐ <strong>Trigger / observe an alert</strong> — e.g. report an
+          incident (fires instantly), or wait for the 15-minute sweep, and see
+          it in the notifications bell.
+        </li>
+        <li>
+          ☐ <strong>Receive a notification + a branded email</strong> — invite a
+          volunteer to your own address (branded invite arrives), and use
+          <strong>Forgot password?</strong> to confirm the Supabase reset email
+          comes through and the reset page works.
+        </li>
+      </ul>
+      <p>
+        If all seven tick, the live Street Cats instance is standing on its own
+        accounts end-to-end — and step ⑥ can be finished off with confidence.
+      </p>
+
+      <hr />
+
+      <p class="closing">
+        That's the whole thing. Build the new home, copy the cats across, point
+        the door at it, prove it works, then rotate the keys and hand over the
+        deeds. Take it one numbered step at a time — there's no rush, and the
+        old setup stays running as a safety net until the very last step. Thank
+        you for everything you do for the cats. 🐾
+      </p>
+    </div>
+  </body>
+</html>
