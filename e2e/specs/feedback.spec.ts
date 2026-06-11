@@ -88,7 +88,9 @@ test.describe("feedback channel (UI)", () => {
     await page.getByRole("button", { name: /send|submit/i }).click();
 
     // An inline validation error is shown; no success panel appears.
-    await expect(page.getByRole("alert")).toBeVisible();
+    // Target the error by its message text — getByRole("alert") also matches
+    // Next's always-present (empty) route announcer, tripping strict mode.
+    await expect(page.getByText(/add a short message/i)).toBeVisible();
     await expect(page.getByRole("status")).toHaveCount(0);
   });
 });
