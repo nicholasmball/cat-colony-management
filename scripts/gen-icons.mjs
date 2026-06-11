@@ -14,9 +14,18 @@ const DARK = 25;
 // Mark extraction: crop the top band, flatten to opaque white, linear-map
 // (white->cream, black->dark, antialiased edges blend), trim to a tight bbox.
 const meta = await sharp(master).metadata();
-const a = [(cream.r - DARK) / 255, (cream.g - DARK) / 255, (cream.b - DARK) / 255];
+const a = [
+  (cream.r - DARK) / 255,
+  (cream.g - DARK) / 255,
+  (cream.b - DARK) / 255,
+];
 const recoloured = await sharp(master)
-  .extract({ left: 0, top: 0, width: meta.width, height: Math.round(meta.height * 0.58) })
+  .extract({
+    left: 0,
+    top: 0,
+    width: meta.width,
+    height: Math.round(meta.height * 0.58),
+  })
   .flatten({ background: { r: 255, g: 255, b: 255 } })
   .linear(a, [DARK, DARK, DARK])
   .png()
@@ -28,14 +37,16 @@ async function gen(size, scale, out) {
   const fg = await sharp(mark)
     .resize(content, content, { fit: "contain", background: cream })
     .toBuffer();
-  await sharp({ create: { width: size, height: size, channels: 3, background: cream } })
+  await sharp({
+    create: { width: size, height: size, channels: 3, background: cream },
+  })
     .composite([{ input: fg, gravity: "center" }])
     .removeAlpha()
     .png({ compressionLevel: 9 })
     .toFile(out);
 }
 
-await gen(192, 0.78, "public/icon-192.png");        // "any" variants
+await gen(192, 0.78, "public/icon-192.png"); // "any" variants
 await gen(512, 0.78, "public/icon-512.png");
 await gen(192, 0.6, "public/icon-maskable-192.png"); // maskable: safe-zone padding
 await gen(512, 0.6, "public/icon-maskable-512.png");
