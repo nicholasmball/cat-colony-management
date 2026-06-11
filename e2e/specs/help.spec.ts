@@ -34,9 +34,7 @@ test.describe("feeder reaches Help and sees the quick-start", () => {
     // The four daily questions + each major section heading render real text.
     // "Was the colony fed?" appears twice (the daily-questions list AND the
     // feeding-update steps), so assert the first match rather than a unique one.
-    await expect(
-      page.getByText("Was the colony fed?").first(),
-    ).toBeVisible();
+    await expect(page.getByText("Was the colony fed?").first()).toBeVisible();
     await expect(
       page.getByRole("heading", { name: /Record a feeding update/i }),
     ).toBeVisible();
