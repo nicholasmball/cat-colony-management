@@ -41,6 +41,19 @@ export function notificationKeys(
       bodyKey: NOT_SEEN_BODY[reason] ?? NOT_SEEN_BODY.not_seen_days,
     };
   }
+  if (type === "feedback_resolved") {
+    // The reporter's "your feedback was resolved" notice. Two body variants: with
+    // the admin's optional note quoted, or — when the note is empty — just the
+    // original-message snippet. Mirrors the not_seen param-driven body choice.
+    const hasNote =
+      typeof params.note === "string" && params.note.trim().length > 0;
+    return {
+      titleKey: "alerts.feedback_resolved.title",
+      bodyKey: hasNote
+        ? "alerts.feedback_resolved.body.with_note"
+        : "alerts.feedback_resolved.body.without_note",
+    };
+  }
   // Every other alert is a flat { title, body } pair under alerts.<type>.
   return {
     titleKey: `alerts.${type}.title`,

@@ -677,6 +677,13 @@
         "not_seen_days": "Not seen for {count, plural, one {# day} other {# days}} at {colonyName} — needs review.",
         "repeated_not_seen": "Not seen {count, plural, one {# time} other {# times}} in a row at {colonyName} — needs review."
       }
+    },
+    "feedback_resolved": {
+      "title": "Your feedback was marked resolved",
+      "body": {
+        "with_note": "“{snippet}” was resolved — {note}",
+        "without_note": "“{snippet}”"
+      }
     }
   },
   "errors": {
@@ -697,6 +704,8 @@
     "inviteInvalidOrUsed": "This invite is invalid or already used.",
     "noPendingInvite": "No pending invite found for this account.",
     "resolveNoteRequired": "Add a short note on how this was resolved before closing it.",
+    "resolveNoteTooLong": "That note is too long — keep it under 500 characters.",
+    "feedbackResolveFailed": "Couldn’t resolve this feedback. Please try again.",
     "assignManagerOnly": "You can only assign an incident to a caretaker or admin.",
     "writeNoteFirst": "Write a note before posting.",
     "chooseIncidentType": "Choose what's happening before you report.",
@@ -841,6 +850,7 @@
       "buildLabel": "Build",
       "statusNew": "New",
       "statusQueued": "Queued",
+      "statusResolved": "Resolved",
       "roleAdmin": "Admin",
       "roleCaretaker": "Caretaker",
       "roleFeeder": "Feeder",
@@ -852,7 +862,22 @@
       "viewInbox": "View submitted feedback",
       "viewInboxSub": "See what your team has reported",
       "viewInboxAria": "View submitted feedback (admin)",
-      "adminBadge": "Admin"
+      "adminBadge": "Admin",
+      "resolve": {
+        "resolve": "Resolve",
+        "groupLabel": "Resolve this feedback",
+        "resolutionNote": "Resolution note",
+        "optional": "(optional)",
+        "notePlaceholder": "Add an optional note for the reporter…",
+        "counter": "{count} / 500",
+        "noteHint": "Optional — resolve works with it empty. The reporter is notified in-app.",
+        "terminalCue": "This can’t be undone.",
+        "confirmResolve": "Mark resolved",
+        "resolving": "Resolving…",
+        "cancel": "Cancel",
+        "resolvedBy": "Resolved by {name}",
+        "resolvedByFallback": "an admin"
+      }
     }
   }
 }

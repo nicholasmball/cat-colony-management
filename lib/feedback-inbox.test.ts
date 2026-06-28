@@ -13,6 +13,10 @@ test("feedbackStatusBadge maps the known statuses to their own variant", () => {
     variant: "queued",
     label: null,
   });
+  assert.deepEqual(feedbackStatusBadge("resolved"), {
+    variant: "resolved",
+    label: null,
+  });
 });
 
 test("feedbackStatusBadge falls back to a neutral badge for unmapped values", () => {

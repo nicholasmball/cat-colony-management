@@ -677,6 +677,13 @@
         "not_seen_days": "Não visto há {count, plural, one {# dia} other {# dias}} em {colonyName} — precisa de revisão.",
         "repeated_not_seen": "Não visto {count, plural, one {# vez} other {# vezes}} seguidas em {colonyName} — precisa de revisão."
       }
+    },
+    "feedback_resolved": {
+      "title": "O seu feedback foi marcado como resolvido",
+      "body": {
+        "with_note": "“{snippet}” foi resolvido — {note}",
+        "without_note": "“{snippet}”"
+      }
     }
   },
   "errors": {
@@ -697,6 +704,8 @@
     "inviteInvalidOrUsed": "Este convite é inválido ou já foi utilizado.",
     "noPendingInvite": "Não foi encontrado nenhum convite pendente para esta conta.",
     "resolveNoteRequired": "Adicione uma breve nota sobre como foi resolvido antes de o fechar.",
+    "resolveNoteTooLong": "Essa nota é demasiado longa — mantenha-a com menos de 500 caracteres.",
+    "feedbackResolveFailed": "Não foi possível resolver este feedback. Tente novamente.",
     "assignManagerOnly": "Só pode atribuir um incidente a um cuidador ou administrador.",
     "writeNoteFirst": "Escreva uma nota antes de publicar.",
     "chooseIncidentType": "Escolha o que se passa antes de reportar.",
@@ -841,6 +850,7 @@
       "buildLabel": "Versão",
       "statusNew": "Novo",
       "statusQueued": "Em fila",
+      "statusResolved": "Resolvido",
       "roleAdmin": "Administrador",
       "roleCaretaker": "Cuidador",
       "roleFeeder": "Alimentador",
@@ -852,7 +862,22 @@
       "viewInbox": "Ver feedback enviado",
       "viewInboxSub": "Veja o que a sua equipa reportou",
       "viewInboxAria": "Ver feedback enviado (administrador)",
-      "adminBadge": "Admin"
+      "adminBadge": "Admin",
+      "resolve": {
+        "resolve": "Resolver",
+        "groupLabel": "Resolver este feedback",
+        "resolutionNote": "Nota de resolução",
+        "optional": "(opcional)",
+        "notePlaceholder": "Adicione uma nota opcional para quem reportou…",
+        "counter": "{count} / 500",
+        "noteHint": "Opcional — pode resolver sem preencher. Quem reportou é notificado na app.",
+        "terminalCue": "Não pode ser anulado.",
+        "confirmResolve": "Marcar como resolvido",
+        "resolving": "A resolver…",
+        "cancel": "Cancelar",
+        "resolvedBy": "Resolvido por {name}",
+        "resolvedByFallback": "um administrador"
+      }
     }
   }
 }

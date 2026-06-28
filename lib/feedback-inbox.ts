@@ -12,7 +12,8 @@
 // The statuses the inbox renders with a dedicated, coloured badge. Everything
 // else (a future bot status like "triaged" / "done") falls back to a neutral
 // badge that still shows the raw value — never a crash, never a bare render.
-export const KNOWN_FEEDBACK_STATUSES = ["new", "queued"] as const;
+// 'resolved' is the terminal admin-set state (0012) — a slate badge, no actions.
+export const KNOWN_FEEDBACK_STATUSES = ["new", "queued", "resolved"] as const;
 export type KnownFeedbackStatus = (typeof KNOWN_FEEDBACK_STATUSES)[number];
 
 export type FeedbackStatusBadge =

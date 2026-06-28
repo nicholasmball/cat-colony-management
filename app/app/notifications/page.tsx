@@ -35,10 +35,15 @@ type NotificationRowData = {
   created_at: string;
 };
 
-// Resolve the entity a row links to. Incident → triage detail; cat → the cat
-// page (needs its colony id); colony → colony page. Null when nothing applies
-// (the row is then non-navigable but still renders + marks read).
+// Resolve the entity a row links to. A non-entity alert (e.g. feedback_resolved)
+// may carry an explicit in-app destination in message_params.href — honoured
+// only when it's a safe /app route (never an external/admin URL). Otherwise:
+// incident → triage detail; cat → the cat page (needs its colony id); colony →
+// colony page. Null when nothing applies (the row is then non-navigable but
+// still renders + marks read).
 function entityHref(row: NotificationRowData): string | null {
+  const href = row.message_params?.href;
+  if (typeof href === "string" && href.startsWith("/app")) return href;
   if (row.incident_id) return `/app/incidents/${row.incident_id}`;
   if (row.cat_id && row.colony_id)
     return `/app/colonies/${row.colony_id}/cats/${row.cat_id}`;

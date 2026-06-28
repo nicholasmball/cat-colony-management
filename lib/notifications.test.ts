@@ -59,3 +59,22 @@ test("not_seen falls back to not_seen_days when reason is missing/unknown", () =
     "alerts.not_seen.body.not_seen_days",
   );
 });
+
+test("feedback_resolved picks the with_note body only when a non-empty note is present", () => {
+  assert.deepEqual(
+    notificationKeys("feedback_resolved", { note: "Shipped in v0.9.5" }),
+    {
+      titleKey: "alerts.feedback_resolved.title",
+      bodyKey: "alerts.feedback_resolved.body.with_note",
+    },
+  );
+  // No note / blank note / absent param → the without_note body (snippet only).
+  assert.equal(
+    notificationKeys("feedback_resolved", {}).bodyKey,
+    "alerts.feedback_resolved.body.without_note",
+  );
+  assert.equal(
+    notificationKeys("feedback_resolved", { note: "   " }).bodyKey,
+    "alerts.feedback_resolved.body.without_note",
+  );
+});
