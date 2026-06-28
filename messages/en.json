@@ -826,6 +826,33 @@
     "errorUpload": "Couldn’t attach the screenshot. You can still send your message, or try another image.",
     "errorNotImage": "That file isn’t an image.",
     "errorTooLarge": "That image is too large.",
-    "errorSubmit": "Couldn’t send your feedback. Please try again."
+    "errorSubmit": "Couldn’t send your feedback. Please try again.",
+    "inbox": {
+      "title": "Feedback inbox",
+      "intro": "Reports submitted by your team during testing.",
+      "back": "Send feedback",
+      "backAria": "Send feedback — back to the feedback form",
+      "count": "{count, plural, one {# report} other {# reports}} · newest first",
+      "emptyTitle": "No feedback yet",
+      "emptyBody": "Submissions from your team will appear here.",
+      "fromLabel": "From",
+      "pageLabel": "Page",
+      "localeLabel": "Locale",
+      "buildLabel": "Build",
+      "statusNew": "New",
+      "statusQueued": "Queued",
+      "roleAdmin": "Admin",
+      "roleCaretaker": "Caretaker",
+      "roleFeeder": "Feeder",
+      "screenshotTitle": "Screenshot",
+      "screenshotEnlarge": "View screenshot",
+      "screenshotAlt": "Screenshot attached to this feedback",
+      "screenshotFullSize": "Open full size",
+      "screenshotUnavailable": "Screenshot unavailable",
+      "viewInbox": "View submitted feedback",
+      "viewInboxSub": "See what your team has reported",
+      "viewInboxAria": "View submitted feedback (admin)",
+      "adminBadge": "Admin"
+    }
   }
 }
