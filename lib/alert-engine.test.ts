@@ -19,8 +19,8 @@ function daysAgo(days: number): string {
 // ── dedup-key shapes (the engine's idempotency anchor) ───────────────────────
 test("dedup-key shapes match the documented format", () => {
   assert.equal(
-    dedupKey.feedingMissed("col1", "2026-06-09"),
-    "feeding_missed:col1:2026-06-09",
+    dedupKey.feedingMissed("col1", "win1", "2026-06-09"),
+    "feeding_missed:col1:win1:2026-06-09",
   );
   assert.equal(dedupKey.incidentUrgent("inc1"), "incident_urgent:inc1");
   assert.equal(dedupKey.incidentRoutine("inc1"), "incident_routine:inc1");
@@ -136,44 +136,109 @@ test("concern sighting → one routine concern spec keyed by observed_at", () =>
   );
 });
 
-// ── CONDITION: feeding_missed (reuses feedingStatus/latestFedByColony) ───────
+// ── CONDITION: feeding_missed — now PER WINDOW (reuses feedingStatus) ─────────
 const MISSED_MIN = MISSED_AFTER_MIN + 1; // just past the 12h threshold
 
-test("feeding_missed: window closed past threshold, no feed → one spec", () => {
+test("feeding_missed: single window closed past threshold, not fed → one spec (single-window parity)", () => {
   const specs = planFeedingMissedAlerts({
     localDate: "2026-06-09",
     colonies: [
       {
         colonyId: "col1",
         colonyName: "Riverside",
-        minutesAfterClose: MISSED_MIN,
         thresholdHours: 12,
+        windows: [
+          { windowKey: "w1", fed: false, minutesAfterClose: MISSED_MIN },
+        ],
       },
     ],
-    events: [],
   });
   assert.equal(specs.length, 1);
   assert.equal(specs[0].type, "feeding_missed");
   assert.equal(specs[0].severity, "routine");
-  assert.equal(specs[0].dedup_key, "feeding_missed:col1:2026-06-09");
+  assert.equal(specs[0].dedup_key, "feeding_missed:col1:w1:2026-06-09");
   assert.deepEqual(specs[0].message_params, {
     colonyName: "Riverside",
     hours: 12,
   });
 });
 
-test("feeding_missed: a 'fed' event today suppresses the alert", () => {
+test("feeding_missed: morning fed + evening unfed → ONLY the evening window alerts", () => {
   const specs = planFeedingMissedAlerts({
     localDate: "2026-06-09",
     colonies: [
       {
         colonyId: "col1",
         colonyName: "Riverside",
-        minutesAfterClose: MISSED_MIN,
         thresholdHours: 12,
+        windows: [
+          { windowKey: "morning", fed: true, minutesAfterClose: MISSED_MIN },
+          { windowKey: "evening", fed: false, minutesAfterClose: MISSED_MIN },
+        ],
       },
     ],
-    events: [{ colony_id: "col1", observed_at: daysAgo(0), fed: true }],
+  });
+  assert.equal(specs.length, 1);
+  assert.equal(specs[0].dedup_key, "feeding_missed:col1:evening:2026-06-09");
+});
+
+test("feeding_missed: both windows fed → no specs", () => {
+  const specs = planFeedingMissedAlerts({
+    localDate: "2026-06-09",
+    colonies: [
+      {
+        colonyId: "col1",
+        colonyName: "Riverside",
+        thresholdHours: 12,
+        windows: [
+          { windowKey: "morning", fed: true, minutesAfterClose: MISSED_MIN },
+          { windowKey: "evening", fed: true, minutesAfterClose: MISSED_MIN },
+        ],
+      },
+    ],
+  });
+  assert.deepEqual(specs, []);
+});
+
+test("feeding_missed: both windows unfed + past threshold → two distinct, stable dedup keys", () => {
+  const input = {
+    localDate: "2026-06-09",
+    colonies: [
+      {
+        colonyId: "col1",
+        colonyName: "Riverside",
+        thresholdHours: 12,
+        windows: [
+          { windowKey: "morning", fed: false, minutesAfterClose: MISSED_MIN },
+          { windowKey: "evening", fed: false, minutesAfterClose: MISSED_MIN },
+        ],
+      },
+    ],
+  };
+  const specs = planFeedingMissedAlerts(input);
+  assert.equal(specs.length, 2);
+  const keys = specs.map((s) => s.dedup_key).sort();
+  assert.deepEqual(keys, [
+    "feeding_missed:col1:evening:2026-06-09",
+    "feeding_missed:col1:morning:2026-06-09",
+  ]);
+  // Re-run yields the same keys (stable) — and with both already present the
+  // planner emits nothing (idempotent across the 15-min cron re-scan).
+  const rerun = planFeedingMissedAlerts(input, new Set(keys));
+  assert.deepEqual(rerun, []);
+});
+
+test("feeding_missed: zero-window colony → no specs", () => {
+  const specs = planFeedingMissedAlerts({
+    localDate: "2026-06-09",
+    colonies: [
+      {
+        colonyId: "col1",
+        colonyName: "Riverside",
+        thresholdHours: 12,
+        windows: [],
+      },
+    ],
   });
   assert.deepEqual(specs, []);
 });
@@ -185,16 +250,21 @@ test("feeding_missed: window not yet past threshold → pending, no spec", () =>
       {
         colonyId: "col1",
         colonyName: "Riverside",
-        minutesAfterClose: MISSED_AFTER_MIN - 1,
         thresholdHours: 12,
+        windows: [
+          {
+            windowKey: "w1",
+            fed: false,
+            minutesAfterClose: MISSED_AFTER_MIN - 1,
+          },
+        ],
       },
     ],
-    events: [],
   });
   assert.deepEqual(specs, []);
 });
 
-test("feeding_missed: existing dedup key for the day → zero specs (idempotent)", () => {
+test("feeding_missed: existing per-window dedup key → zero specs (idempotent)", () => {
   const specs = planFeedingMissedAlerts(
     {
       localDate: "2026-06-09",
@@ -202,13 +272,14 @@ test("feeding_missed: existing dedup key for the day → zero specs (idempotent)
         {
           colonyId: "col1",
           colonyName: "Riverside",
-          minutesAfterClose: MISSED_MIN,
           thresholdHours: 12,
+          windows: [
+            { windowKey: "w1", fed: false, minutesAfterClose: MISSED_MIN },
+          ],
         },
       ],
-      events: [],
     },
-    new Set(["feeding_missed:col1:2026-06-09"]),
+    new Set(["feeding_missed:col1:w1:2026-06-09"]),
   );
   assert.deepEqual(specs, []);
 });

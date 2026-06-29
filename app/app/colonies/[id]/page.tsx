@@ -22,6 +22,8 @@ import {
   type ConcernReview,
 } from "@/lib/cat-concern";
 import { scheduleWhen } from "@/lib/schedule";
+import { getWindowsByColony } from "../feeding-windows";
+import { windowRangeLabel } from "@/lib/feeding-windows";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
   PawIcon,
@@ -106,13 +108,21 @@ export default async function ColonyDetail({
 
   const { data: colony } = await supabase
     .from("colonies")
-    .select(
-      "id, name, notes, is_active, feeding_window_start, feeding_window_end",
-    )
+    .select("id, name, notes, is_active")
     .eq("id", id)
     .is("deleted_at", null)
     .maybeSingle();
   if (!colony) notFound();
+
+  // All feeding windows for this colony, in order — the header shows every one
+  // ("Feeds 07:00–08:00 · 18:00–19:00"); 0 windows reads "No feeding time set".
+  const colonyWindows =
+    (await getWindowsByColony(supabase, [id], org?.organisation_id)).get(id) ??
+    [];
+  const feedsLine = colonyWindows
+    .map((w) => windowRangeLabel(w.window_start, w.window_end))
+    .filter(Boolean)
+    .join(" · ");
 
   const { data: catsData } = await supabase
     .from("cats")
@@ -217,9 +227,6 @@ export default async function ColonyDetail({
   const activeConcern = concernCats.filter((x) => !x.flag.monitoring);
   const monitoringConcern = concernCats.filter((x) => x.flag.monitoring);
 
-  const start = hhmm(colony.feeding_window_start);
-  const end = hhmm(colony.feeding_window_end);
-
   // Active schedules for this colony, ordered weekday then date.
   const { data: scheduleData } = await supabase
     .from("feeding_schedules")
@@ -323,8 +330,8 @@ export default async function ColonyDetail({
         <div>
           <h1 className="font-display text-3xl">{colony.name}</h1>
           <p className="text-sm text-muted">
-            {start
-              ? t("feedsAt", { time: `${start}${end ? `–${end}` : ""}` })
+            {feedsLine
+              ? t("feedsAt", { time: feedsLine })
               : t("noFeedingWindow")}
             {!colony.is_active ? ` · ${tc("inactive")}` : ""}
           </p>

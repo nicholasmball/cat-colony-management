@@ -118,6 +118,26 @@ export function minutesAfterWindow(
   return Math.round((now.getTime() - closeUtc.getTime()) / 60_000);
 }
 
+// Minutes since LOCAL midnight in `tz` for an instant (0..1439). Used to
+// attribute a feeding event to the colony's feeding window it falls in — the
+// per-window fed/missed status reads the event's org-local time-of-day, never
+// the server's. Built on the same Intl machinery as the helpers above.
+export function localMinutesOfDay(instant: Date, tz: string): number {
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  let h = 0;
+  let m = 0;
+  for (const part of dtf.formatToParts(instant)) {
+    if (part.type === "hour") h = Number(part.value) % 24;
+    else if (part.type === "minute") m = Number(part.value);
+  }
+  return h * 60 + m;
+}
+
 // Is `tz` a valid IANA zone? Used to validate org-settings input server-side.
 export function isValidTimeZone(tz: string): boolean {
   if (!tz || typeof tz !== "string") return false;

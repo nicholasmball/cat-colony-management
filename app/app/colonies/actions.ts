@@ -11,6 +11,7 @@ import { isFailedWrite, writeErrorMessage } from "@/lib/mutation-result";
 import { isKeyInOrg } from "@/lib/photo-key";
 import { parseNeutered } from "@/lib/cat-report";
 import { canMoveCat } from "@/lib/move-cat";
+import { parseWindowRows, type ParsedWindow } from "@/lib/feeding-windows";
 import { planConcernSightingAlert } from "@/lib/alert-engine";
 import { alertRecipients } from "@/lib/alert-recipients";
 import { persistAlerts } from "@/lib/alert-persist";
@@ -101,27 +102,85 @@ export async function removeCatPhoto(catId: string): Promise<PhotoResult> {
   return { ok: true };
 }
 
+// Parse the repeatable feeding-window rows the editor posts (parallel
+// `window_start` / `window_end` fields), surfacing a translated ?error= for a
+// half-filled pair or an over-cap list — mirroring the existing redirect idiom.
+// Returns the validated rows; never client-trusted (the action re-validates).
+async function parseColonyWindows(
+  formData: FormData,
+  errorPath: string,
+): Promise<ParsedWindow[]> {
+  const parsed = parseWindowRows(
+    formData.getAll("window_start").map(String),
+    formData.getAll("window_end").map(String),
+  );
+  if (!parsed.ok) {
+    const t = await getTranslations("colonies");
+    const message =
+      parsed.reason === "incomplete"
+        ? t("feedingWindowIncomplete", { n: parsed.row })
+        : t("feedingWindowsTooMany");
+    redirect(`${errorPath}?error=${encodeURIComponent(message)}`);
+  }
+  return parsed.windows;
+}
+
 export async function createColony(formData: FormData) {
   const org = await getActiveOrg();
   if (!org) redirect("/app");
+  // Manager-only trust boundary in app code (the UI hides "Add colony" from
+  // feeders, but the server must not trust that) — mirrors updateColony.
+  if (org.role !== "admin" && org.role !== "caretaker") {
+    redirect("/app/colonies");
+  }
 
   const name = String(formData.get("name") ?? "").trim();
-  const start = String(formData.get("feeding_window_start") ?? "") || null;
-  const end = String(formData.get("feeding_window_end") ?? "") || null;
   const notes = String(formData.get("notes") ?? "").trim() || null;
+  const windows = await parseColonyWindows(formData, "/app/colonies/new");
+  // Keep the legacy single-window columns coherent during cutover: seed them
+  // from window position 1 (null when there are no windows).
+  const first = windows[0];
 
   const supabase = await createClient();
-  const { error } = await supabase.from("colonies").insert({
-    organisation_id: org.organisation_id,
-    name,
-    feeding_window_start: start,
-    feeding_window_end: end,
-    notes,
-  });
+  const { data: colony, error } = await supabase
+    .from("colonies")
+    .insert({
+      organisation_id: org.organisation_id,
+      name,
+      feeding_window_start: first?.window_start ?? null,
+      feeding_window_end: first?.window_end ?? null,
+      notes,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
-    redirect(`/app/colonies/new?error=${encodeURIComponent(error.message)}`);
+  if (error || !colony) {
+    redirect(
+      `/app/colonies/new?error=${encodeURIComponent(error?.message ?? "")}`,
+    );
   }
+
+  // 0 windows is valid → no rows written (no silent 0-row error: inserting an
+  // empty set is intentional, so we skip the insert rather than flag it).
+  if (windows.length > 0) {
+    const { error: winError } = await supabase
+      .from("colony_feeding_windows")
+      .insert(
+        windows.map((w, i) => ({
+          colony_id: colony.id,
+          organisation_id: org.organisation_id,
+          window_start: w.window_start,
+          window_end: w.window_end,
+          position: i + 1,
+        })),
+      );
+    if (winError) {
+      redirect(
+        `/app/colonies/new?error=${encodeURIComponent(winError.message)}`,
+      );
+    }
+  }
+
   revalidatePath("/app/colonies");
   redirect("/app/colonies");
 }
@@ -137,10 +196,15 @@ export async function updateColony(formData: FormData) {
   }
 
   const name = String(formData.get("name") ?? "").trim();
-  const start = String(formData.get("feeding_window_start") ?? "") || null;
-  const end = String(formData.get("feeding_window_end") ?? "") || null;
   const notes = String(formData.get("notes") ?? "").trim() || null;
   const isActive = formData.get("is_active") === "on";
+  const windows = await parseColonyWindows(
+    formData,
+    `/app/colonies/${id}/edit`,
+  );
+  // Keep the legacy single-window columns coherent during cutover: seed them
+  // from window position 1 (null when there are no windows).
+  const first = windows[0];
 
   // Write through the service-role client (RLS bypassed) scoped to id + the
   // server-trusted org, mirroring archiveColony: in the server-action write
@@ -152,8 +216,8 @@ export async function updateColony(formData: FormData) {
     .from("colonies")
     .update({
       name,
-      feeding_window_start: start,
-      feeding_window_end: end,
+      feeding_window_start: first?.window_start ?? null,
+      feeding_window_end: first?.window_end ?? null,
       notes,
       is_active: isActive,
     })
@@ -169,6 +233,32 @@ export async function updateColony(formData: FormData) {
     );
     redirect(`/app/colonies/${id}/edit?error=${encodeURIComponent(message)}`);
   }
+
+  // Hard-replace this colony's windows (delete + re-insert) — the colony update
+  // above already confirmed the row exists in the caller's org, and this keeps
+  // the set correct + idempotent (a re-submit lands on the same final state).
+  await svc
+    .from("colony_feeding_windows")
+    .delete()
+    .eq("colony_id", id)
+    .eq("organisation_id", org.organisation_id);
+  if (windows.length > 0) {
+    const { error: winError } = await svc.from("colony_feeding_windows").insert(
+      windows.map((w, i) => ({
+        colony_id: id,
+        organisation_id: org.organisation_id,
+        window_start: w.window_start,
+        window_end: w.window_end,
+        position: i + 1,
+      })),
+    );
+    if (winError) {
+      redirect(
+        `/app/colonies/${id}/edit?error=${encodeURIComponent(winError.message)}`,
+      );
+    }
+  }
+
   revalidatePath(`/app/colonies/${id}`);
   revalidatePath("/app/colonies");
   redirect(`/app/colonies/${id}`);

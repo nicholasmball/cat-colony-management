@@ -74,7 +74,8 @@ alter table public.notifications
   add column dispatched_at timestamptz;
 
 -- ── Dedup key: the engine's idempotency anchor. Shapes (lib/alert-engine.ts):
---   feeding_missed:{colony}:{localDate}
+--   feeding_missed:{colony}:{window}:{localDate}  (per-window since 0013; {window}
+--     is the colony_feeding_windows id, or "p{position}" as a fallback)
 --   incident_urgent:{id} / incident_routine:{id}
 --   new_cat:{cat}
 --   concern:{cat}:{observed_at}

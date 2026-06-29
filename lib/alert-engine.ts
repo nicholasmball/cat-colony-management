@@ -15,11 +15,7 @@
 // concernCandidate/concernReasonKey verbatim. This file only adds the dedup-key
 // shaping and the existing-key gate on top of that already-tested detection.
 
-import {
-  feedingStatus,
-  latestFedByColony,
-  type FeedEvent,
-} from "./feeding-status.ts";
+import { feedingStatus } from "./feeding-status.ts";
 import {
   concernCandidate,
   concernReasonKey,
@@ -54,8 +50,11 @@ export type AlertSpec = {
 
 // ── Dedup-key shapes (single source of truth; mirrored in 0009's header) ──────
 export const dedupKey = {
-  feedingMissed: (colonyId: string, localDate: string) =>
-    `feeding_missed:${colonyId}:${localDate}`,
+  // Per-window since 0013: windowKey is the colony_feeding_windows id (or
+  // "p{position}" fallback), so a colony's two windows alert independently and
+  // ON CONFLICT (recipient_id, dedup_key) can't collapse them.
+  feedingMissed: (colonyId: string, windowKey: string, localDate: string) =>
+    `feeding_missed:${colonyId}:${windowKey}:${localDate}`,
   incidentUrgent: (incidentId: string) => `incident_urgent:${incidentId}`,
   incidentRoutine: (incidentId: string) => `incident_routine:${incidentId}`,
   newCat: (catId: string) => `new_cat:${catId}`,
@@ -174,57 +173,69 @@ export function planConcernSightingAlert(
 
 // ── Time-based planners (fired by the cron sweep) ────────────────────────────
 
-// Per colony, the inputs the feeding-missed rule needs. minutesAfterClose mirrors
-// the dashboard: minutes since today's local window close (null = no window),
-// computed by the caller with lib/time.minutesAfterWindow so the date math isn't
-// re-derived here.
+// One detection unit per (colony, window). fed + minutesAfterClose are resolved
+// by the caller PER WINDOW (lib/feeding-windows.fedStateByWindow attributes the
+// day's events to each window; lib/time.minutesAfterWindow gives the lapse since
+// that window's close, null = no end time) so no date math is re-derived here.
+export type FeedingMissedWindow = {
+  // Stable per-window identity for the dedup key (lib/feeding-windows.windowKeyOf).
+  windowKey: string;
+  fed: boolean;
+  minutesAfterClose: number | null;
+};
+
+// Per colony, the windows the feeding-missed rule scans. A colony with NO
+// windows yields no detection units (zero-window → no missed-feed alert); a
+// colony with exactly one window behaves identically to the legacy single-window
+// sweep (single-window parity).
 export type FeedingMissedColony = {
   colonyId: string;
   colonyName: string;
-  minutesAfterClose: number | null;
   // The org's feeding-missed threshold in hours (alert_settings, default 12).
   // Drives BOTH the message body AND detection: feedingStatus is called with
   // thresholdHours×60 so the per-org setting actually takes effect (no hardcoded
   // 720). The caller passes the row value (fallback DEFAULT_FEEDING_MISSED_HOURS).
   thresholdHours: number;
+  windows: FeedingMissedWindow[];
 };
 
 // Plan feeding_missed alerts for one org's colonies for the local day `localDate`
-// (org-tz "today", from lib/time.todayInTz). Reuses latestFedByColony +
-// feedingStatus verbatim: a colony is missed only when the latest event today is
-// not "fed" AND the window closed ≥ threshold ago. Dedup per (colony, localDate)
-// so the 15-min cron re-scan can't re-alert the same colony the same day.
+// (org-tz "today", from lib/time.todayInTz). Reuses feedingStatus verbatim PER
+// WINDOW: a window is missed only when its attributed feed today is not "fed"
+// AND the window closed ≥ threshold ago — so a colony fed in the morning but not
+// in the evening alerts on the evening window only. Dedup per (colony, window,
+// localDate) so two windows each alert once and the 15-min cron re-scan can't
+// re-alert the same window the same day.
 export function planFeedingMissedAlerts(
   input: {
     colonies: FeedingMissedColony[];
-    events: FeedEvent[];
     localDate: string; // org-tz calendar date, e.g. "2026-06-09"
   },
   existing: ReadonlySet<string> = new Set(),
 ): AlertSpec[] {
-  const latest = latestFedByColony(input.events);
   const specs: AlertSpec[] = [];
   for (const c of input.colonies) {
-    const event = latest.get(c.colonyId);
-    const fed = event?.fed === true;
-    const status = feedingStatus(
-      {
-        fed,
-        minutesAfterClose: c.minutesAfterClose,
-      },
-      c.thresholdHours * 60,
-    );
-    if (status !== "missed") continue;
-    const key = dedupKey.feedingMissed(c.colonyId, input.localDate);
-    if (existing.has(key)) continue;
-    specs.push({
-      type: "feeding_missed",
-      severity: "routine",
-      message_key: "alerts.feeding_missed",
-      message_params: { colonyName: c.colonyName, hours: c.thresholdHours },
-      colony_id: c.colonyId,
-      dedup_key: key,
-    });
+    for (const w of c.windows) {
+      const status = feedingStatus(
+        { fed: w.fed, minutesAfterClose: w.minutesAfterClose },
+        c.thresholdHours * 60,
+      );
+      if (status !== "missed") continue;
+      const key = dedupKey.feedingMissed(
+        c.colonyId,
+        w.windowKey,
+        input.localDate,
+      );
+      if (existing.has(key)) continue;
+      specs.push({
+        type: "feeding_missed",
+        severity: "routine",
+        message_key: "alerts.feeding_missed",
+        message_params: { colonyName: c.colonyName, hours: c.thresholdHours },
+        colony_id: c.colonyId,
+        dedup_key: key,
+      });
+    }
   }
   return specs;
 }

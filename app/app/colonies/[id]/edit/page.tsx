@@ -3,7 +3,10 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { updateColony, archiveColony } from "../../actions";
+import { getWindowsByColony } from "../../feeding-windows";
 import { SubmitButton } from "@/components/submit-button";
+import { FeedingWindowsFields } from "@/components/feeding-windows-fields";
+import { hhmm } from "@/lib/feeding-windows";
 import { btnGhost, btnPrimary, fieldLabel, input } from "@/lib/ui";
 
 const errorClass =
@@ -23,13 +26,19 @@ export default async function EditColony({
 
   const { data: colony } = await supabase
     .from("colonies")
-    .select(
-      "id, name, notes, is_active, feeding_window_start, feeding_window_end",
-    )
+    .select("id, name, notes, is_active")
     .eq("id", id)
     .is("deleted_at", null)
     .maybeSingle();
   if (!colony) notFound();
+
+  // The colony's current feeding windows (ordered) seed the editor. An empty
+  // array renders the editor's empty state (0 windows is valid).
+  const windowsByColony = await getWindowsByColony(supabase, [id]);
+  const initialWindows = (windowsByColony.get(id) ?? []).map((w) => ({
+    start: hhmm(w.window_start) ?? "",
+    end: hhmm(w.window_end) ?? "",
+  }));
 
   return (
     <div className="flex max-w-xl flex-col gap-5 px-6 py-6 md:px-10">
@@ -55,26 +64,7 @@ export default async function EditColony({
             className={input}
           />
         </label>
-        <div className="grid grid-cols-2 gap-3">
-          <label className={fieldLabel}>
-            <span>{t("feedingFrom")}</span>
-            <input
-              type="time"
-              name="feeding_window_start"
-              defaultValue={colony.feeding_window_start?.slice(0, 5) ?? ""}
-              className={input}
-            />
-          </label>
-          <label className={fieldLabel}>
-            <span>{t("feedingTo")}</span>
-            <input
-              type="time"
-              name="feeding_window_end"
-              defaultValue={colony.feeding_window_end?.slice(0, 5) ?? ""}
-              className={input}
-            />
-          </label>
-        </div>
+        <FeedingWindowsFields initial={initialWindows} />
         <label className={fieldLabel}>
           <span>{t("notes")}</span>
           <textarea

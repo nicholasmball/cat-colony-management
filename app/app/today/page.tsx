@@ -3,13 +3,16 @@ import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
-import { dayRangeInTz, minutesAfterWindow, todayInTz } from "@/lib/time";
+import { dayRangeInTz, todayInTz } from "@/lib/time";
 import { localWeekday } from "@/lib/schedule";
+import { type FeedingStatus } from "@/lib/feeding-status";
 import {
-  feedingStatus,
-  latestFedByColony,
-  type FeedingStatus,
-} from "@/lib/feeding-status";
+  colonyWindowStatuses,
+  overallWindowStatus,
+  windowRangeLabel,
+  type WindowStatus,
+} from "@/lib/feeding-windows";
+import { getWindowsByColony } from "../colonies/feeding-windows";
 import { DEFAULT_FEEDING_MISSED_HOURS } from "@/lib/alert-settings";
 import { CalendarIcon, ChevronIcon, PawIcon } from "@/components/icons";
 import { EmptyState } from "@/components/empty-state";
@@ -18,17 +21,18 @@ import { card } from "@/lib/ui";
 type ColonyRow = {
   id: string;
   name: string;
-  feeding_window_start: string | null;
-  feeding_window_end: string | null;
 };
 
 type TodayRow = {
   id: string;
   name: string;
-  windowStart: string | null;
-  windowEnd: string | null;
+  // Per feeding window (empty when the colony has no windows configured).
+  windows: WindowStatus[];
+  // Worst window status (or "pending" when there are no windows) — drives
+  // bucketing, the sort and the red rail.
   status: FeedingStatus;
-  fedAt: Date | null;
+  // Earliest window start, for the within-bucket sort (null = no window).
+  earliestStart: string | null;
   // Manager-only: is anyone scheduled to feed this colony today? null for feeders.
   assignedToday: boolean | null;
 };
@@ -87,23 +91,6 @@ function StatusGlyph({ status }: { status: FeedingStatus }) {
   );
 }
 
-function hhmm(t: string | null) {
-  return t ? t.slice(0, 5) : null;
-}
-
-// "08–09" from window start/end, or the localised "No window" when no schedule
-// is set. The no-window label is passed in so this stays a pure formatter.
-function windowText(
-  start: string | null,
-  end: string | null,
-  noWindow: string,
-) {
-  const s = hhmm(start);
-  const e = hhmm(end);
-  if (!s && !e) return noWindow;
-  return `${s ?? "—"}–${e ?? "—"}`;
-}
-
 const statusRank: Record<FeedingStatus, number> = {
   missed: 0,
   pending: 1,
@@ -150,7 +137,7 @@ export default async function TodayPage() {
   // colonies they're scheduled for today; if none, skip the colonies query.
   let coloniesQuery = supabase
     .from("colonies")
-    .select("id, name, feeding_window_start, feeding_window_end")
+    .select("id, name")
     .eq("organisation_id", org.organisation_id)
     .eq("is_active", true)
     .is("deleted_at", null);
@@ -184,24 +171,45 @@ export default async function TodayPage() {
     (settingsResult.data?.feeding_missed_hours ??
       DEFAULT_FEEDING_MISSED_HOURS) * 60;
 
-  // colony_id → the most recent feeding_event today (by observed_at). Events are
-  // append-only, so the latest one is the current truth — a later "Not fed"
-  // correction overrides an earlier "Fed".
-  const latest = latestFedByColony(feedsResult.data ?? []);
+  // Per-window status. One batched windows read, and today's events grouped by
+  // colony in memory — no per-colony query. Each window gets its own fed/missed
+  // line; a colony with no windows keeps the legacy single "No window" row.
+  const now = new Date();
+  const windowsByColony = await getWindowsByColony(
+    supabase,
+    colonies.map((c) => c.id),
+    org.organisation_id,
+  );
+  const feedsByColony = new Map<
+    string,
+    { observed_at: string; fed: boolean }[]
+  >();
+  for (const f of feedsResult.data ?? []) {
+    const list = feedsByColony.get(f.colony_id) ?? [];
+    list.push({ observed_at: f.observed_at, fed: f.fed });
+    feedsByColony.set(f.colony_id, list);
+  }
 
   const rows: TodayRow[] = colonies.map((c) => {
-    const event = latest.get(c.id);
-    const fed = event?.fed === true;
-    const minutesAfterClose = c.feeding_window_end
-      ? minutesAfterWindow(c.feeding_window_end, org.timezone)
-      : null;
+    const windows = colonyWindowStatuses(
+      windowsByColony.get(c.id) ?? [],
+      feedsByColony.get(c.id) ?? [],
+      org.timezone,
+      now,
+      missedAfterMin,
+    );
+    // No windows → a single pending "No window" row (legacy behaviour preserved).
+    const status =
+      windows.length > 0
+        ? overallWindowStatus(windows.map((w) => w.status))
+        : "pending";
+    const earliestStart = windows.find((w) => w.start != null)?.start ?? null;
     return {
       id: c.id,
       name: c.name,
-      windowStart: c.feeding_window_start,
-      windowEnd: c.feeding_window_end,
-      status: feedingStatus({ fed, minutesAfterClose }, missedAfterMin),
-      fedAt: fed ? (event?.at ?? null) : null,
+      windows,
+      status,
+      earliestStart,
       // Coverage gap marker is manager-only; feeders already see only their own.
       assignedToday: isManager ? assignedColonyIds.has(c.id) : null,
     };
@@ -213,8 +221,8 @@ export default async function TodayPage() {
     if (statusRank[a.status] !== statusRank[b.status]) {
       return statusRank[a.status] - statusRank[b.status];
     }
-    const as = a.windowStart;
-    const bs = b.windowStart;
+    const as = a.earliestStart;
+    const bs = b.earliestStart;
     if (as === bs) return 0;
     if (as == null) return 1;
     if (bs == null) return -1;
@@ -240,6 +248,17 @@ export default async function TodayPage() {
     minute: "2-digit",
   });
 
+  function StatusPill({ status }: { status: FeedingStatus }) {
+    return (
+      <span
+        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium ${pillTone[status]}`}
+      >
+        <StatusGlyph status={status} />
+        {t(`status.${status}`)}
+      </span>
+    );
+  }
+
   function Row({ row }: { row: TodayRow }) {
     const href =
       row.status === "fed"
@@ -249,34 +268,50 @@ export default async function TodayPage() {
       <li>
         <Link
           href={href}
-          className={`${card} flex min-h-[60px] items-center gap-3 px-4 py-3 transition hover:bg-foreground/5`}
+          className={`${card} flex min-h-[60px] items-start gap-3 px-4 py-3 transition hover:bg-foreground/5 ${
+            row.status === "missed" ? "border-l-4 border-l-red-500" : ""
+          }`}
         >
           <div className="min-w-0 flex-1">
             <p className="truncate font-medium">{row.name}</p>
-            <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
-              <span>
-                {windowText(row.windowStart, row.windowEnd, t("noWindow"))}
+            {row.windows.length > 0 ? (
+              // One status line per feeding window (morning ✓ Fed · evening ⚠ Missed).
+              <span className="mt-1 flex flex-col gap-1">
+                {row.windows.map((w) => (
+                  <span
+                    key={w.windowKey}
+                    className="flex flex-wrap items-center gap-1.5 text-xs text-muted"
+                  >
+                    <span className="font-medium tabular-nums text-foreground">
+                      {windowRangeLabel(w.start, w.end)}
+                    </span>
+                    <StatusPill status={w.status} />
+                    {w.status === "fed" && w.fedAt ? (
+                      <span>{timeFmt.format(new Date(w.fedAt))}</span>
+                    ) : null}
+                  </span>
+                ))}
+                {row.assignedToday === false ? (
+                  <span className="inline-flex w-fit items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
+                    <CalendarIcon className="h-3 w-3" aria-hidden />
+                    {t("noOneAssignedToday")}
+                  </span>
+                ) : null}
               </span>
-              <span aria-hidden>·</span>
-              <span
-                className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium ${
-                  pillTone[row.status]
-                }`}
-              >
-                <StatusGlyph status={row.status} />
-                {t(`status.${row.status}`)}
-              </span>
-              {row.status === "fed" && row.fedAt ? (
-                <span>{timeFmt.format(row.fedAt)}</span>
-              ) : null}
-              {row.assignedToday === false ? (
-                // Coverage gap: icon + words, never colour alone (WCAG 1.4.1).
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
-                  <CalendarIcon className="h-3 w-3" aria-hidden />
-                  {t("noOneAssignedToday")}
-                </span>
-              ) : null}
-            </p>
+            ) : (
+              // No windows configured → the legacy single "No window" line.
+              <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                <span>{t("noWindow")}</span>
+                <span aria-hidden>·</span>
+                <StatusPill status={row.status} />
+                {row.assignedToday === false ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
+                    <CalendarIcon className="h-3 w-3" aria-hidden />
+                    {t("noOneAssignedToday")}
+                  </span>
+                ) : null}
+              </p>
+            )}
           </div>
           <span className="shrink-0 text-sm font-semibold text-accent">
             {row.status === "fed" ? (
@@ -285,7 +320,7 @@ export default async function TodayPage() {
               t("feedArrow")
             )}
           </span>
-          <ChevronIcon className="h-4 w-4 shrink-0 text-muted" />
+          <ChevronIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
         </Link>
       </li>
     );

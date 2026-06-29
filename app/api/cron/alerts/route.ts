@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { dayRangeInTz, minutesAfterWindow, todayInTz } from "@/lib/time";
+import {
+  dayRangeInTz,
+  localMinutesOfDay,
+  minutesAfterWindow,
+  todayInTz,
+} from "@/lib/time";
 import { alertRecipients, type AlertMembership } from "@/lib/alert-recipients";
 import {
   planFeedingMissedAlerts,
@@ -9,6 +14,13 @@ import {
   type FeedingMissedColony,
   type NotSeenCat,
 } from "@/lib/alert-engine";
+import {
+  fedStateByWindow,
+  orderWindows,
+  timeToMinutes,
+  windowKeyOf,
+  type FeedingWindowRow,
+} from "@/lib/feeding-windows";
 import { persistAlerts } from "@/lib/alert-persist";
 import { DEFAULT_FEEDING_MISSED_HOURS } from "@/lib/alert-settings";
 import { PER_CAT_SIGHTING_CAP, capRowsPerKey } from "@/lib/dashboard";
@@ -71,7 +83,7 @@ export async function POST(req: Request) {
     await Promise.all([
       svc
         .from("colonies")
-        .select("id, name, organisation_id, feeding_window_end")
+        .select("id, name, organisation_id")
         .in("organisation_id", orgIds)
         .eq("is_active", true)
         .is("deleted_at", null),
@@ -106,8 +118,37 @@ export async function POST(req: Request) {
     id: string;
     name: string;
     organisation_id: string;
-    feeding_window_end: string | null;
   }[];
+
+  // Feeding windows for every active colony — one batched read, grouped + ordered
+  // in memory (no per-colony query). Drives the now PER-WINDOW missed-feed sweep.
+  const colonyIds = colonies.map((c) => c.id);
+  const windowsByColony = new Map<string, FeedingWindowRow[]>();
+  if (colonyIds.length > 0) {
+    const { data: windowData } = await svc
+      .from("colony_feeding_windows")
+      .select("id, colony_id, window_start, window_end, position")
+      .in("colony_id", colonyIds);
+    for (const w of (windowData ?? []) as {
+      id: string;
+      colony_id: string;
+      window_start: string | null;
+      window_end: string | null;
+      position: number;
+    }[]) {
+      const list = windowsByColony.get(w.colony_id) ?? [];
+      list.push({
+        id: w.id,
+        window_start: w.window_start,
+        window_end: w.window_end,
+        position: w.position,
+      });
+      windowsByColony.set(w.colony_id, list);
+    }
+    for (const [id, list] of windowsByColony) {
+      windowsByColony.set(id, orderWindows(list));
+    }
+  }
   const cats = (catsRes.data ?? []) as {
     id: string;
     name: string | null;
@@ -185,11 +226,11 @@ export async function POST(req: Request) {
     list.push(c);
     coloniesByOrg.set(c.organisation_id, list);
   }
-  const feedsByOrg = new Map<string, typeof feeds>();
+  const feedsByColony = new Map<string, typeof feeds>();
   for (const f of feeds) {
-    const list = feedsByOrg.get(f.organisation_id) ?? [];
+    const list = feedsByColony.get(f.colony_id) ?? [];
     list.push(f);
-    feedsByOrg.set(f.organisation_id, list);
+    feedsByColony.set(f.colony_id, list);
   }
   const catsByOrg = new Map<string, typeof cats>();
   for (const c of cats) {
@@ -274,22 +315,43 @@ export async function POST(req: Request) {
     const feedingMissedHours =
       settings.feeding_missed_hours ?? DEFAULT_FEEDING_MISSED_HOURS;
 
-    // feeding_missed: per colony, today's events vs the org-local window close.
-    const feedingColonies: FeedingMissedColony[] = orgColonies.map((c) => ({
-      colonyId: c.id,
-      colonyName: c.name,
-      minutesAfterClose: c.feeding_window_end
-        ? minutesAfterWindow(c.feeding_window_end, tz, now)
-        : null,
-      // Drives both the message body AND detection (×60 inside feedingStatus).
-      thresholdHours: feedingMissedHours,
-    }));
+    // feeding_missed: PER WINDOW. Attribute today's events to each window
+    // (fedStateByWindow) and measure the lapse since each window's close, so a
+    // colony fed in the morning but not the evening alerts on the evening window
+    // only. A colony with no windows yields no units (zero-window → no alert).
+    const feedingColonies: FeedingMissedColony[] = orgColonies.map((c) => {
+      const windows = windowsByColony.get(c.id) ?? [];
+      const events = (feedsByColony.get(c.id) ?? []).map((f) => ({
+        localMinutes: localMinutesOfDay(new Date(f.observed_at), tz),
+        observedAt: f.observed_at,
+        fed: f.fed,
+      }));
+      const fedState = fedStateByWindow(
+        windows.map((w) => ({
+          key: windowKeyOf(w),
+          startMinutes: timeToMinutes(w.window_start),
+        })),
+        events,
+      );
+      return {
+        colonyId: c.id,
+        colonyName: c.name,
+        // Drives both the message body AND detection (×60 inside feedingStatus).
+        thresholdHours: feedingMissedHours,
+        windows: windows.map((w) => {
+          const key = windowKeyOf(w);
+          return {
+            windowKey: key,
+            fed: fedState.get(key)?.fed ?? false,
+            minutesAfterClose: w.window_end
+              ? minutesAfterWindow(w.window_end, tz, now)
+              : null,
+          };
+        }),
+      };
+    });
     const feedingSpecs = planFeedingMissedAlerts(
-      {
-        colonies: feedingColonies,
-        events: feedsByOrg.get(org.id) ?? [],
-        localDate,
-      },
+      { colonies: feedingColonies, localDate },
       existing,
     );
 

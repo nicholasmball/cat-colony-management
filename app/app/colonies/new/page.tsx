@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { createColony } from "../actions";
 import { SubmitButton } from "@/components/submit-button";
+import { FeedingWindowsFields } from "@/components/feeding-windows-fields";
 import { btnPrimary, fieldLabel, input } from "@/lib/ui";
 
 export default async function NewColonyPage({
@@ -33,16 +34,7 @@ export default async function NewColonyPage({
           <span>{t("name")}</span>
           <input name="name" required className={input} />
         </label>
-        <div className="grid grid-cols-2 gap-3">
-          <label className={fieldLabel}>
-            <span>{t("feedingFrom")}</span>
-            <input type="time" name="feeding_window_start" className={input} />
-          </label>
-          <label className={fieldLabel}>
-            <span>{t("feedingTo")}</span>
-            <input type="time" name="feeding_window_end" className={input} />
-          </label>
-        </div>
+        <FeedingWindowsFields />
         <label className={fieldLabel}>
           <span>{t("notesOptional")}</span>
           <textarea name="notes" rows={3} className={`${input} py-2`} />

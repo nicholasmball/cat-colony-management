@@ -3,12 +3,10 @@ import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveOrg } from "@/lib/active-org";
-import { dayRangeInTz, minutesAfterWindow } from "@/lib/time";
-import {
-  feedingStatus,
-  latestFedByColony,
-  type FeedingStatus,
-} from "@/lib/feeding-status";
+import { dayRangeInTz } from "@/lib/time";
+import { type FeedingStatus } from "@/lib/feeding-status";
+import { colonyWindowStatuses, windowRangeLabel } from "@/lib/feeding-windows";
+import { getWindowsByColony } from "../colonies/feeding-windows";
 import {
   concernCandidate,
   concernReasonKey,
@@ -96,21 +94,6 @@ function FeedGlyph({ status }: { status: FeedingStatus }) {
       <circle cx="12" cy="12" r="6" />
     </svg>
   );
-}
-
-function hhmm(t: string | null) {
-  return t ? t.slice(0, 5) : null;
-}
-
-function windowText(
-  start: string | null,
-  end: string | null,
-  noWindow: string,
-) {
-  const s = hhmm(start);
-  const e = hhmm(end);
-  if (!s && !e) return noWindow;
-  return `${s ?? "—"}–${e ?? "—"}`;
 }
 
 // ── Small presentational primitives (compose the existing tokens; no new UI
@@ -203,9 +186,12 @@ function ViewAllLink({ href, label }: { href: string; label: string }) {
   );
 }
 
+// One row PER feeding window (design nit #3: the missed tally counts windows,
+// not colonies — a colony fed in the morning but missed at night surfaces the
+// evening slot only). A colony with no windows is a single "No window" unit.
 type FeedRow = {
-  id: string;
-  name: string;
+  colonyId: string;
+  colonyName: string;
   windowStart: string | null;
   windowEnd: string | null;
   status: FeedingStatus;
@@ -245,7 +231,7 @@ export default async function DashboardPage() {
     // (1+2) all active colonies + (1) today's feeding events — the Today pattern.
     supabase
       .from("colonies")
-      .select("id, name, feeding_window_start, feeding_window_end")
+      .select("id, name")
       .eq("organisation_id", org.organisation_id)
       .eq("is_active", true)
       .is("deleted_at", null),
@@ -282,31 +268,57 @@ export default async function DashboardPage() {
       .maybeSingle(),
   ]);
 
-  // ── Section 1 + 2: Today's feeds & missed feeds ────────────────────────────
+  // ── Section 1 + 2: Today's feeds & missed feeds (PER WINDOW) ────────────────
   const colonies = (coloniesResult.data ?? []) as {
     id: string;
     name: string;
-    feeding_window_start: string | null;
-    feeding_window_end: string | null;
   }[];
-  const latest = latestFedByColony(feedsResult.data ?? []);
   // Effective feeding-missed threshold in minutes: the org's row, else default.
   const missedAfterMin =
     ((settingsResult.data?.feeding_missed_hours as number | null) ??
       DEFAULT_FEEDING_MISSED_HOURS) * 60;
-  const feedRows: FeedRow[] = colonies.map((c) => {
-    const event = latest.get(c.id);
-    const fed = event?.fed === true;
-    const minutesAfterClose = c.feeding_window_end
-      ? minutesAfterWindow(c.feeding_window_end, org.timezone, now)
-      : null;
-    return {
-      id: c.id,
-      name: c.name,
-      windowStart: c.feeding_window_start,
-      windowEnd: c.feeding_window_end,
-      status: feedingStatus({ fed, minutesAfterClose }, missedAfterMin),
-    };
+  // One batched windows read + today's events grouped by colony in memory.
+  const windowsByColony = await getWindowsByColony(
+    supabase,
+    colonies.map((c) => c.id),
+    org.organisation_id,
+  );
+  const feedsByColony = new Map<
+    string,
+    { observed_at: string; fed: boolean }[]
+  >();
+  for (const f of feedsResult.data ?? []) {
+    const list = feedsByColony.get(f.colony_id) ?? [];
+    list.push({ observed_at: f.observed_at, fed: f.fed });
+    feedsByColony.set(f.colony_id, list);
+  }
+  const feedRows: FeedRow[] = colonies.flatMap((c) => {
+    const windows = colonyWindowStatuses(
+      windowsByColony.get(c.id) ?? [],
+      feedsByColony.get(c.id) ?? [],
+      org.timezone,
+      now,
+      missedAfterMin,
+    );
+    if (windows.length === 0) {
+      // No windows → a single pending "No window" unit (legacy parity).
+      return [
+        {
+          colonyId: c.id,
+          colonyName: c.name,
+          windowStart: null,
+          windowEnd: null,
+          status: "pending" as FeedingStatus,
+        },
+      ];
+    }
+    return windows.map((w) => ({
+      colonyId: c.id,
+      colonyName: c.name,
+      windowStart: w.start,
+      windowEnd: w.end,
+      status: w.status,
+    }));
   });
   const feedCounts = summariseTodayFeeds(feedRows.map((r) => r.status));
   const missedRows = feedRows
@@ -603,21 +615,18 @@ export default async function DashboardPage() {
             ) : (
               <>
                 <ul className="mt-2 flex flex-col gap-2">
-                  {missedRows.slice(0, TOP_N).map((r) => (
-                    <li key={r.id}>
+                  {missedRows.slice(0, TOP_N).map((r, i) => (
+                    <li key={`${r.colonyId}-${i}`}>
                       <Link
-                        href={`/app/colonies/${r.id}/feed`}
+                        href={`/app/colonies/${r.colonyId}/feed`}
                         className={`${card} flex min-h-[56px] items-center gap-3 border-l-4 border-l-red-500 px-4 py-3 transition hover:bg-foreground/5`}
                       >
                         <div className="min-w-0 flex-1">
-                          <p className="truncate font-medium">{r.name}</p>
+                          <p className="truncate font-medium">{r.colonyName}</p>
                           <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
-                            <span>
-                              {windowText(
-                                r.windowStart,
-                                r.windowEnd,
-                                t("noWindow"),
-                              )}
+                            <span className="tabular-nums">
+                              {windowRangeLabel(r.windowStart, r.windowEnd) ||
+                                t("noWindow")}
                             </span>
                             <span aria-hidden>·</span>
                             <span
