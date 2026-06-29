@@ -14,7 +14,7 @@
 // bogus. Phones drift; a minute or two of skew is normal, so we allow a small
 // window. Anything beyond it (a far-future or clearly-wrong clock) is rejected
 // in favour of the fallback rather than trusting it.
-const MAX_FUTURE_SKEW_MS = 5 * 60 * 1000;
+export const MAX_FUTURE_SKEW_MS = 5 * 60 * 1000;
 
 // Parse a client-supplied field-observation timestamp.
 //

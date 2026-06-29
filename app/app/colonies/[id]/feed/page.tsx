@@ -68,7 +68,11 @@ export default async function FeedPage({
           {error}
         </p>
       ) : null}
-      <FeedForm colonyId={id} cats={cats} />
+      <FeedForm
+        colonyId={id}
+        cats={cats}
+        timezone={org?.timezone ?? "Europe/Lisbon"}
+      />
     </div>
   );
 }

@@ -5,6 +5,9 @@ import {
   dayRangeInTz,
   minutesAfterWindow,
   isValidTimeZone,
+  localHhmm,
+  hhmmToUtcIso,
+  isHhmmFutureBeyondSkew,
 } from "./time.ts";
 
 // All tests pass an explicit `now`/date — never the real clock — so they are
@@ -99,6 +102,98 @@ test("minutesAfterWindow works for a non-Portugal org (Auckland)", () => {
     ),
     720,
   );
+});
+
+// ── "Time fed" control helpers ──────────────────────────────────────────────
+
+test("localHhmm formats the org-local wall clock (Lisbon summer, UTC+1)", () => {
+  // 08:41 UTC → 09:41 in Lisbon (WEST, UTC+1).
+  assert.equal(
+    localHhmm(new Date("2026-06-08T08:41:00Z"), "Europe/Lisbon"),
+    "09:41",
+  );
+});
+
+test("localHhmm zero-pads single-digit hours/minutes", () => {
+  // 06:05 UTC → 07:05 Lisbon summer.
+  assert.equal(
+    localHhmm(new Date("2026-06-08T06:05:00Z"), "Europe/Lisbon"),
+    "07:05",
+  );
+});
+
+test("localHhmm reads the local clock across a UTC midnight (Auckland UTC+12)", () => {
+  // 12:30 UTC → 00:30 next day in Auckland.
+  assert.equal(
+    localHhmm(new Date("2026-06-05T12:30:00Z"), "Pacific/Auckland"),
+    "00:30",
+  );
+});
+
+test("hhmmToUtcIso resolves an org-local time on today's local day (Lisbon summer)", () => {
+  // now = 09:15 Lisbon (08:15 UTC). 07:30 local on that day = 06:30 UTC.
+  const now = new Date("2026-06-08T08:15:00Z");
+  assert.equal(
+    hhmmToUtcIso("07:30", "Europe/Lisbon", now),
+    "2026-06-08T06:30:00.000Z",
+  );
+});
+
+test("hhmmToUtcIso round-trips localHhmm to the same wall-clock minute", () => {
+  const now = new Date("2026-06-08T08:41:30Z");
+  const hhmm = localHhmm(now, "Europe/Lisbon"); // "09:41"
+  // Re-resolving the formatted HH:MM lands on that minute (seconds dropped).
+  assert.equal(
+    hhmmToUtcIso(hhmm, "Europe/Lisbon", now),
+    "2026-06-08T08:41:00.000Z",
+  );
+});
+
+test("hhmmToUtcIso uses the LOCAL calendar day, not the UTC one (tz boundary)", () => {
+  // 23:30 UTC is already the 6th in Lisbon summer; 00:15 local resolves to the
+  // 6th local day = 2026-06-05T23:15:00Z.
+  const now = new Date("2026-06-05T23:30:00Z");
+  assert.equal(
+    hhmmToUtcIso("00:15", "Europe/Lisbon", now),
+    "2026-06-05T23:15:00.000Z",
+  );
+});
+
+test("hhmmToUtcIso throws on a malformed time string", () => {
+  assert.throws(() => hhmmToUtcIso("", "Europe/Lisbon", new Date()));
+});
+
+test("isHhmmFutureBeyondSkew: the prefilled 'now' value is never flagged", () => {
+  const now = new Date("2026-06-08T08:41:00Z");
+  assert.equal(
+    isHhmmFutureBeyondSkew(
+      localHhmm(now, "Europe/Lisbon"),
+      "Europe/Lisbon",
+      now,
+    ),
+    false,
+  );
+});
+
+test("isHhmmFutureBeyondSkew: an earlier time today is allowed", () => {
+  const now = new Date("2026-06-08T08:15:00Z"); // 09:15 Lisbon
+  assert.equal(isHhmmFutureBeyondSkew("07:30", "Europe/Lisbon", now), false);
+});
+
+test("isHhmmFutureBeyondSkew: a time within the 5-min skew is tolerated", () => {
+  const now = new Date("2026-06-08T08:15:00Z"); // 09:15 Lisbon
+  // 09:18 local is +3 min — under the skew window.
+  assert.equal(isHhmmFutureBeyondSkew("09:18", "Europe/Lisbon", now), false);
+});
+
+test("isHhmmFutureBeyondSkew: a future beyond the skew window is flagged", () => {
+  const now = new Date("2026-06-08T08:15:00Z"); // 09:15 Lisbon
+  // 10:30 local is +75 min — clearly future.
+  assert.equal(isHhmmFutureBeyondSkew("10:30", "Europe/Lisbon", now), true);
+});
+
+test("isHhmmFutureBeyondSkew: a malformed value never blocks (returns false)", () => {
+  assert.equal(isHhmmFutureBeyondSkew("", "Europe/Lisbon", new Date()), false);
 });
 
 test("isValidTimeZone accepts real zones and rejects junk", () => {

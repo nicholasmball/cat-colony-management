@@ -182,7 +182,14 @@
     "notesOptional": "Notas (opcional)",
     "saveUpdate": "Guardar atualização",
     "savingUpdate": "A guardar…",
-    "submitFailed": "Não foi possível guardar a atualização de alimentação. Tente novamente."
+    "submitFailed": "Não foi possível guardar a atualização de alimentação. Tente novamente.",
+    "timeFed": "Hora da alimentação",
+    "timeFedOptional": "(opcional)",
+    "timeFedHint": "Predefinido para agora. Altere só se alimentou mais cedo hoje.",
+    "timeFedEdited": "✓ Alterada",
+    "timeFedNowIs": "· agora são {time}",
+    "timeFedFutureError": "A hora não pode ser no futuro. Agora são {time} — escolha essa hora ou anterior.",
+    "timeFedReset": "Repor para agora"
   },
   "colonies": {
     "title": "Colónias",

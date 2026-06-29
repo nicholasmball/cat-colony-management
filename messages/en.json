@@ -182,7 +182,14 @@
     "notesOptional": "Notes (optional)",
     "saveUpdate": "Save update",
     "savingUpdate": "Saving…",
-    "submitFailed": "Could not save the feeding update. Please try again."
+    "submitFailed": "Could not save the feeding update. Please try again.",
+    "timeFed": "Time fed",
+    "timeFedOptional": "(optional)",
+    "timeFedHint": "Defaults to now. Change it only if you fed earlier today.",
+    "timeFedEdited": "✓ Edited",
+    "timeFedNowIs": "· now is {time}",
+    "timeFedFutureError": "The time can't be in the future. Now is {time} — pick that time or earlier.",
+    "timeFedReset": "Reset to now"
   },
   "colonies": {
     "title": "Colonies",

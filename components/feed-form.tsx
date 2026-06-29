@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { enqueue } from "@/lib/offline/outbox";
 import { getStore, isDefinitelyOffline } from "@/lib/offline/client";
-import { PawIcon } from "@/components/icons";
+import { ClockIcon, PawIcon, WarningIcon } from "@/components/icons";
+import { hhmmToUtcIso, isHhmmFutureBeyondSkew, localHhmm } from "@/lib/time";
 import { btnPrimary, input } from "@/lib/ui";
 
 type Cat = {
@@ -66,15 +67,48 @@ const colonyFlags = [
 export function FeedForm({
   colonyId,
   cats,
+  timezone,
 }: {
   colonyId: string;
   cats: Cat[];
+  timezone: string;
 }) {
   const t = useTranslations("feed");
   const router = useRouter();
   const [fed, setFed] = useState(true);
   const [flags, setFlags] = useState<Record<string, boolean>>({});
   const [sightings, setSightings] = useState<Record<string, string>>({});
+
+  // Optional "Time fed" control. It surfaces + lets the feeder adjust the
+  // observedAt the form already mints at tap — pre-filled to NOW in the org
+  // timezone. The pre-fill happens AFTER mount (not in the initial render) so the
+  // server-rendered markup and the client agree on the input value — a dynamic
+  // "now" baked into SSR would otherwise trip a hydration mismatch. The default
+  // is held in a ref (the as-loaded value), so an "Edited" cue only shows on a
+  // real user change — a native picker re-emitting the same HH:MM on load reads
+  // as unchanged.
+  const [timeFed, setTimeFed] = useState("");
+  const [defaultTime, setDefaultTime] = useState("");
+  const timeInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    // Set off the synchronous effect body via a microtask (mirroring useOnline in
+    // sync-indicator.tsx) to avoid a cascading-render warning; the empty initial
+    // value already covers the pre-mount window and falls back to now() on submit.
+    queueMicrotask(() => {
+      const hhmm = localHhmm(new Date(), timezone);
+      setDefaultTime(hhmm);
+      setTimeFed(hhmm);
+    });
+  }, [timezone]);
+
+  const validTime = /^\d{2}:\d{2}$/.test(timeFed);
+  const edited = validTime && timeFed !== defaultTime;
+  const now = new Date();
+  const nowHhmm = localHhmm(now, timezone);
+  // Only an EXPLICIT future beyond the shared skew window is an error; the field
+  // at rest (≈ now) and any earlier time are fine. The server still coerces a
+  // stray future value as the backstop — we just spare the feeder the surprise.
+  const futureError = edited && isHhmmFutureBeyondSkew(timeFed, timezone, now);
   // Replaces useFormStatus (which only works inside a server-action <form>): we
   // now drive the disabled/pending state ourselves around the fetch, preserving
   // the exact same "can't double-submit" behaviour the SubmitButton gave.
@@ -86,15 +120,27 @@ export function FeedForm({
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (submitting) return;
+    // Never truly blocked: we only hold the submit while the TYPED time is an
+    // explicit future (beyond skew). The feeder fixes it in place — there's a
+    // one-tap "reset to now" affordance — then Save works. The Save button
+    // reflects this via aria-disabled (not opacity-alone).
+    if (futureError) {
+      timeInputRef.current?.focus();
+      return;
+    }
     setSubmitting(true);
     setError(null);
 
-    // Capture the field-observation time NOW, at the tap — before the offline/
-    // online branch — so a queued offline write carries the true field time and
-    // keeps it after syncing minutes/hours later (the server would otherwise
-    // stamp observed_at at sync time). The route applies this same value to the
-    // feeding event and every sighting.
-    const observedAt = new Date().toISOString();
+    // The field-observation time the route applies to the feeding event AND every
+    // sighting. Captured NOW (at the tap, before the offline/online branch) so a
+    // queued offline write keeps its true field time after syncing later. If the
+    // feeder adjusted the optional "Time fed" control, use that HH:MM interpreted
+    // as today in the org timezone instead; an untouched/cleared control falls
+    // back to exact-now, so the zero-interaction case is identical to before.
+    const observedAt =
+      edited && validTime
+        ? hhmmToUtcIso(timeFed, timezone, new Date())
+        : new Date().toISOString();
 
     // Phase 1 transport: mint a client UUID for the feeding event and one per
     // marked cat sighting, then POST JSON to the route. The client UUIDs make a
@@ -326,11 +372,85 @@ export function FeedForm({
         <textarea name="notes" rows={2} className={`${input} py-2`} />
       </label>
 
+      {/* Optional "Time fed" — a quiet secondary strip just above Save. Pre-filled
+          to now; the common case is zero interaction. */}
+      <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface/60 p-3">
+        <div className="flex items-center gap-3">
+          <label
+            htmlFor="time-fed"
+            className="flex min-w-0 flex-1 items-center gap-2 text-sm font-medium"
+          >
+            <ClockIcon className="h-4 w-4 shrink-0 text-muted" aria-hidden />
+            <span>
+              {t("timeFed")}{" "}
+              <span className="font-medium text-muted">
+                {t("timeFedOptional")}
+              </span>
+            </span>
+          </label>
+          <input
+            id="time-fed"
+            ref={timeInputRef}
+            type="time"
+            value={timeFed}
+            onChange={(e) => setTimeFed(e.target.value)}
+            aria-invalid={futureError || undefined}
+            aria-describedby={futureError ? "time-fed-error" : "time-fed-hint"}
+            className={`min-h-11 min-w-[7rem] rounded-lg border bg-surface px-3 text-center tabular-nums text-foreground focus:outline-none focus:ring-2 ${
+              futureError
+                ? "border-red-600 focus:ring-red-600/25"
+                : "border-border focus:border-accent focus:ring-accent/25"
+            }`}
+          />
+        </div>
+
+        {edited && !futureError ? (
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+            <span className="inline-flex items-center gap-1 rounded-full border border-accent/40 bg-accent/10 px-2 py-0.5 font-semibold text-accent">
+              {t("timeFedEdited")}
+            </span>
+            <span className="text-muted">
+              {t("timeFedNowIs", { time: nowHhmm })}
+            </span>
+          </div>
+        ) : null}
+
+        {futureError ? (
+          <>
+            <p
+              id="time-fed-error"
+              role="alert"
+              className="flex items-start gap-2 rounded-lg bg-red-50 px-2.5 py-2 text-xs text-red-700 dark:bg-red-950/60 dark:text-red-300"
+            >
+              <WarningIcon
+                className="mt-0.5 h-3.5 w-3.5 shrink-0"
+                aria-hidden
+              />
+              <span>{t("timeFedFutureError", { time: nowHhmm })}</span>
+            </p>
+            <button
+              type="button"
+              onClick={() => setTimeFed(localHhmm(new Date(), timezone))}
+              className="self-start text-xs font-semibold text-accent underline underline-offset-2"
+            >
+              {t("timeFedReset")}
+            </button>
+          </>
+        ) : (
+          <p id="time-fed-hint" className="text-xs text-muted">
+            {t("timeFedHint")}
+          </p>
+        )}
+      </div>
+
       <button
         type="submit"
         disabled={submitting}
         aria-busy={submitting}
-        className={`${btnPrimary} sticky bottom-4 min-h-13 disabled:cursor-not-allowed disabled:opacity-60`}
+        aria-disabled={submitting || futureError}
+        className={`${btnPrimary} sticky bottom-4 min-h-13 disabled:cursor-not-allowed disabled:opacity-60 ${
+          futureError ? "cursor-not-allowed opacity-60" : ""
+        }`}
       >
         {submitting ? t("savingUpdate") : t("saveUpdate")}
       </button>
