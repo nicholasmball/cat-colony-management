@@ -30,3 +30,26 @@ export async function getAssignableFeeders(
   );
   return feeders.sort((a, b) => a.email.localeCompare(b.email));
 }
+
+export type PendingInvite = { email: string };
+
+// Pending (un-accepted) FEEDER invitations for the org — surfaced read-only on
+// the Add-schedule form as greyed "Invited · pending" entries so an admin who
+// just invited someone sees the result without going to Members. These are NOT
+// assignable (no accepted membership yet), so they never enter the feeder
+// <select>; getAssignableFeeders stays the source of truth for that. Bounded
+// select (one column, org-scoped, role + accepted filters). Service client
+// because invitations are admin-only; caller must already be a verified admin.
+export async function getPendingFeederInvites(
+  organisationId: string,
+): Promise<PendingInvite[]> {
+  const svc = createServiceClient();
+  const { data } = await svc
+    .from("invitations")
+    .select("email")
+    .eq("organisation_id", organisationId)
+    .eq("role", "feeder")
+    .is("accepted_at", null)
+    .order("created_at", { ascending: true });
+  return (data ?? []).map((r) => ({ email: r.email as string }));
+}

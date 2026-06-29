@@ -8,7 +8,12 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getActiveOrg } from "@/lib/active-org";
 import { isFailedWrite, writeErrorMessage } from "@/lib/mutation-result";
-import { canChangeRole, isRole, type AppRole } from "@/lib/member-role";
+import {
+  canChangeRole,
+  inviteRoleFromInput,
+  type AppRole,
+} from "@/lib/member-role";
+import { resolveInviteReturn, inviteReturnPath } from "@/lib/invite-return";
 import { canEraseMember } from "@/lib/member-admin";
 import { emailModeFromEnv } from "@/lib/email/flags";
 import { inviteEmailPath } from "@/lib/email/invite-plan";
@@ -81,19 +86,33 @@ function err(message: string): never {
 export async function inviteVolunteer(formData: FormData) {
   const org = await requireAdminOrg();
   const t = await getTranslations("errors");
+
+  // Where this invite returns to. The Members form sends no source → MEMBERS;
+  // the schedule form sends source=schedule + colony_id → back to that form.
+  // resolveInviteReturn validates server-side (known token + uuid), so this is
+  // never an open redirect. Errors below also return to this trusted base path.
+  const source = String(formData.get("source") ?? "");
+  const colonyId = String(formData.get("colony_id") ?? "");
+  const returnBase = resolveInviteReturn({ source, colonyId });
+  const fail = (message: string): never =>
+    redirect(`${returnBase}?error=${encodeURIComponent(message)}`);
+
   const email = String(formData.get("email") ?? "")
     .trim()
     .toLowerCase();
-  const role = String(formData.get("role") ?? "");
+
+  // Resolve the role server-side: a blank/absent role defaults to "feeder" (the
+  // schedule form never sends one), a non-blank-but-invalid value is rejected,
+  // and a valid role (the Members form's feeder/caretaker/admin) is kept. This
+  // is the real security boundary — the UI note is cosmetic.
+  const role = inviteRoleFromInput(String(formData.get("role") ?? ""));
 
   if (!email.includes("@") || email.length < 3) {
-    err(t("validEmailRequired"));
+    fail(t("validEmailRequired"));
   }
-  // Validate against the canonical role set — admin/caretaker/feeder pass;
-  // "", "owner", "superadmin" and any junk are rejected (no invitation row is
-  // written). This is the real security boundary: the UI note is cosmetic.
-  if (!isRole(role)) {
-    err(t("roleRequired"));
+  if (role === null) {
+    // `return` so control-flow analysis narrows `role` to AppRole below.
+    return fail(t("roleRequired"));
   }
 
   // Block inviting someone who's already an active member of this org.
@@ -108,7 +127,7 @@ export async function inviteVolunteer(formData: FormData) {
       .eq("organisation_id", org.organisation_id)
       .is("deleted_at", null)
       .maybeSingle();
-    if (mem) err(t("alreadyMember"));
+    if (mem) fail(t("alreadyMember"));
   }
 
   const supabase = await createClient();
@@ -142,7 +161,7 @@ export async function inviteVolunteer(formData: FormData) {
     .select("token")
     .maybeSingle();
   if (error) {
-    err(error.code === "23505" ? t("pendingInviteExists") : error.message);
+    fail(error.code === "23505" ? t("pendingInviteExists") : error.message);
   }
 
   const origin = await siteOrigin();
@@ -153,10 +172,8 @@ export async function inviteVolunteer(formData: FormData) {
     orgName: org.name,
     role,
   });
-  revalidatePath(MEMBERS);
-  redirect(
-    `${MEMBERS}?invited=${encodeURIComponent(email)}&sent=${sent ? 1 : 0}`,
-  );
+  revalidatePath(returnBase);
+  redirect(inviteReturnPath({ source, colonyId, email, sent }));
 }
 
 export async function resendInvite(formData: FormData) {

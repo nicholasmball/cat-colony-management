@@ -22,6 +22,19 @@ export function isRole(value: string): value is AppRole {
   return (ROLES as string[]).includes(value);
 }
 
+// Resolve the role for an invite from raw form input. An ABSENT/blank role is
+// the server-side default of "feeder" — this is what lets the schedule-form
+// invite (which never sends a role) create feeder invites without trusting the
+// client. A non-blank but invalid value (e.g. "owner") is rejected as null so
+// the action can surface roleRequired and write no invitation row. A valid role
+// (the Members form's feeder/caretaker/admin) is returned unchanged, so the
+// existing Members behaviour is preserved exactly.
+export function inviteRoleFromInput(raw: string): AppRole | null {
+  const trimmed = raw.trim();
+  if (trimmed === "") return "feeder";
+  return isRole(trimmed) ? trimmed : null;
+}
+
 // True when moving from currentRole to newRole drops privilege
 // (e.g. admin→caretaker, caretaker→feeder).
 export function isDemotion(currentRole: AppRole, newRole: AppRole): boolean {

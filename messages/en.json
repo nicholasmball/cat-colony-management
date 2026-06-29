@@ -396,7 +396,24 @@
     "cancel": "Cancel",
     "active": "Active",
     "deleteSchedule": "Delete schedule",
-    "removeConfirm": "Remove this schedule?"
+    "removeConfirm": "Remove this schedule?",
+    "invite": {
+      "dontSeeThem": "Don't see them?",
+      "inviteVolunteer": "Invite a new volunteer",
+      "emailLabel": "Email",
+      "emailPlaceholder": "volunteer@example.com",
+      "helper": "They'll be invited as a feeder. You can assign them to a schedule once they accept the invitation.",
+      "helperEmpty": "They'll be invited as a feeder. You can create this schedule once they accept the invitation.",
+      "send": "Send invitation",
+      "sending": "Sending…",
+      "pendingTag": "Invited · pending",
+      "successNormal": "Invitation sent to {email}. They'll appear as a feeder once they accept. No schedule was created yet.",
+      "successEmpty": "Invitation sent to {email}. The schedule can't be created until someone accepts and becomes a feeder.",
+      "waiting": "Waiting on {email} to accept. No assignable feeder yet.",
+      "adminNote": "Only admins can invite. Caretakers ask an admin to add someone.",
+      "emptyWarning": "No feeders or caretakers to assign yet. Invite a volunteer below to get started — you can create the schedule once they accept.",
+      "backToColony": "Back to colony"
+    }
   },
   "incidents": {
     "title": "Incidents",

@@ -396,7 +396,24 @@
     "cancel": "Cancelar",
     "active": "Ativo",
     "deleteSchedule": "Eliminar horário",
-    "removeConfirm": "Remover este horário?"
+    "removeConfirm": "Remover este horário?",
+    "invite": {
+      "dontSeeThem": "Não os encontra?",
+      "inviteVolunteer": "Convidar um novo voluntário",
+      "emailLabel": "Email",
+      "emailPlaceholder": "voluntario@exemplo.com",
+      "helper": "Será convidado como alimentador. Poderá atribuí-lo a um horário assim que aceitar o convite.",
+      "helperEmpty": "Será convidado como alimentador. Poderá criar este horário assim que aceitar o convite.",
+      "send": "Enviar convite",
+      "sending": "A enviar…",
+      "pendingTag": "Convidado · pendente",
+      "successNormal": "Convite enviado para {email}. Aparecerá como alimentador assim que aceitar. Ainda não foi criado nenhum horário.",
+      "successEmpty": "Convite enviado para {email}. O horário só pode ser criado depois de alguém aceitar e tornar-se alimentador.",
+      "waiting": "A aguardar que {email} aceite. Ainda não há alimentador para atribuir.",
+      "adminNote": "Só os administradores podem convidar. Os cuidadores devem pedir a um administrador para adicionar alguém.",
+      "emptyWarning": "Ainda não há alimentadores ou cuidadores para atribuir. Convide um voluntário abaixo para começar — pode criar o horário assim que aceitar.",
+      "backToColony": "Voltar à colónia"
+    }
   },
   "incidents": {
     "title": "Incidentes",
