@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { enqueue } from "@/lib/offline/outbox";
 import { getStore, isDefinitelyOffline } from "@/lib/offline/client";
-import { ClockIcon, PawIcon, WarningIcon } from "@/components/icons";
+import { ClockIcon, FlagIcon, PawIcon, WarningIcon } from "@/components/icons";
 import { hhmmToUtcIso, isHhmmFutureBeyondSkew, localHhmm } from "@/lib/time";
+import { buildSightings, countSightings } from "@/lib/feed-sightings";
 import { btnPrimary, input } from "@/lib/ui";
 
 type Cat = {
@@ -16,14 +17,24 @@ type Cat = {
   photoSrc: string | null;
 };
 
-// Decorative 40px round avatar to the LEFT of the cat name. Reuses the colony-
-// detail avatar markup; additive here are lazy loading + a row-local onError
-// fallback to the paw, both inside a fixed h-10 w-10 box so there's no layout
-// shift. The name remains the sole text label, so alt="" (decorative).
-function CatAvatar({ src }: { src: string | null }) {
+// Square, full-width tile photo for the tap-to-mark-seen grid. Lazy-loaded with
+// a tile-local onError fallback to the paw, inside a fixed aspect-square box so
+// photos arriving later cause no layout shift (key for a 30+ cat colony). The
+// name is always the text label, so alt="" (decorative). `dimmed` lifts the
+// "not seen" tiles' photos so an un-tapped cat reads as "not marked yet" —
+// reinforced by the glyph + word chip, never colour/opacity alone.
+function TilePhoto({
+  src,
+  dimmed,
+  children,
+}: {
+  src: string | null;
+  dimmed: boolean;
+  children: React.ReactNode;
+}) {
   const [failed, setFailed] = useState(false);
   return (
-    <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-surface">
+    <span className="relative block aspect-square w-full overflow-hidden bg-foreground/5">
       {src && !failed ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -31,32 +42,19 @@ function CatAvatar({ src }: { src: string | null }) {
           alt=""
           loading="lazy"
           onError={() => setFailed(true)}
-          className="h-full w-full object-cover"
+          className={`h-full w-full object-cover transition ${
+            dimmed ? "opacity-60 saturate-[.85]" : ""
+          }`}
         />
       ) : (
-        <PawIcon className="h-5 w-5 text-muted" aria-hidden />
+        <span className="grid h-full w-full place-items-center">
+          <PawIcon className="h-8 w-8 text-muted" aria-hidden />
+        </span>
       )}
+      {children}
     </span>
   );
 }
-
-const sightingOptions = [
-  {
-    key: "seen",
-    labelKey: "sightingSeen",
-    on: "border-emerald-600 bg-emerald-600 text-white",
-  },
-  {
-    key: "not_seen",
-    labelKey: "sightingNotSeen",
-    on: "border-amber-500 bg-amber-500 text-white",
-  },
-  {
-    key: "concern",
-    labelKey: "sightingConcern",
-    on: "border-red-600 bg-red-600 text-white",
-  },
-] as const;
 
 const colonyFlags = [
   { key: "problem", labelKey: "flagProblem" },
@@ -77,7 +75,34 @@ export function FeedForm({
   const router = useRouter();
   const [fed, setFed] = useState(true);
   const [flags, setFlags] = useState<Record<string, boolean>>({});
-  const [sightings, setSightings] = useState<Record<string, string>>({});
+  // Tap-to-mark-seen grid state. `seen` and `concern` are id sets the feeder
+  // builds by tapping; `wholeColony` (default ON) decides whether un-tapped cats
+  // are written not_seen (full round) or omitted (partial round). The seen and
+  // concern sets are independent: a flagged tile keeps its underlying seen state,
+  // so clearing the flag returns it to seen/not-seen with no data lost. The pure
+  // mapper (lib/feed-sightings.ts buildSightings) turns these into sightings[].
+  const [seen, setSeen] = useState<ReadonlySet<string>>(() => new Set());
+  const [concern, setConcern] = useState<ReadonlySet<string>>(() => new Set());
+  const [wholeColony, setWholeColony] = useState(true);
+
+  function toggleSeen(id: string) {
+    setSeen((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  function toggleConcern(id: string) {
+    setConcern((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const counts = countSightings(cats, { seen, concern });
 
   // Optional "Time fed" control. It surfaces + lets the feeder adjust the
   // observedAt the form already mints at tap — pre-filled to NOW in the org
@@ -158,13 +183,18 @@ export function FeedForm({
         (
           e.currentTarget.elements.namedItem("notes") as HTMLTextAreaElement
         )?.value?.trim() || null,
-      sightings: Object.entries(sightings)
-        .filter(([, status]) => status)
-        .map(([catId, status]) => ({
+      // The grid's seen/concern sets + the whole-colony checkbox collapse to the
+      // SAME sightings[] shape the route already accepts (status ∈
+      // seen|not_seen|concern). buildSightings owns the precedence (concern >
+      // seen > not_seen-if-wholeColony > omit); we just mint a client UUID per
+      // entry for idempotent replay, exactly as before.
+      sightings: buildSightings(cats, { seen, concern, wholeColony }).map(
+        (s) => ({
           id: crypto.randomUUID(),
-          catId,
-          status,
-        })),
+          catId: s.catId,
+          status: s.status,
+        }),
+      ),
     };
 
     const destination = `/app/colonies/${colonyId}?updated=1`;
@@ -319,51 +349,142 @@ export function FeedForm({
           {t("cats")}
         </h2>
         {cats.length === 0 ? (
-          <p className="rounded-xl border border-border bg-surface p-4 text-sm text-muted">
-            {t("noCatsYet")}
+          // Empty colony stays useful: fed / flags / notes still submit (cat
+          // records never block). The friendly note carries that explicitly.
+          <p className="flex items-start gap-2.5 rounded-xl border border-border bg-surface p-4 text-sm text-muted">
+            <PawIcon
+              className="mt-0.5 h-5 w-5 shrink-0 text-muted"
+              aria-hidden
+            />
+            <span>{t("noCatsYet")}</span>
           </p>
         ) : (
-          <ul className="flex flex-col gap-2">
-            {cats.map((c) => {
-              const sel = sightings[c.id] ?? "";
-              return (
-                <li
-                  key={c.id}
-                  className="flex items-start gap-3 rounded-xl border border-border bg-surface p-3"
-                >
-                  <CatAvatar src={c.photoSrc} />
-                  <div className="flex min-w-0 flex-1 flex-col gap-2">
-                    <span className="truncate text-sm font-medium">
-                      {c.name ?? c.temp_id ?? t("unnamedCat")}
-                    </span>
-                    <div className="grid grid-cols-3 gap-2">
-                      {sightingOptions.map((s) => {
-                        const on = sel === s.key;
-                        return (
-                          <button
-                            key={s.key}
-                            type="button"
-                            aria-pressed={on}
-                            onClick={() =>
-                              setSightings((m) => ({
-                                ...m,
-                                [c.id]: m[c.id] === s.key ? "" : s.key,
-                              }))
-                            }
-                            className={`min-h-11 rounded-lg border text-sm font-medium transition ${
-                              on ? s.on : "border-border text-foreground"
-                            }`}
-                          >
-                            {t(s.labelKey)}
-                          </button>
-                        );
+          <>
+            {/* Legend makes the INVERTED default explicit in TEXT (never colour-
+                alone): un-tapped = not seen. It rewrites for the partial round so
+                the rule is always honest about what Save will write. */}
+            <div
+              className={`flex items-start gap-2 rounded-lg border p-3 text-sm ${
+                wholeColony
+                  ? "border-emerald-600/40 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200"
+                  : "border-accent/40 bg-accent/5 text-foreground"
+              }`}
+            >
+              <span aria-hidden className="mt-px shrink-0">
+                {wholeColony ? "👁" : "◐"}
+              </span>
+              <span>
+                {wholeColony ? t("gridLegend") : t("gridLegendPartial")}{" "}
+                {t("gridLegendFlagHint")}
+              </span>
+            </div>
+
+            {/* Live count — the feeder's last-chance check before Save. The
+                problem count lives INSIDE the polite region so it's announced
+                too; the not-seen count EXCLUDES concern tiles. */}
+            <p
+              aria-live="polite"
+              className="text-sm font-semibold tabular-nums text-foreground"
+            >
+              {t("countSeen", { seen: counts.seen, total: cats.length })}
+              <span className="font-medium text-muted">
+                {" · "}
+                {t("countNotSeen", { count: counts.notSeen })}
+                {counts.problem > 0
+                  ? ` · ${t("countProblem", { count: counts.problem })}`
+                  : ""}
+              </span>
+            </p>
+
+            <ul className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+              {cats.map((c) => {
+                const catLabel = c.name ?? c.temp_id ?? t("unnamedCat");
+                const isConcern = concern.has(c.id);
+                const isSeen = seen.has(c.id);
+                // aria-pressed on the main button tracks the underlying SEEN
+                // toggle (so tapping always flips seen ↔ not-seen, even under a
+                // flag); the visible state shows concern's override. Full state-
+                // aware label on every tile regardless of colony size.
+                const stateWord = isConcern
+                  ? t("tileStateProblem")
+                  : isSeen
+                    ? t("sightingSeen")
+                    : t("sightingNotSeen");
+                const nextWord = isSeen
+                  ? t("sightingNotSeen")
+                  : t("sightingSeen");
+                return (
+                  <li key={c.id} className="relative">
+                    <button
+                      type="button"
+                      aria-pressed={isSeen}
+                      aria-label={t("tileTapLabel", {
+                        cat: catLabel,
+                        state: stateWord,
+                        next: nextWord,
                       })}
-                    </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                      onClick={() => toggleSeen(c.id)}
+                      className={`block w-full overflow-hidden rounded-xl border-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ${
+                        isConcern
+                          ? "border-amber-500 bg-amber-50 dark:bg-amber-950/40"
+                          : isSeen
+                            ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40"
+                            : "border-border bg-surface"
+                      }`}
+                    >
+                      <TilePhoto
+                        src={c.photoSrc}
+                        dimmed={!isSeen && !isConcern}
+                      >
+                        <span
+                          className={`absolute bottom-1.5 left-1.5 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold ${
+                            isConcern
+                              ? "border-amber-500 bg-amber-500 text-amber-950"
+                              : isSeen
+                                ? "border-emerald-600 bg-emerald-600 text-white"
+                                : "border-border bg-surface/90 text-muted"
+                          }`}
+                        >
+                          <span aria-hidden>
+                            {isConcern ? "⚑" : isSeen ? "✓" : "○"}
+                          </span>
+                          {stateWord}
+                        </span>
+                      </TilePhoto>
+                      <span className="block truncate px-2 py-2 text-sm font-semibold text-foreground">
+                        {catLabel}
+                      </span>
+                    </button>
+                    {/* SEPARATE ≥44px control — a sibling, NOT nested in the main
+                        button. Marks concern (overrides seen/not-seen) and clears
+                        back to the prior state. */}
+                    <button
+                      type="button"
+                      aria-pressed={isConcern}
+                      aria-label={
+                        isConcern
+                          ? t("problemReportedFor", { cat: catLabel })
+                          : t("reportProblemWith", { cat: catLabel })
+                      }
+                      onClick={() => toggleConcern(c.id)}
+                      className="absolute right-0 top-0 z-10 grid h-11 w-11 place-items-center focus-visible:outline-none"
+                    >
+                      <span
+                        aria-hidden
+                        className={`grid h-7 w-7 place-items-center rounded-lg border text-sm transition ${
+                          isConcern
+                            ? "border-amber-500 bg-amber-500 text-amber-950"
+                            : "border-border bg-surface/90 text-muted"
+                        }`}
+                      >
+                        <FlagIcon className="h-4 w-4" aria-hidden />
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
         )}
       </section>
 
@@ -442,6 +563,44 @@ export function FeedForm({
           </p>
         )}
       </div>
+
+      {/* "I checked the whole colony" — default ON, sits right above Save. ON →
+          un-tapped cats are written not_seen (full round); OFF → un-tapped cats
+          are omitted (partial round), so a feeder who only did part of the round
+          never mass-marks cats not-seen. The helper text + count reflect exactly
+          what Save will write. Only meaningful with cats present. */}
+      {cats.length > 0 ? (
+        <label
+          className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 ${
+            wholeColony
+              ? "border-emerald-600/40 bg-emerald-50 dark:bg-emerald-950/40"
+              : "border-accent/40 bg-accent/5"
+          }`}
+        >
+          <input
+            type="checkbox"
+            checked={wholeColony}
+            onChange={(e) => setWholeColony(e.target.checked)}
+            className="mt-0.5 h-6 w-6 shrink-0 accent-emerald-600"
+          />
+          <span className="flex flex-col gap-0.5">
+            <span className="text-sm font-bold text-foreground">
+              {t("wholeColonyCheck")}
+            </span>
+            <span
+              className={`text-xs font-medium ${
+                wholeColony
+                  ? "text-emerald-900 dark:text-emerald-200"
+                  : "text-accent"
+              }`}
+            >
+              {wholeColony
+                ? t("wholeColonyHelperOn", { count: counts.notSeen })
+                : t("wholeColonyHelperOff", { count: counts.seen })}
+            </span>
+          </span>
+        </label>
+      ) : null}
 
       <button
         type="submit"

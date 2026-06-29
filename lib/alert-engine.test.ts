@@ -416,3 +416,111 @@ test("not_seen: existing dedup key for the same streak → zero specs (idempoten
   );
   assert.deepEqual(specs, []);
 });
+
+// ── SAFETY: the tap-to-mark-seen grid's not_seen write pattern ───────────────
+// The grid (components/feed-form.tsx + lib/feed-sightings.ts) writes one
+// not_seen sighting per un-tapped cat when "I checked the whole colony" is ON.
+// These cases prove that new, higher-volume not_seen pattern does NOT change the
+// time-based alert behaviour: a single absence never alerts, and a re-sighting
+// breaks the streak. The alert-engine logic is unchanged — this just pins the
+// data pattern as safe.
+test("grid pattern: a single feed's not_seen after a recent sighting does NOT alert", () => {
+  // A cat with a baseline (seen 3 days ago) that's un-tapped on today's round
+  // gets ONE not_seen. That's below not_seen_days (7) and repeated_not_seen (3)
+  // → time-based, no immediate alert / missing mark on a single absence.
+  const specs = planNotSeenAlerts({
+    now: NOW,
+    cats: [
+      {
+        catId: "cat1",
+        colonyId: "col1",
+        colonyName: "Riverside",
+        catName: "Smudge",
+        status: "active",
+        sightings: [
+          { status: "seen", observed_at: daysAgo(3) },
+          { status: "not_seen", observed_at: daysAgo(0) },
+        ],
+      },
+    ],
+  });
+  assert.deepEqual(
+    specs,
+    [],
+    "one not_seen must never immediately alert / mark missing",
+  );
+});
+
+test("grid pattern: a NEVER-SEEN cat's single not_seen today does NOT alert (AC E)", () => {
+  // A cat with NO prior `seen` baseline that's un-tapped on today's round gets
+  // ONE not_seen. The gap from its oldest (only) sighting is ~0 days → below
+  // not_seen_days (7) and the run of 1 is below repeated_not_seen (3). This is
+  // the exact case the baseline-using tests above miss: a single absence on a
+  // never-seen cat must never auto-mark it missing.
+  const specs = planNotSeenAlerts({
+    now: NOW,
+    cats: [
+      {
+        catId: "cat1",
+        colonyId: "col1",
+        colonyName: "Riverside",
+        catName: "Smudge",
+        status: "active",
+        sightings: [{ status: "not_seen", observed_at: daysAgo(0) }],
+      },
+    ],
+  });
+  assert.deepEqual(
+    specs,
+    [],
+    "a never-seen cat's single not_seen must never alert / mark missing",
+  );
+});
+
+test("grid pattern: two un-tapped feeds (2 consecutive) still below the 3-streak → no alert", () => {
+  // Default repeated_not_seen = 3, not_seen_days = 7. A recent seen baseline +
+  // two consecutive not_seen marks (e.g. two part-rounds this cat was un-tapped)
+  // is NOT yet missing — both thresholds must be crossed.
+  const specs = planNotSeenAlerts({
+    now: NOW,
+    cats: [
+      {
+        catId: "cat1",
+        colonyId: "col1",
+        colonyName: "Riverside",
+        catName: "Smudge",
+        status: "active",
+        sightings: [
+          { status: "seen", observed_at: daysAgo(3) },
+          { status: "not_seen", observed_at: daysAgo(2) },
+          { status: "not_seen", observed_at: daysAgo(1) },
+        ],
+      },
+    ],
+  });
+  assert.deepEqual(specs, [], "two absences must not mark a cat missing");
+});
+
+test("grid pattern: a re-sighting (tapped seen) at the head breaks the streak → no alert", () => {
+  // A long not_seen run that WOULD alert, but the latest feed tapped the cat
+  // seen. notSeenStreakStart finds no open run → no spec. Re-sighting clears it.
+  const specs = planNotSeenAlerts({
+    now: NOW,
+    cats: [
+      {
+        catId: "cat1",
+        colonyId: "col1",
+        colonyName: "Riverside",
+        catName: "Smudge",
+        status: "active",
+        sightings: [
+          { status: "not_seen", observed_at: daysAgo(9) },
+          { status: "not_seen", observed_at: daysAgo(8) },
+          { status: "not_seen", observed_at: daysAgo(7) },
+          { status: "seen", observed_at: daysAgo(0) },
+        ],
+      },
+    ],
+  });
+  assert.deepEqual(specs, [], "a re-sighting must break the not-seen streak");
+});

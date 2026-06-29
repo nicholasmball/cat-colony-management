@@ -8,8 +8,13 @@
 //
 // Rules (from the MVP Requirements + the missing-cat design, step 4):
 //   * concern            — the latest sighting's status is `concern`.
-//   * not_seen_days      — no `seen` sighting within not_seen_days (default 7)
-//                          AND the latest sighting is `not_seen`/`concern`.
+//   * not_seen_days      — the gap since a confirmed sighting is >= not_seen_days
+//                          (default 7) AND the latest sighting is
+//                          `not_seen`/`concern`. The gap is measured from the
+//                          most recent `seen`, or — for a never-seen cat — from
+//                          the OLDEST sighting on record, so a never-seen cat with
+//                          only a fresh not_seen has a ~0-day gap and is NOT
+//                          flagged here (a single absence never marks missing).
 //   * repeated_not_seen  — the latest repeated_not_seen (default 3) sightings are
 //                          all non-seen (no `seen` among them).
 // Re-raise (time-anchored): a review (ignored/monitoring) silences signals OLDER
@@ -118,13 +123,16 @@ export function concernCandidate({
     reason = "concern";
     count = 0;
   } else {
-    // not_seen_days: the most recent `seen` is older than the window (or never),
-    // and the latest sighting is itself non-seen.
+    // not_seen_days: the gap since a confirmed sighting is at least the window.
+    // With a `seen` baseline the gap runs from the most recent `seen`; for a
+    // never-seen cat it runs from the OLDEST sighting on record. Either way the
+    // threshold is applied — a never-seen cat with only a fresh not_seen has a
+    // ~0-day gap and must NOT flag here (a single absence never marks missing).
     const lastSeen = ordered.find((s) => s.status === "seen");
     const daysSinceSeen = lastSeen
       ? daysBetween(ts(lastSeen.observed_at), nowMs)
       : daysBetween(ts(ordered[ordered.length - 1].observed_at), nowMs);
-    const noRecentSeen = !lastSeen || daysSinceSeen >= notSeenDays;
+    const noRecentSeen = daysSinceSeen >= notSeenDays;
     if (isNonSeen(latest.status) && noRecentSeen) {
       reason = "not_seen_days";
       count = daysSinceSeen;

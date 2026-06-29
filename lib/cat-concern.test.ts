@@ -234,6 +234,76 @@ test("concernReasonText: concern, day singular/plural, times", () => {
   );
 });
 
+// ── Never-seen cats (no `seen` baseline) — AC E: a single un-tapped feed must
+// never mark a cat missing; the 7-day / 3-consecutive thresholds still apply ───
+test("never-seen + single recent not_seen → NOT a candidate (AC E)", () => {
+  // The #4 grid default ("I checked the whole colony") writes one not_seen per
+  // un-tapped cat. A cat with no prior `seen` and only that fresh not_seen has a
+  // ~0-day gap → must not be flagged on a single absence.
+  const r = concernCandidate({
+    status: "active",
+    sightings: [{ status: "not_seen", observed_at: daysAgo(0) }],
+    now: NOW,
+  });
+  assert.equal(r, null);
+});
+
+test("never-seen + oldest not_seen exactly 7 days ago → not_seen_days, count 7", () => {
+  const r = concernCandidate({
+    status: "active",
+    sightings: [
+      { status: "not_seen", observed_at: daysAgo(7) },
+      { status: "not_seen", observed_at: daysAgo(1) },
+    ],
+    now: NOW,
+  });
+  assert.equal(r?.reason, "not_seen_days");
+  assert.equal(r?.count, 7);
+});
+
+test("never-seen + oldest not_seen 6 days ago → NOT a candidate (under window)", () => {
+  const r = concernCandidate({
+    status: "active",
+    sightings: [
+      { status: "not_seen", observed_at: daysAgo(6) },
+      { status: "not_seen", observed_at: daysAgo(1) },
+    ],
+    now: NOW,
+  });
+  // Gap is 6 (< 7) and the run of 2 is < 3 → neither threshold crossed.
+  assert.equal(r, null);
+});
+
+test("never-seen + 3 consecutive not_seen within 7 days → repeated_not_seen, count 3", () => {
+  const r = concernCandidate({
+    status: "active",
+    sightings: [
+      { status: "not_seen", observed_at: daysAgo(3) },
+      { status: "not_seen", observed_at: daysAgo(2) },
+      { status: "not_seen", observed_at: daysAgo(1) },
+    ],
+    now: NOW,
+  });
+  // Oldest gap is 3 (< 7) so not_seen_days doesn't fire; the run of 3 does.
+  assert.equal(r?.reason, "repeated_not_seen");
+  assert.equal(r?.count, 3);
+});
+
+test("regression: seen baseline older than 7 days + latest not_seen → still not_seen_days", () => {
+  // Proves the never-seen fix didn't break the baseline path (the `!lastSeen`
+  // branch removed from noRecentSeen never applied when a `seen` exists).
+  const r = concernCandidate({
+    status: "active",
+    sightings: [
+      { status: "seen", observed_at: daysAgo(9) },
+      { status: "not_seen", observed_at: daysAgo(1) },
+    ],
+    now: NOW,
+  });
+  assert.equal(r?.reason, "not_seen_days");
+  assert.equal(r?.count, 9);
+});
+
 test("input order does not matter (unordered sightings)", () => {
   const r = concernCandidate({
     status: "active",

@@ -158,6 +158,26 @@ export function WarningIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+// Flag/pennant — the per-cat "report a problem" control on the feeding grid
+// (marks a sighting `concern`). Recognition support only — always paired with a
+// text label ("Problem" chip + the button's aria-label), never icon-alone.
+export function FlagIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M5 21V4" />
+      <path d="M5 4h11l-1.5 3.5L16 11H5" />
+    </svg>
+  );
+}
+
 // Bell — used for the Notifications centre + its unread badge.
 export function BellIcon(props: SVGProps<SVGSVGElement>) {
   return (

@@ -11,10 +11,10 @@
 import { isUuid } from "./uuid.ts";
 import { parseFieldTimestamp } from "./field-time.ts";
 
-// The cat_sighting statuses the form's per-cat segmented control can emit. Same
-// three the feed form offers (components/feed-form.tsx sightingOptions). A
-// sighting the feeder left untouched is simply omitted client-side and must not
-// appear in the body.
+// The cat_sighting statuses the form's per-cat grid can emit. Same three the
+// feed form builds via lib/feed-sightings.ts buildSightings. A sighting the
+// feeder left untouched is simply omitted client-side and must not appear in the
+// body.
 export const SIGHTING_STATUSES = ["seen", "not_seen", "concern"] as const;
 export type SightingStatus = (typeof SIGHTING_STATUSES)[number];
 
